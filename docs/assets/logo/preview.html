@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Combine Trade — Logo Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #18181B; color: #E2E8F0; font-family: Inter, system-ui, sans-serif; padding: 40px; }
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  p.sub { color: #94A3B8; margin-bottom: 40px; }
+  h2 { font-size: 16px; color: #94A3B8; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .section { margin-bottom: 48px; }
+  .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
+  .card { border: 1px solid #27272A; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .card.dark { background: #0A0A0F; }
+  .card.light { background: #FFFFFF; }
+  .card.checker { background: repeating-conic-gradient(#27272A 0% 25%, transparent 0% 50%) 50% / 16px 16px; }
+  .label { font-size: 12px; color: #64748B; }
+  .sizes { display: flex; gap: 32px; align-items: end; }
+  .sizes .size { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Combine Trade Logo System</h1>
+<p class="sub">Green primary / Red secondary — Signal crossing mark</p>
+
+<div class="section">
+  <h2>Icon Mark</h2>
+  <div class="row">
+    <div class="card dark">
+      <img src="icon-dark.svg" width="160" height="160" alt="Icon dark">
+      <span class="label">Dark background</span>
+    </div>
+    <div class="card light">
+      <img src="icon-light.svg" width="160" height="160" alt="Icon light">
+      <span class="label">Light background</span>
+    </div>
+    <div class="card checker">
+      <img src="icon.svg" width="160" height="160" alt="Icon transparent">
+      <span class="label">Transparent</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Full Lockup</h2>
+  <div class="row">
+    <div class="card dark" style="padding: 32px 40px;">
+      <img src="lockup-dark.svg" width="420" alt="Lockup dark">
+      <span class="label">Dark background</span>
+    </div>
+  </div>
+  <div class="row" style="margin-top: 16px;">
+    <div class="card light" style="padding: 32px 40px;">
+      <img src="lockup-light.svg" width="420" alt="Lockup light">
+      <span class="label">Light background</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Scale Test</h2>
+  <div class="row">
+    <div class="card dark">
+      <div class="sizes">
+        <div class="size">
+          <img src="icon-dark.svg" width="128" height="128" alt="128px">
+          <span class="label">128px</span>
+        </div>
+        <div class="size">
+          <img src="icon-dark.svg" width="64" height="64" alt="64px">
+          <span class="label">64px</span>
+        </div>
+        <div class="size">
+          <img src="icon-dark.svg" width="32" height="32" alt="32px">
+          <span class="label">32px</span>
+        </div>
+        <div class="size">
+          <img src="favicon.svg" width="16" height="16" alt="16px favicon">
+          <span class="label">16px</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Favicon</h2>
+  <div class="row">
+    <div class="card dark">
+      <img src="favicon.svg" width="64" height="64" alt="Favicon" style="image-rendering: pixelated;">
+      <span class="label">favicon.svg (shown at 64px)</span>
+    </div>
+    <div class="card dark">
+      <img src="favicon.svg" width="32" height="32" alt="Favicon 32">
+      <span class="label">32px</span>
+    </div>
+    <div class="card dark">
+      <img src="favicon.svg" width="16" height="16" alt="Favicon 16">
+      <span class="label">16px (actual size)</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>System Tray</h2>
+  <div class="row">
+    <div class="card dark">
+      <img src="tray-light.svg" width="64" height="64" alt="Tray light">
+      <span class="label">Dark menu bar (macOS dark)</span>
+    </div>
+    <div class="card light">
+      <img src="tray-dark.svg" width="64" height="64" alt="Tray dark">
+      <span class="label">Light menu bar (macOS light)</span>
+    </div>
+    <div class="card dark" style="flex-direction: row; gap: 16px;">
+      <img src="tray-light.svg" width="22" height="22" alt="Tray actual">
+      <span class="label" style="color:#94A3B8;">Actual menu bar size (22px)</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

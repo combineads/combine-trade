@@ -1,0 +1,16 @@
+<svg viewBox="0 0 416 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Combine Trade — Full lockup on dark background -->
+  <rect width="416" height="120" rx="16" fill="#0A0A0F"/>
+
+  <!-- Icon mark -->
+  <g transform="translate(16, 12)">
+    <!-- Red path (descending, behind) -->
+    <path d="M 12,24 C 36,24 60,72 84,72" stroke="#EF4444" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <!-- Green path (ascending, on top) -->
+    <path d="M 12,72 C 36,72 60,24 84,24" stroke="#22C55E" stroke-width="14" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="124" y="70" font-family="Inter, Geist Sans, system-ui, -apple-system, sans-serif" font-size="38" font-weight="600" fill="#22C55E">Combine</text>
+  <text x="297" y="70" font-family="Inter, Geist Sans, system-ui, -apple-system, sans-serif" font-size="38" font-weight="400" fill="#E2E8F0">Trade</text>
+</svg>

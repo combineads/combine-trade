@@ -1,0 +1,8 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Combine Trade Icon — dark background -->
+  <rect width="200" height="200" rx="32" fill="#0A0A0F"/>
+  <!-- Red path (descending, behind) -->
+  <path d="M 40,60 C 88,60 112,140 160,140" stroke="#EF4444" stroke-width="22" stroke-linecap="round" fill="none"/>
+  <!-- Green path (ascending, on top) -->
+  <path d="M 40,140 C 88,140 112,60 160,60" stroke="#22C55E" stroke-width="22" stroke-linecap="round" fill="none"/>
+</svg>

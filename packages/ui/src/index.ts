@@ -75,5 +75,11 @@ export { NotificationBanner, KillSwitchBanner, type BannerVariant, type Notifica
 // Components — TopBar
 export { TopBar, type TopBarProps } from "./components/top-bar";
 
+// Hooks — SSE
+export { useSSE, type SSEOptions, type SSEEvent, type UseSSEReturn, type SSEStatus } from "./hooks/use-sse";
+
+// Views — Strategy Events
+export { StrategyEventsTab, type StrategyEventsTabProps, type StrategyEvent, type EventOutcome } from "./views/strategies/strategy-events-tab";
+
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

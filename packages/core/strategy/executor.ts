@@ -11,6 +11,7 @@ export interface ExecutionInput {
 	code: string;
 	symbol: string;
 	timeframe: string;
+	direction?: "long" | "short" | "both";
 	candles: CandleData;
 	barIndex: number;
 	additionalCandles?: Record<string, CandleData>;
@@ -59,9 +60,14 @@ export class StrategyExecutor {
 			barIndex: input.barIndex,
 		};
 
-		// Build globals including pre-computed indicators
+		// Build globals including pre-computed indicators and strategy context
 		const globals: Record<string, unknown> = {
 			__preComputed: preComputed,
+			context: {
+				symbol: input.symbol,
+				timeframe: input.timeframe,
+				direction: input.direction ?? "both",
+			},
 		};
 
 		// Wrap strategy code with indicator API that reads pre-computed data

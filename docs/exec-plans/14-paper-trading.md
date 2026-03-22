@@ -228,4 +228,11 @@
 | 2026-03-22 | Readiness score 재설계 — 0-100 composite score (기존 단순 체크리스트 대체) | Discovery 세션 결정. 4개 카테고리: Backtest(35) + Paper(35) + Risk Setup(20) + Manual(10). Gate ≥ 70. Z-test로 paper vs backtest 검증 (기존 Pearson correlation 폐기 — 다른 시점 데이터 간 correlation은 무의미). Sharpe √365 (crypto 24/7). Paper 최소 기간 7일 (2주에서 단축, 대신 z-test로 통계적 검증 강화). |
 
 ## Progress notes
-- Pending implementation.
+- 2026-03-22: EP14 M1, M2, M4 pure computation layer implemented.
+  - T-068: Paper order matcher — `simulateMarketFill()`, `scanForExit()` (12 tests)
+  - T-069: Paper balance tracker — `applyEntry()`, `applyExit()`, `calculateUnrealizedPnl()`, `computePeriodSummary()` (13 tests)
+  - T-070: Paper comparator — `zTestWinRate()`, `sharpeRatio()`, `maxDrawdown()`, `expectancyDelta()` (18 tests)
+  - T-071: Readiness score — `calculateReadinessScore()` 0-100 composite (13 tests)
+  - T-072: Integration test — full pipeline matcher→balance→comparator→readiness (6 tests)
+  - Total: 62 tests, all passing
+  - M3 (mode integration), M5 (API) deferred — requires EP06/EP08 framework setup

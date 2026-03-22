@@ -16,3 +16,23 @@ export interface BollingerBandsResult {
 	middle: number[];
 	lower: number[];
 }
+
+/** MACD result */
+export interface MACDResult {
+	macd: number[];
+	signal: number[];
+	histogram: number[];
+}
+
+/** Stochastic Oscillator result */
+export interface StochasticResult {
+	k: number[];
+	d: number[];
+}
+
+/** ADX result */
+export interface ADXResult {
+	adx: number[];
+	plusDI: number[];
+	minusDI: number[];
+}

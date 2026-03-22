@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { bb, ema, sma } from "../index.js";
+import { adx, atr, bb, cci, ema, macd, obv, rsi, sma, stochastic, vwap } from "../index.js";
 
 describe("SMA", () => {
 	test("SMA(5) of [1,2,3,4,5] = [3]", async () => {
@@ -124,5 +124,220 @@ describe("Bollinger Bands", () => {
 		const narrowWidth = narrow.upper[lastIdx]! - narrow.lower[lastIdx]!;
 		const wideWidth = wide.upper[lastIdx]! - wide.lower[lastIdx]!;
 		expect(wideWidth).toBeGreaterThan(narrowWidth);
+	});
+});
+
+// Sample OHLCV data for tests requiring high/low/close/volume
+const sampleHigh = [
+	48, 49, 50, 51, 50, 49, 48, 50, 52, 53, 51, 50, 49, 48, 50, 52, 54, 53, 51, 50, 49, 48, 50, 52,
+	53, 51, 50, 49, 48, 50,
+];
+const sampleLow = [
+	45, 46, 47, 48, 47, 46, 45, 47, 49, 50, 48, 47, 46, 45, 47, 49, 51, 50, 48, 47, 46, 45, 47, 49,
+	50, 48, 47, 46, 45, 47,
+];
+const sampleClose = [
+	47, 48, 49, 50, 49, 48, 47, 49, 51, 52, 50, 49, 48, 47, 49, 51, 53, 52, 50, 49, 48, 47, 49, 51,
+	52, 50, 49, 48, 47, 49,
+];
+const sampleVolume = [
+	100, 120, 130, 150, 110, 90, 80, 140, 160, 170, 130, 110, 95, 85, 145, 165, 180, 140, 120, 100,
+	90, 80, 150, 170, 175, 135, 115, 95, 85, 145,
+];
+
+describe("RSI", () => {
+	test("RSI(14) produces values between 0 and 100", async () => {
+		const result = await rsi(sampleClose, 14);
+		expect(result.length).toBeGreaterThan(0);
+		for (const v of result) {
+			expect(v).toBeGreaterThanOrEqual(0);
+			expect(v).toBeLessThanOrEqual(100);
+		}
+	});
+
+	test("RSI of strongly rising prices is high", async () => {
+		const rising = Array.from({ length: 30 }, (_, i) => 100 + i * 2);
+		const result = await rsi(rising, 14);
+		const last = result[result.length - 1]!;
+		expect(last).toBeGreaterThan(70);
+	});
+
+	test("RSI of strongly falling prices is low", async () => {
+		const falling = Array.from({ length: 30 }, (_, i) => 200 - i * 2);
+		const result = await rsi(falling, 14);
+		const last = result[result.length - 1]!;
+		expect(last).toBeLessThan(30);
+	});
+
+	test("RSI with insufficient data returns empty", async () => {
+		const result = await rsi([1, 2, 3], 14);
+		expect(result.length).toBe(0);
+	});
+});
+
+describe("MACD", () => {
+	test("MACD returns macd, signal, histogram arrays", async () => {
+		const data = Array.from({ length: 50 }, (_, i) => 100 + Math.sin(i / 5) * 10);
+		const result = await macd(data);
+		expect(result.macd.length).toBeGreaterThan(0);
+		expect(result.signal.length).toBeGreaterThan(0);
+		expect(result.histogram.length).toBeGreaterThan(0);
+	});
+
+	test("MACD histogram = macd - signal", async () => {
+		const data = Array.from({ length: 50 }, (_, i) => 100 + Math.sin(i / 5) * 10);
+		const result = await macd(data);
+		const minLen = Math.min(result.macd.length, result.signal.length, result.histogram.length);
+		for (let i = 0; i < minLen; i++) {
+			const expected = result.macd[i]! - result.signal[i]!;
+			expect(result.histogram[i]).toBeCloseTo(expected, 5);
+		}
+	});
+
+	test("MACD with insufficient data returns empty", async () => {
+		const result = await macd([1, 2, 3, 4, 5]);
+		expect(result.macd.length).toBe(0);
+	});
+});
+
+describe("ATR", () => {
+	test("ATR(14) produces positive values", async () => {
+		const result = await atr(sampleHigh, sampleLow, sampleClose, 14);
+		expect(result.length).toBeGreaterThan(0);
+		for (const v of result) {
+			expect(v).toBeGreaterThan(0);
+		}
+	});
+
+	test("ATR is higher for more volatile data", async () => {
+		const stableHigh = Array.from({ length: 30 }, () => 101);
+		const stableLow = Array.from({ length: 30 }, () => 99);
+		const stableClose = Array.from({ length: 30 }, () => 100);
+		const volatileHigh = Array.from({ length: 30 }, () => 110);
+		const volatileLow = Array.from({ length: 30 }, () => 90);
+		const volatileClose = Array.from({ length: 30 }, () => 100);
+
+		const stableATR = await atr(stableHigh, stableLow, stableClose, 14);
+		const volatileATR = await atr(volatileHigh, volatileLow, volatileClose, 14);
+		const stableLast = stableATR[stableATR.length - 1]!;
+		const volatileLast = volatileATR[volatileATR.length - 1]!;
+		expect(volatileLast).toBeGreaterThan(stableLast);
+	});
+
+	test("ATR with insufficient data returns empty", async () => {
+		const result = await atr([1, 2], [0, 1], [1, 1], 14);
+		expect(result.length).toBe(0);
+	});
+});
+
+describe("Stochastic", () => {
+	test("Stochastic returns %K and %D between 0 and 100", async () => {
+		const result = await stochastic(sampleHigh, sampleLow, sampleClose);
+		expect(result.k.length).toBeGreaterThan(0);
+		expect(result.d.length).toBeGreaterThan(0);
+		for (const v of result.k) {
+			expect(v).toBeGreaterThanOrEqual(0);
+			expect(v).toBeLessThanOrEqual(100);
+		}
+	});
+
+	test("Stochastic with insufficient data returns empty", async () => {
+		const result = await stochastic([1, 2], [0, 1], [1, 1], 14);
+		expect(result.k.length).toBe(0);
+	});
+});
+
+describe("CCI", () => {
+	test("CCI produces values (can be negative or positive)", async () => {
+		const result = await cci(sampleHigh, sampleLow, sampleClose, 14);
+		expect(result.length).toBeGreaterThan(0);
+	});
+
+	test("CCI with insufficient data returns empty", async () => {
+		const result = await cci([1, 2], [0, 1], [1, 1], 20);
+		expect(result.length).toBe(0);
+	});
+});
+
+describe("ADX", () => {
+	// ADX needs ~2*period+1 data points to produce output
+	const longHigh = [...sampleHigh, ...sampleHigh];
+	const longLow = [...sampleLow, ...sampleLow];
+	const longClose = [...sampleClose, ...sampleClose];
+
+	test("ADX returns adx, plusDI, minusDI", async () => {
+		const result = await adx(longHigh, longLow, longClose, 14);
+		expect(result.adx.length).toBeGreaterThan(0);
+		expect(result.plusDI.length).toBeGreaterThan(0);
+		expect(result.minusDI.length).toBeGreaterThan(0);
+	});
+
+	test("ADX values are non-negative", async () => {
+		const result = await adx(longHigh, longLow, longClose, 14);
+		for (const v of result.adx) {
+			expect(v).toBeGreaterThanOrEqual(0);
+		}
+	});
+
+	test("ADX with insufficient data returns empty", async () => {
+		const result = await adx([1, 2, 3], [0, 1, 2], [1, 1, 2], 14);
+		expect(result.adx.length).toBe(0);
+	});
+});
+
+describe("OBV", () => {
+	test("OBV produces cumulative volume values", async () => {
+		const result = await obv(sampleClose, sampleVolume);
+		expect(result.length).toBeGreaterThan(0);
+	});
+
+	test("OBV increases on rising close", async () => {
+		const close = [10, 11, 12, 13, 14];
+		const volume = [100, 100, 100, 100, 100];
+		const result = await obv(close, volume);
+		// Each bar adds volume, so OBV should be monotonically increasing
+		for (let i = 1; i < result.length; i++) {
+			expect(result[i]).toBeGreaterThanOrEqual(result[i - 1]!);
+		}
+	});
+
+	test("OBV decreases on falling close", async () => {
+		const close = [14, 13, 12, 11, 10];
+		const volume = [100, 100, 100, 100, 100];
+		const result = await obv(close, volume);
+		for (let i = 1; i < result.length; i++) {
+			expect(result[i]).toBeLessThanOrEqual(result[i - 1]!);
+		}
+	});
+
+	test("OBV with insufficient data returns empty", async () => {
+		const result = await obv([1], [100]);
+		expect(result.length).toBe(0);
+	});
+});
+
+describe("VWAP", () => {
+	test("VWAP produces values", async () => {
+		const result = await vwap(sampleHigh, sampleLow, sampleClose, sampleVolume);
+		expect(result.length).toBeGreaterThan(0);
+	});
+
+	test("VWAP is between low and high range", async () => {
+		const result = await vwap(sampleHigh, sampleLow, sampleClose, sampleVolume, 10);
+		for (const v of result) {
+			expect(v).toBeGreaterThanOrEqual(Math.min(...sampleLow));
+			expect(v).toBeLessThanOrEqual(Math.max(...sampleHigh));
+		}
+	});
+
+	test("VWAP of constant prices equals that price", async () => {
+		const h = Array.from({ length: 10 }, () => 100);
+		const l = Array.from({ length: 10 }, () => 100);
+		const c = Array.from({ length: 10 }, () => 100);
+		const v = Array.from({ length: 10 }, () => 50);
+		const result = await vwap(h, l, c, v, 5);
+		for (const val of result) {
+			expect(val).toBeCloseTo(100, 2);
+		}
 	});
 });

@@ -7,6 +7,8 @@
 	"types": "index.ts",
 	"dependencies": {
 		"@combine/shared": "workspace:*",
-		"@ixjb94/indicators": "^1.2.4"
+		"@ixjb94/indicators": "^1.2.4",
+		"isolated-vm": "^6.1.2",
+		"quickjs-emscripten": "^0.32.0"
 	}
 }

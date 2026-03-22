@@ -1,4 +1,5 @@
 import type { CandleRepository } from "@combine/candle";
+import type { StrategyRepository } from "@combine/core/strategy";
 import { createToken } from "./types.js";
 
 /**
@@ -10,4 +11,5 @@ export const Tokens = {
 	Database: createToken<{ query: (sql: string) => Promise<unknown> }>("Database"),
 	EventBus: createToken<{ publish: (event: string, data: unknown) => void }>("EventBus"),
 	CandleRepository: createToken<CandleRepository>("CandleRepository"),
+	StrategyRepository: createToken<StrategyRepository>("StrategyRepository"),
 } as const;

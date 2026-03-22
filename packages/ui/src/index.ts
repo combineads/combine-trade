@@ -63,5 +63,11 @@ export { BacktestPage, type BacktestPageProps, type BacktestResult } from "./vie
 export { ChartContainer, type ChartContainerProps } from "./components/chart-container";
 export { ClientOnly, type ClientOnlyProps } from "./components/client-only";
 
+// Views — Settings
+export { SettingsView, type SettingsViewProps } from "./views/settings/settings-view";
+
+// Views — Strategies (create)
+export { StrategyCreateView, type StrategyCreateViewProps, type StrategyCreateInput, type StrategyDirection } from "./views/strategies/strategy-create-view";
+
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

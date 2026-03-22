@@ -64,3 +64,18 @@ bun run typecheck
 - Chart components (separate task)
 - Monaco editor
 - Form integration (react-hook-form)
+
+## Implementation Notes
+- Date: 2026-03-22
+- Files changed: `packages/ui/src/components/button.tsx`, `badge.tsx`, `card.tsx`, `skeleton.tsx`, `pagination.tsx` (all new), `packages/ui/src/index.ts` (updated exports), `packages/ui/__tests__/components.test.tsx` (new)
+- Tests: 20 tests covering Button (5 variants+disabled), StatusBadge (4 statuses), DirectionBadge (3 directions), Card (4 states), Skeleton (2), Pagination (2)
+- Approach: Pure CSS-in-JS via inline styles using design system CSS custom properties. No external CSS library needed for base components.
+- Validation: 20/20 pass, typecheck clean, full suite 1176 pass
+
+## Outputs
+- Button (primary, secondary, tertiary, danger variants)
+- StatusBadge (active, stopped, warning, draft)
+- DirectionBadge (LONG, SHORT, PASS)
+- Card (default, active, paused, draft, error, kill-switch states)
+- Skeleton loader
+- Pagination component

@@ -63,3 +63,16 @@ bun run typecheck
 - UI rendering (separate page tasks)
 - Authentication flow (login page task)
 - Optimistic updates
+
+## Implementation Notes
+- Date: 2026-03-22
+- Files changed: `packages/ui/src/lib/api-client.ts` (new), `packages/ui/__tests__/hooks.test.ts` (new), `packages/ui/src/index.ts` (updated)
+- Tests: 10 tests covering createApiClient, buildQueryString, apiPaths for all endpoints
+- Approach: Pure function API client factory (no React Query hooks yet — deferred until pages need them). apiPaths provides type-safe URL builders for all API endpoints. React Query hooks will be added per-page as needed.
+- Validation: 10/10 pass, typecheck clean, full suite 1186 pass
+- Discovered work: React Query hooks (useStrategies, useEvents, etc.) and SSE hook should be added when pages are implemented (T-132+)
+
+## Outputs
+- `createApiClient(config)` — typed fetch wrapper with get/post/put/delete
+- `buildQueryString(params)` — URL query string builder
+- `apiPaths` — type-safe path builders for all API endpoints (strategies, risk, data, auth, SSE, backtest, health)

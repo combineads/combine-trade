@@ -1,0 +1,96 @@
+import { describe, expect, test } from "bun:test";
+import { renderToString } from "react-dom/server";
+import { TradeStats, type TradeStatsData } from "../src/views/backtest/trade-stats";
+import { EquityCurve, type EquityPoint } from "../src/views/backtest/equity-curve";
+import { PnlDistribution, type PnlBucket } from "../src/views/backtest/pnl-distribution";
+import { BacktestView } from "../src/views/backtest/backtest-view";
+
+describe("TradeStats", () => {
+	const stats: TradeStatsData = {
+		totalTrades: 250,
+		winrate: 0.58,
+		expectancy: 0.45,
+		profitFactor: 1.82,
+		maxDrawdown: 12.5,
+		sharpeRatio: 1.35,
+		avgHoldBars: 32,
+	};
+
+	test("renders trade count", () => {
+		const html = renderToString(<TradeStats stats={stats} />);
+		expect(html).toContain("250");
+	});
+
+	test("renders winrate", () => {
+		const html = renderToString(<TradeStats stats={stats} />);
+		expect(html).toContain("58.0");
+	});
+
+	test("renders expectancy", () => {
+		const html = renderToString(<TradeStats stats={stats} />);
+		expect(html).toContain("0.45");
+	});
+
+	test("renders max drawdown", () => {
+		const html = renderToString(<TradeStats stats={stats} />);
+		expect(html).toContain("12.5");
+	});
+});
+
+describe("EquityCurve", () => {
+	const points: EquityPoint[] = [
+		{ index: 0, equity: 10000 },
+		{ index: 1, equity: 10200 },
+		{ index: 2, equity: 10150 },
+	];
+
+	test("renders equity values", () => {
+		const html = renderToString(<EquityCurve points={points} />);
+		expect(html).toContain("10,000");
+		expect(html).toContain("10,200");
+	});
+
+	test("renders empty state", () => {
+		const html = renderToString(<EquityCurve points={[]} />);
+		expect(html).toContain("No data");
+	});
+});
+
+describe("PnlDistribution", () => {
+	const buckets: PnlBucket[] = [
+		{ range: "-3% to -2%", count: 5 },
+		{ range: "-1% to 0%", count: 15 },
+		{ range: "0% to 1%", count: 25 },
+		{ range: "1% to 2%", count: 20 },
+	];
+
+	test("renders bucket ranges", () => {
+		const html = renderToString(<PnlDistribution buckets={buckets} />);
+		expect(html).toContain("-3% to -2%");
+		expect(html).toContain("0% to 1%");
+	});
+
+	test("renders counts", () => {
+		const html = renderToString(<PnlDistribution buckets={buckets} />);
+		expect(html).toContain("25");
+	});
+});
+
+describe("BacktestView", () => {
+	test("renders heading", () => {
+		const html = renderToString(<BacktestView strategies={[]} />);
+		expect(html).toContain("Backtest");
+	});
+
+	test("renders strategy selector", () => {
+		const html = renderToString(
+			<BacktestView strategies={[{ id: "s1", name: "Momentum v3" }]} />,
+		);
+		expect(html).toContain("Momentum v3");
+	});
+
+	test("renders run button", () => {
+		const html = renderToString(<BacktestView strategies={[]} />);
+		expect(html).toContain("Run Backtest");
+	});
+});

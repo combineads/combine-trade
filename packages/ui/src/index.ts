@@ -46,5 +46,20 @@ export { KillSwitchControl, type KillSwitchControlProps } from "./views/risk/kil
 export { LossLimitDisplay, type LossLimitDisplayProps, type LossLimitData } from "./views/risk/loss-limit-display";
 export { AuditLog, type AuditLogProps, type AuditEntry } from "./views/risk/audit-log";
 
+// Views — Charts
+export { CandlestickChartView, type CandlestickChartViewProps } from "./views/charts/candlestick-chart-view";
+export { TimeframeSelector, type Timeframe, type TimeframeSelectorProps } from "./views/charts/timeframe-selector";
+export { EventMarker, TpSlOverlay, type MarkerType, type EventMarkerProps, type TpSlOverlayProps } from "./views/charts/event-markers";
+
+// Views — Backtest
+export { TradeStats, type TradeStatsData, type TradeStatsProps } from "./views/backtest/trade-stats";
+export { EquityCurve, type EquityPoint, type EquityCurveProps } from "./views/backtest/equity-curve";
+export { PnlDistribution, type PnlBucket, type PnlDistributionProps } from "./views/backtest/pnl-distribution";
+export { BacktestView, type BacktestStrategy, type BacktestViewProps } from "./views/backtest/backtest-view";
+
+// Components — Chart
+export { ChartContainer, type ChartContainerProps } from "./components/chart-container";
+export { ClientOnly, type ClientOnlyProps } from "./components/client-only";
+
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

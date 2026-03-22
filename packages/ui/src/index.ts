@@ -69,5 +69,11 @@ export { SettingsView, type SettingsViewProps } from "./views/settings/settings-
 // Views — Strategies (create)
 export { StrategyCreateView, type StrategyCreateViewProps, type StrategyCreateInput, type StrategyDirection } from "./views/strategies/strategy-create-view";
 
+// Components — Notification
+export { NotificationBanner, KillSwitchBanner, type BannerVariant, type NotificationBannerProps } from "./components/notification-banner";
+
+// Components — TopBar
+export { TopBar, type TopBarProps } from "./components/top-bar";
+
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

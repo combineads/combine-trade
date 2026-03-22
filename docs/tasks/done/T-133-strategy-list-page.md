@@ -66,3 +66,33 @@ cd apps/web && bun run build
 - Monaco code editor (T-134)
 - Strategy detail page (T-134)
 - TradingView charts
+- Create/edit forms (deferred — need react-hook-form setup)
+- Safety gate enforcement for auto-trade (needs kill-switch integration)
+
+## Implementation Plan
+- Create StrategyCard with name, version, symbols, winrate, mode, status badge
+- Create ModeSelector with 4 execution mode buttons
+- Create StrategyListView with grid layout + empty state
+- Wire strategies page in apps/web to use StrategyListView
+- Export new components from packages/ui barrel
+
+## Implementation Notes
+- Date: 2026-03-22
+- Files changed:
+  - `packages/ui/src/views/strategies/strategy-card.tsx` (new)
+  - `packages/ui/src/views/strategies/mode-selector.tsx` (new)
+  - `packages/ui/src/views/strategies/strategy-list-view.tsx` (new)
+  - `packages/ui/__tests__/strategy-list.test.tsx` (new)
+  - `packages/ui/src/index.ts` (updated — added strategy view exports)
+  - `apps/web/src/app/(app)/strategies/page.tsx` (updated — wired StrategyListView)
+- Tests written: 10 (StrategyCard: 5, ModeSelector: 2, StrategyListView: 3)
+- Approach: TDD — wrote tests first, then minimal implementation to pass
+- Validation results: 10/10 tests pass, typecheck clean, 1211 total pass
+- Discovered work: Create/edit forms and safety gate deferred (form library needed)
+
+## Outputs
+- `StrategyListView` component — accepts StrategyListItem[] for rendering strategy grid
+- `StrategyCard` component — renders individual strategy mini-stats card
+- `ModeSelector` component — 4-mode button group (analysis/alert/paper-trade/auto-trade)
+- `StrategyListItem` interface — canonical type for strategy list data
+- `ExecutionMode` type — union type for strategy execution modes

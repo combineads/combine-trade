@@ -66,3 +66,17 @@ cd apps/web && bun run build
 - Strategy detail page
 - Chart components
 - Full risk management page
+
+## Implementation Notes
+- Date: 2026-03-22
+- Files changed: 5 new view files in packages/ui/src/views/dashboard/, updated apps/web/src/app/dashboard/page.tsx, packages/ui/__tests__/dashboard.test.tsx
+- Tests: 9 tests covering KillSwitchCard (ON/OFF), StrategySummary, RecentEvents, WorkerStatus, DashboardView
+- Approach: Pure presentational components with props — no data fetching. Dashboard page passes static data until API hooks are wired.
+- Validation: 9/9 pass, typecheck clean, full suite 1195 pass
+
+## Outputs
+- KillSwitchCard (ON/OFF states per DESIGN_SYSTEM.md §5.9)
+- StrategySummary (card grid with mini stats)
+- RecentEvents (event feed with direction badges)
+- WorkerStatus (status dots per §5.7)
+- DashboardView (composed view with 4-column grid)

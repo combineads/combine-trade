@@ -168,4 +168,5 @@
 | 2026-03-22 | Binance Vision 3-tier backfill 채택 | Monthly→Daily→REST 순서로 3년치 벌크 로드. Monthly: 당월 첫 월요일 게시, Daily: T-1 (익일 게시). SHA256 CHECKSUM 검증 필수. |
 
 ## Progress notes
-- Pending implementation.
+- 2026-03-22: Tasks generated — T-038 (CSV parser), T-039 (engine), T-040 (labeler), T-041 (report), T-042 (integration).
+- 2026-03-22: M1 partial (CSV parser), M2 (replay engine + labeler), M3 (statistics report) completed. 353 tests passing. M1 Binance Vision download, M4 re-vectorization deferred to future tasks.

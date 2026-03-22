@@ -35,7 +35,10 @@
       "name": "@combine/backtest",
       "version": "0.0.1",
       "dependencies": {
+        "@combine/candle": "workspace:*",
+        "@combine/core": "workspace:*",
         "@combine/shared": "workspace:*",
+        "decimal.js": "^10.4.3",
       },
     },
     "packages/candle": {
@@ -113,6 +116,8 @@
       "name": "@combine/label-worker",
       "version": "0.0.1",
       "dependencies": {
+        "@combine/candle": "workspace:*",
+        "@combine/core": "workspace:*",
         "@combine/shared": "workspace:*",
       },
     },

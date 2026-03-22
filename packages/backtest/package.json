@@ -6,6 +6,9 @@
 	"main": "index.ts",
 	"types": "index.ts",
 	"dependencies": {
-		"@combine/shared": "workspace:*"
+		"@combine/candle": "workspace:*",
+		"@combine/core": "workspace:*",
+		"@combine/shared": "workspace:*",
+		"decimal.js": "^10.4.3"
 	}
 }

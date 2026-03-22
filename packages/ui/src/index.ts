@@ -92,5 +92,10 @@ export { useCandleData, mergeBars, parseCandleResponse, type UseCandleDataOption
 // Views — Charts (overlay)
 export { StrategyEventOverlay, type ChartStrategyEvent, type StrategyEventOverlayProps } from "./views/charts/strategy-event-overlay";
 
+// Hooks — Dashboard Real-time
+export { usePortfolioStatus, type PortfolioPosition, type PortfolioStatus, type UsePortfolioStatusResult } from "./hooks/use-portfolio-status";
+export { useDailyPnl, type PnlPoint, type UseDailyPnlResult } from "./hooks/use-daily-pnl";
+export { useStrategyPerformance, type StrategyPerformanceStats, type UseStrategyPerformanceResult } from "./hooks/use-strategy-performance";
+
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

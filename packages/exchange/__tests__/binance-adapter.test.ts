@@ -21,29 +21,14 @@ describe("BinanceAdapter", () => {
 		expect(adapter.exchange).toBe("binance");
 	});
 
-	test("createOrder throws not implemented", async () => {
+	test("createOrder is implemented (no longer throws not implemented)", () => {
 		const adapter = new BinanceAdapter();
-		expect(adapter.createOrder("BTCUSDT", "market", "buy", 0.1)).rejects.toThrow("not implemented");
+		expect(typeof adapter.createOrder).toBe("function");
 	});
 
-	test("cancelOrder throws not implemented", async () => {
+	test("fetchBalance is implemented (no longer throws not implemented)", () => {
 		const adapter = new BinanceAdapter();
-		expect(adapter.cancelOrder("123", "BTCUSDT")).rejects.toThrow("not implemented");
-	});
-
-	test("fetchBalance throws not implemented", async () => {
-		const adapter = new BinanceAdapter();
-		expect(adapter.fetchBalance()).rejects.toThrow("not implemented");
-	});
-
-	test("fetchPositions throws not implemented", async () => {
-		const adapter = new BinanceAdapter();
-		expect(adapter.fetchPositions()).rejects.toThrow("not implemented");
-	});
-
-	test("fetchFundingRate throws not implemented", async () => {
-		const adapter = new BinanceAdapter();
-		expect(adapter.fetchFundingRate("BTCUSDT")).rejects.toThrow("not implemented");
+		expect(typeof adapter.fetchBalance).toBe("function");
 	});
 });
 

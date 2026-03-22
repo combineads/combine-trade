@@ -97,5 +97,11 @@ export { usePortfolioStatus, type PortfolioPosition, type PortfolioStatus, type 
 export { useDailyPnl, type PnlPoint, type UseDailyPnlResult } from "./hooks/use-daily-pnl";
 export { useStrategyPerformance, type StrategyPerformanceStats, type UseStrategyPerformanceResult } from "./hooks/use-strategy-performance";
 
+// Auth
+export { AuthProvider, AuthContext, initialAuthState, type AuthUser, type AuthState, type AuthContextValue, type AuthProviderProps } from "./auth/auth-context";
+export { useAuth } from "./auth/use-auth";
+export { ProtectedRoute, shouldRedirect, shouldRenderChildren, shouldRenderNothing, type ProtectedRouteProps } from "./auth/protected-route";
+export { createAuthApiClient, type AuthApiClientOptions, type AuthApiClient } from "./auth/auth-api-client";
+
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

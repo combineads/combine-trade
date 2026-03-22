@@ -1,0 +1,102 @@
+"use client";
+
+import React, { useEffect, useRef } from "react";
+
+export interface EquityCurvePoint {
+	time: number;
+	equity: number;
+	drawdown: number;
+}
+
+export interface EquityCurveChartProps {
+	data: EquityCurvePoint[];
+	height?: number;
+	className?: string;
+	initialEquity?: number;
+}
+
+export function EquityCurveChart({ data, height = 300, className, initialEquity }: EquityCurveChartProps) {
+	const containerRef = useRef<HTMLDivElement>(null);
+	const chartRef = useRef<unknown>(null);
+
+	useEffect(() => {
+		const container = containerRef.current;
+		if (!container) return;
+
+		let disposed = false;
+
+		(async () => {
+			try {
+				const { createChart } = await import("lightweight-charts");
+				if (disposed) return;
+
+				const style = getComputedStyle(container);
+				const bg = style.getPropertyValue("--color-surface").trim() || "#1a1a2e";
+				const text = style.getPropertyValue("--color-text-primary").trim() || "#e0e0e0";
+				const grid = style.getPropertyValue("--color-border").trim() || "#2a2a3e";
+				const successColor = style.getPropertyValue("--color-success").trim() || "#22c55e";
+				const dangerColor = style.getPropertyValue("--color-danger").trim() || "#ef4444";
+
+				const chart = createChart(container, {
+					width: container.clientWidth,
+					height,
+					layout: { background: { color: bg }, textColor: text },
+					grid: { vertLines: { color: grid }, horzLines: { color: grid } },
+					rightPriceScale: { visible: true },
+					leftPriceScale: { visible: true },
+				});
+
+				const equitySeries = chart.addLineSeries({
+					color: successColor,
+					lineWidth: 2,
+					priceScaleId: "left",
+				});
+
+				const drawdownSeries = chart.addAreaSeries({
+					topColor: "transparent",
+					bottomColor: `${dangerColor}4d`,
+					lineColor: dangerColor,
+					lineWidth: 1,
+					priceScaleId: "right",
+				});
+
+				if (data.length > 0) {
+					equitySeries.setData(data.map((d) => ({ time: d.time as any, value: d.equity })));
+					drawdownSeries.setData(data.map((d) => ({
+						time: d.time as any,
+						value: Math.max(d.drawdown, -1),
+					})));
+				}
+
+				chartRef.current = { chart, equitySeries, drawdownSeries };
+
+				const observer = new ResizeObserver((entries) => {
+					for (const entry of entries) {
+						chart.applyOptions({ width: entry.contentRect.width });
+					}
+				});
+				observer.observe(container);
+				(chartRef.current as any).observer = observer;
+			} catch { /* lightweight-charts not available in SSR/test */ }
+		})();
+
+		return () => {
+			disposed = true;
+			const ref = chartRef.current as any;
+			if (ref) {
+				ref.observer?.disconnect();
+				ref.chart?.remove();
+				chartRef.current = null;
+			}
+		};
+	}, [data, height]);
+
+	return (
+		<div
+			ref={containerRef}
+			data-testid="equity-curve-chart"
+			className={className}
+			style={{ height: `${height}px`, width: "100%" }}
+		/>
+	);
+}

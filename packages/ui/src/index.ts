@@ -52,6 +52,7 @@ export { TimeframeSelector, type Timeframe, type TimeframeSelectorProps } from "
 export { EventMarker, TpSlOverlay, type MarkerType, type EventMarkerProps, type TpSlOverlayProps } from "./views/charts/event-markers";
 export { SymbolSelector, type SymbolSelectorProps } from "./views/charts/symbol-selector";
 export { LightweightChart, type OHLCVBar, type LightweightChartProps } from "./views/charts/lightweight-chart";
+export { EquityCurveChart, type EquityCurvePoint, type EquityCurveChartProps } from "./views/charts/equity-curve-chart";
 
 // Views — Backtest
 export { TradeStats, type TradeStatsData, type TradeStatsProps } from "./views/backtest/trade-stats";

@@ -1,8 +1,31 @@
+"use client";
+
+import { EventsView, type EventRow } from "@combine/ui";
+import { useEffect, useState } from "react";
+
 export default function EventsPage() {
+	const [events, setEvents] = useState<EventRow[]>([]);
+	const [total, setTotal] = useState(0);
+	const [page, setPage] = useState(1);
+	const pageSize = 20;
+
+	useEffect(() => {
+		fetch(`/api/v1/events?page=${page}&pageSize=${pageSize}`)
+			.then((r) => r.json())
+			.then((data) => {
+				setEvents(data.items ?? []);
+				setTotal(data.total ?? 0);
+			})
+			.catch(() => {});
+	}, [page]);
+
 	return (
-		<div>
-			<h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 24 }}>Events</h1>
-			<p style={{ color: "var(--text-secondary)" }}>Strategy events — coming soon.</p>
-		</div>
+		<EventsView
+			events={events}
+			total={total}
+			page={page}
+			pageSize={pageSize}
+			onPageChange={setPage}
+		/>
 	);
 }

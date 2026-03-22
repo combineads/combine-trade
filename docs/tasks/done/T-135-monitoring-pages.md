@@ -68,3 +68,38 @@ cd apps/web && bun run build
 - Event detail modal
 - Order detail timeline
 - Real-time SSE updates on tables
+- Loading skeletons during fetch (deferred — need loading state management)
+- Date range filter (deferred — FilterBar component created but not wired to pages)
+
+## Implementation Plan
+- Create DataTable generic component per §5.5 (alternating rows, mono numbers, right-aligned)
+- Create FilterBar component with select dropdowns
+- Create EventsView, OrdersView, AlertsView with DataTable + Pagination
+- Wire apps/web pages to use view components with API fetch
+- Export all new components from packages/ui barrel
+
+## Implementation Notes
+- Date: 2026-03-23
+- Files changed:
+  - `packages/ui/src/components/data-table.tsx` (new)
+  - `packages/ui/src/components/filter-bar.tsx` (new)
+  - `packages/ui/src/views/events/events-view.tsx` (new)
+  - `packages/ui/src/views/orders/orders-view.tsx` (new)
+  - `packages/ui/src/views/alerts/alerts-view.tsx` (new)
+  - `packages/ui/__tests__/monitoring-pages.test.tsx` (new)
+  - `packages/ui/src/index.ts` (updated — added monitoring exports)
+  - `apps/web/src/app/(app)/events/page.tsx` (updated)
+  - `apps/web/src/app/(app)/orders/page.tsx` (updated)
+  - `apps/web/src/app/(app)/alerts/page.tsx` (updated)
+- Tests written: 14 (DataTable: 3, FilterBar: 2, EventsView: 3, OrdersView: 3, AlertsView: 3)
+- Approach: TDD — tests first, then DataTable generic, then views, then web page wiring
+- Validation results: 14/14 tests pass, typecheck clean, Next.js build succeeds, 1241 total pass
+- Discovered work: FilterBar created but not integrated into page-level state; loading skeletons need client-side loading state
+
+## Outputs
+- `DataTable<T>` component — generic table with typed columns, alternating rows, empty state
+- `FilterBar` component — select dropdowns for filtering
+- `EventsView` component — events table with DirectionBadge
+- `OrdersView` component — orders table with status, quantity, price
+- `AlertsView` component — alerts table with direction, message, status
+- `EventRow`, `OrderRow`, `AlertRow` interfaces — canonical types for monitoring data

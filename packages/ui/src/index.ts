@@ -24,5 +24,18 @@ export { StrategyEditorView, type StrategyEditorViewProps, type StrategyDetail }
 export { ConfigPanels, type ConfigPanelsProps, type StrategyConfig, type FeatureConfig, type SearchConfig, type ResultConfig, type DecisionConfig } from "./views/strategies/config-panels";
 export { StrategyStats, type StrategyStatsProps, type StrategyStatsData } from "./views/strategies/strategy-stats";
 
+// Components — Data
+export { DataTable, type Column, type DataTableProps } from "./components/data-table";
+export { FilterBar, type FilterOption, type FilterBarProps } from "./components/filter-bar";
+
+// Views — Events
+export { EventsView, type EventsViewProps, type EventRow } from "./views/events/events-view";
+
+// Views — Orders
+export { OrdersView, type OrdersViewProps, type OrderRow } from "./views/orders/orders-view";
+
+// Views — Alerts
+export { AlertsView, type AlertsViewProps, type AlertRow } from "./views/alerts/alerts-view";
+
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

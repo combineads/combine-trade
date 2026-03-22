@@ -1,5 +1,7 @@
 # 10-auth
 
+> ⚠️ **DEPRECATED** — 이 에픽은 `18-better-auth-multiuser`로 대체됩니다. 새 작업은 18번 에픽을 참조하세요.
+
 ## Objective
 Elysia API 서버에 인증/인가 레이어를 구축하여 미인증 접근을 차단한다. 단일 사용자 시스템이지만 API가 네트워크에 노출될 수 있으므로, 모든 API 엔드포인트와 WebSocket/SSE 연결에 인증이 필수이다.
 

@@ -2,3 +2,4 @@ export { TradeStats, type TradeStatsData, type TradeStatsProps } from "./trade-s
 export { EquityCurve, type EquityPoint, type EquityCurveProps } from "./equity-curve";
 export { PnlDistribution, type PnlBucket, type PnlDistributionProps } from "./pnl-distribution";
 export { BacktestView, type BacktestStrategy, type BacktestViewProps } from "./backtest-view";
+export { BacktestPage, type BacktestPageProps, type BacktestResult } from "./backtest-page";

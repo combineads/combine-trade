@@ -50,12 +50,14 @@ export { AuditLog, type AuditLogProps, type AuditEntry } from "./views/risk/audi
 export { CandlestickChartView, type CandlestickChartViewProps } from "./views/charts/candlestick-chart-view";
 export { TimeframeSelector, type Timeframe, type TimeframeSelectorProps } from "./views/charts/timeframe-selector";
 export { EventMarker, TpSlOverlay, type MarkerType, type EventMarkerProps, type TpSlOverlayProps } from "./views/charts/event-markers";
+export { SymbolSelector, type SymbolSelectorProps } from "./views/charts/symbol-selector";
 
 // Views — Backtest
 export { TradeStats, type TradeStatsData, type TradeStatsProps } from "./views/backtest/trade-stats";
 export { EquityCurve, type EquityPoint, type EquityCurveProps } from "./views/backtest/equity-curve";
 export { PnlDistribution, type PnlBucket, type PnlDistributionProps } from "./views/backtest/pnl-distribution";
 export { BacktestView, type BacktestStrategy, type BacktestViewProps } from "./views/backtest/backtest-view";
+export { BacktestPage, type BacktestPageProps, type BacktestResult } from "./views/backtest/backtest-page";
 
 // Components — Chart
 export { ChartContainer, type ChartContainerProps } from "./components/chart-container";

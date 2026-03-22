@@ -81,5 +81,8 @@ export { useSSE, type SSEOptions, type SSEEvent, type UseSSEReturn, type SSEStat
 // Views — Strategy Events
 export { StrategyEventsTab, type StrategyEventsTabProps, type StrategyEvent, type EventOutcome } from "./views/strategies/strategy-events-tab";
 
+// Components — Paper Trading
+export { PaperTradingBanner, PaperBadge, PaperOrderCard, type PaperTradingBannerProps, type PaperOrderCardProps } from "./components/paper-trading-badge";
+
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

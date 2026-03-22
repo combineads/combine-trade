@@ -38,3 +38,19 @@ export type {
 	DoubleBBEvaluation,
 } from "./evaluate.js";
 export { evaluateDoubleBB } from "./evaluate.js";
+
+export type {
+	FeatureDefinition,
+	SearchConfig,
+	ResultConfig,
+	DecisionConfig,
+	DoubleBBStrategyConfig,
+} from "./config.js";
+export {
+	DOUBLE_BB_TIMEFRAMES,
+	DOUBLE_BB_FEATURES_DEFINITION,
+	DOUBLE_BB_INDICATOR_CONFIG,
+	buildDoubleBBConfig,
+} from "./config.js";
+
+export { DOUBLE_BB_SCRIPT } from "./script.js";

@@ -1,0 +1,10 @@
+.env
+.env.*
+node_modules
+docs/
+.git
+.github
+.harness
+*.test.ts
+__tests__
+.claude

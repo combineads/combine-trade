@@ -1,3 +1,4 @@
+export { authUser, authSession, authAccount, authVerification } from "./better-auth.js";
 export { candles } from "./candles.js";
 export { strategies } from "./strategies.js";
 export { strategyEvents } from "./strategy-events.js";

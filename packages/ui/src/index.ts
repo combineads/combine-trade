@@ -85,5 +85,11 @@ export { StrategyEventsTab, type StrategyEventsTabProps, type StrategyEvent, typ
 // Components — Paper Trading
 export { PaperTradingBanner, PaperBadge, PaperOrderCard, type PaperTradingBannerProps, type PaperOrderCardProps } from "./components/paper-trading-badge";
 
+// Hooks — Candle Data
+export { useCandleData, mergeBars, parseCandleResponse, type UseCandleDataOptions, type UseCandleDataResult } from "./hooks/use-candle-data";
+
+// Views — Charts (overlay)
+export { StrategyEventOverlay, type ChartStrategyEvent, type StrategyEventOverlayProps } from "./views/charts/strategy-event-overlay";
+
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

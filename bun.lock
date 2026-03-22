@@ -28,6 +28,7 @@
       "name": "@combine/alert",
       "version": "0.0.1",
       "dependencies": {
+        "@combine/core": "workspace:*",
         "@combine/shared": "workspace:*",
       },
     },
@@ -71,13 +72,16 @@
       "name": "@combine/execution",
       "version": "0.0.1",
       "dependencies": {
+        "@combine/core": "workspace:*",
         "@combine/shared": "workspace:*",
+        "decimal.js": "^10.4.3",
       },
     },
     "packages/shared": {
       "name": "@combine/shared",
       "version": "0.0.1",
       "dependencies": {
+        "decimal.js": "^10.6.0",
         "pino": "^9.0.0",
       },
       "devDependencies": {
@@ -88,6 +92,9 @@
       "name": "@combine/alert-worker",
       "version": "0.0.1",
       "dependencies": {
+        "@combine/alert": "workspace:*",
+        "@combine/core": "workspace:*",
+        "@combine/execution": "workspace:*",
         "@combine/shared": "workspace:*",
       },
     },

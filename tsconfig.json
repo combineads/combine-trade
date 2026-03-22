@@ -34,7 +34,8 @@
 		{ "path": "workers/label-worker" },
 		{ "path": "workers/alert-worker" },
 		{ "path": "workers/execution-worker" },
-		{ "path": "workers/journal-worker" }
+		{ "path": "workers/journal-worker" },
+		{ "path": "packages/ui" }
 	],
 	"include": [],
 	"exclude": ["node_modules", "dist"]

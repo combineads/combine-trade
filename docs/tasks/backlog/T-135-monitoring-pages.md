@@ -1,0 +1,70 @@
+# T-135 Implement Events, Orders, Alerts monitoring pages
+
+## Goal
+Build the monitoring pages for events, orders, and alerts with paginated tables and filters.
+
+## Why
+EP08 M3 — Design Priority 5. Essential monitoring for trading operations.
+
+## Inputs
+- `docs/DESIGN_SYSTEM.md` §5.5 (tables), §5.2 (badges), §7 (states)
+- Event/Order/Alert API routes
+- API hooks (T-131)
+
+## Dependencies
+- T-130 (base UI components)
+- T-131 (API client hooks)
+
+## Expected Outputs
+- Events page: paginated table with symbol, direction, strategy, date filters
+- Orders page: paginated table with symbol, status, strategy filters
+- Alerts page: paginated table with strategy, status filters
+- Shared pagination component
+- Filter controls
+
+## Deliverables
+- `packages/ui/src/views/events/events-view.tsx`
+- `packages/ui/src/views/orders/orders-view.tsx`
+- `packages/ui/src/views/alerts/alerts-view.tsx`
+- `packages/ui/src/components/pagination.tsx`
+- `packages/ui/src/components/filter-bar.tsx`
+- `apps/web/src/app/events/page.tsx`
+- `apps/web/src/app/orders/page.tsx`
+- `apps/web/src/app/alerts/page.tsx`
+- `packages/ui/__tests__/monitoring-pages.test.tsx`
+
+## Constraints
+- DataTable per DESIGN_SYSTEM.md §5.5 (mono numbers, right-aligned)
+- Direction badges per §5.3 (LONG green, SHORT red)
+- Status badges per §5.2
+- Pagination with page/pageSize controls
+- Empty states per §7.2
+- Loading skeletons per §7.1
+- Date range filter for events
+
+## Steps
+1. Write tests for monitoring components
+2. Implement shared pagination component
+3. Implement filter bar component
+4. Implement Events page with table and filters
+5. Implement Orders page with table and filters
+6. Implement Alerts page with table and filters
+
+## Acceptance Criteria
+- All three pages render paginated data
+- Filters narrow results correctly
+- Pagination works (page navigation, page size change)
+- Empty states shown when no data
+- Loading skeletons during fetch
+
+## Validation
+```bash
+bun test packages/ui/__tests__/monitoring-pages.test.tsx
+bun run typecheck
+cd apps/web && bun run build
+```
+
+## Out of Scope
+- Event detail modal
+- Order detail timeline
+- Real-time SSE updates on tables

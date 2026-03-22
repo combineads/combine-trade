@@ -1,0 +1,129 @@
+/* ─── Shared (theme-invariant) ─────────────────────────────── */
+:root {
+  /* Brand */
+  --color-primary: #22C55E;
+  --color-primary-hover: #16A34A;
+  --color-secondary: #EF4444;
+  --color-secondary-hover: #DC2626;
+  --color-warning: #F59E0B;
+  --color-neutral: #64748B;
+
+  /* Trading decisions */
+  --color-long: #22C55E;
+  --color-short: #EF4444;
+  --color-pass: #64748B;
+  --color-win: #22C55E;
+  --color-loss: #EF4444;
+  --color-time-exit: #64748B;
+  --color-pending: #F59E0B;
+
+  /* Typography */
+  --font-sans: 'Inter', 'Geist Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Geist Mono', monospace;
+
+  /* Layout */
+  --sidebar-collapsed: 64px;
+  --sidebar-expanded: 240px;
+  --content-max-width: 1440px;
+  --content-padding: 24px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+/* ─── Dark Theme (default) ──────────────────────────────────── */
+[data-theme="dark"] {
+  --bg-base: #0A0A0F;
+  --bg-card: #12121A;
+  --bg-elevated: #1A1A2E;
+  --border-subtle: #1E293B;
+  --border-default: #334155;
+
+  --text-primary: #E2E8F0;
+  --text-secondary: #94A3B8;
+  --text-muted: #475569;
+
+  --chart-bg: #0A0A0F;
+  --chart-grid: #1E293B;
+  --chart-crosshair: #334155;
+  --chart-scale-text: #94A3B8;
+
+  --skeleton-base: #1E293B;
+  --skeleton-shimmer: #334155;
+
+  --topbar-bg: #0A0A0F;
+  --topbar-border: #1E293B;
+  --sidebar-bg: #0A0A0F;
+}
+
+/* ─── Light Theme ───────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-base: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #F1F5F9;
+  --border-subtle: #E2E8F0;
+  --border-default: #CBD5E1;
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+
+  --chart-bg: #FFFFFF;
+  --chart-grid: #E2E8F0;
+  --chart-crosshair: #CBD5E1;
+  --chart-scale-text: #475569;
+
+  --skeleton-base: #E2E8F0;
+  --skeleton-shimmer: #CBD5E1;
+
+  --topbar-bg: #FFFFFF;
+  --topbar-border: #E2E8F0;
+  --sidebar-bg: #F1F5F9;
+}
+
+/* ─── OS preference fallback (no saved setting) ─────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg-base: #0A0A0F;
+    --bg-card: #12121A;
+    --bg-elevated: #1A1A2E;
+    --border-subtle: #1E293B;
+    --border-default: #334155;
+    --text-primary: #E2E8F0;
+    --text-secondary: #94A3B8;
+    --text-muted: #475569;
+    --chart-bg: #0A0A0F;
+    --chart-grid: #1E293B;
+    --chart-crosshair: #334155;
+    --chart-scale-text: #94A3B8;
+    --skeleton-base: #1E293B;
+    --skeleton-shimmer: #334155;
+    --topbar-bg: #0A0A0F;
+    --topbar-border: #1E293B;
+    --sidebar-bg: #0A0A0F;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg-base: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --bg-elevated: #F1F5F9;
+    --border-subtle: #E2E8F0;
+    --border-default: #CBD5E1;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+    --chart-bg: #FFFFFF;
+    --chart-grid: #E2E8F0;
+    --chart-crosshair: #CBD5E1;
+    --chart-scale-text: #475569;
+    --skeleton-base: #E2E8F0;
+    --skeleton-shimmer: #CBD5E1;
+    --topbar-bg: #FFFFFF;
+    --topbar-border: #E2E8F0;
+    --sidebar-bg: #F1F5F9;
+  }
+}

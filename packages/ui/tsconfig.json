@@ -1,0 +1,12 @@
+{
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+		"composite": true,
+		"outDir": "dist",
+		"rootDir": ".",
+		"jsx": "react-jsx",
+		"types": ["@types/react", "@types/react-dom", "@types/bun"]
+	},
+	"include": ["src/**/*.ts", "src/**/*.tsx", "__tests__/**/*.ts", "__tests__/**/*.tsx"],
+	"exclude": ["node_modules", "dist"]
+}

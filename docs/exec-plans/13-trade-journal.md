@@ -196,4 +196,11 @@ packages/core/journal/ must not import Elysia, CCXT, or Drizzle directly. Data a
 | 2026-03-21 | pattern_drift 최소 샘플 30건 | 통계적 유의성 확보, 전략 의사결정 기준과 일치 |
 
 ## Progress notes
-- Pending implementation.
+- 2026-03-22: EP13 M1-M4 pure computation layer implemented.
+  - T-063: Entry snapshot builder — `buildEntrySnapshot()` (9 tests)
+  - T-064: Market context calculator — `classifyTrend()`, `buildMarketContext()` (11 tests)
+  - T-065: Journal assembler — `assembleJournal()` (8 tests)
+  - T-066: Auto-tagger — `generateTags()` with configurable thresholds (14 tests)
+  - T-067: Integration test — full pipeline snapshot→context→assembler→tagger (7 tests)
+  - Total: 49 tests, 144 assertions, all passing
+  - M5 (worker, DB, API) deferred — requires EP08 framework setup

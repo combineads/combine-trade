@@ -65,3 +65,27 @@ cd apps/web && bun run build
 - Position liquidation monitor (future)
 - Position sync display
 - Auto-trigger configuration UI
+- Keyboard shortcut handler (hint displayed, event listener deferred)
+- Confirmation dialog page-level wiring (component created, integration deferred)
+
+## Implementation Notes
+- Date: 2026-03-23
+- Files changed:
+  - `packages/ui/src/views/risk/loss-limit-display.tsx` (new)
+  - `packages/ui/src/views/risk/audit-log.tsx` (new)
+  - `packages/ui/src/views/risk/kill-switch-control.tsx` (new)
+  - `packages/ui/src/views/risk/risk-management-view.tsx` (new)
+  - `packages/ui/src/components/confirmation-dialog.tsx` (new)
+  - `packages/ui/__tests__/risk-management.test.tsx` (new)
+  - `packages/ui/src/index.ts` (updated)
+  - `apps/web/src/app/(app)/risk/page.tsx` (updated)
+- Tests written: 16 (LossLimitDisplay: 3, AuditLog: 3, ConfirmationDialog: 3, KillSwitchControl: 3, RiskManagementView: 4)
+- Validation results: 16/16 tests pass, typecheck clean, Next.js build succeeds, 1257 total pass
+
+## Outputs
+- `RiskManagementView` component — full risk management page
+- `KillSwitchControl` component — kill switch with Ctrl+Shift+K hint
+- `LossLimitDisplay` component — progress bar with §11 thresholds
+- `AuditLog` component — chronological audit events
+- `ConfirmationDialog` component — reusable modal
+- `RiskState` interface — risk page state type

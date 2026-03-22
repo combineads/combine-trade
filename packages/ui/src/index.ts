@@ -24,6 +24,9 @@ export { StrategyEditorView, type StrategyEditorViewProps, type StrategyDetail }
 export { ConfigPanels, type ConfigPanelsProps, type StrategyConfig, type FeatureConfig, type SearchConfig, type ResultConfig, type DecisionConfig } from "./views/strategies/config-panels";
 export { StrategyStats, type StrategyStatsProps, type StrategyStatsData } from "./views/strategies/strategy-stats";
 
+// Components — Dialog
+export { ConfirmationDialog, type ConfirmationDialogProps } from "./components/confirmation-dialog";
+
 // Components — Data
 export { DataTable, type Column, type DataTableProps } from "./components/data-table";
 export { FilterBar, type FilterOption, type FilterBarProps } from "./components/filter-bar";
@@ -36,6 +39,12 @@ export { OrdersView, type OrdersViewProps, type OrderRow } from "./views/orders/
 
 // Views — Alerts
 export { AlertsView, type AlertsViewProps, type AlertRow } from "./views/alerts/alerts-view";
+
+// Views — Risk
+export { RiskManagementView, type RiskManagementViewProps, type RiskState } from "./views/risk/risk-management-view";
+export { KillSwitchControl, type KillSwitchControlProps } from "./views/risk/kill-switch-control";
+export { LossLimitDisplay, type LossLimitDisplayProps, type LossLimitData } from "./views/risk/loss-limit-display";
+export { AuditLog, type AuditLogProps, type AuditEntry } from "./views/risk/audit-log";
 
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

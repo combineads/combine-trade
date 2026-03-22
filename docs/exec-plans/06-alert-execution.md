@@ -168,3 +168,4 @@ Until EP09 (risk management) is complete, the following hard caps apply:
 ## Progress notes
 - 2026-03-22: Tasks generated — T-043 (formatter), T-044 (mode service), T-045 (order builder), T-046 (alert handler), T-047 (integration).
 - 2026-03-22: M1 (formatter), M2 partial (alert handler), M3 partial (order builder), M5 (mode service) completed. 396 tests passing. Full workers and DB schemas deferred to future tasks.
+- 2026-03-22: M2-M4 completed. T-105 (Binance adapter order methods), T-106 (Slack webhook), T-107 (execution worker handler), T-109 (order tracker), T-110 (alert worker event bus), T-111 (execution worker event bus). 1008 tests passing. EP06 fully implemented.

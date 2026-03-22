@@ -149,3 +149,4 @@ Note: 이벤트 버스 인프라(LISTEN/NOTIFY 추상화)는 00-project-bootstra
 ## Progress notes
 - 2026-03-22: Tasks generated — T-048 (correlation), T-049 (dead-letter), T-050 (catch-up), T-051 (metrics), T-052 (integration).
 - 2026-03-22: Pipeline infrastructure modules completed. M1 supervisor, M4 Docker deferred. 431 tests passing.
+- 2026-03-22: M1 (worker supervisor) completed. T-108: WorkerSupervisor with exponential backoff restart, graceful shutdown. 1008 tests passing. M4 Docker deferred (user runs locally).

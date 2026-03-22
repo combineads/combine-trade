@@ -147,4 +147,5 @@ Note: 이벤트 버스 인프라(LISTEN/NOTIFY 추상화)는 00-project-bootstra
 | 2026-03-21 | decision_completed replaces vector_created for downstream | Clearer signal that includes decision result, not just vector existence |
 
 ## Progress notes
-- Pending implementation.
+- 2026-03-22: Tasks generated — T-048 (correlation), T-049 (dead-letter), T-050 (catch-up), T-051 (metrics), T-052 (integration).
+- 2026-03-22: Pipeline infrastructure modules completed. M1 supervisor, M4 Docker deferred. 431 tests passing.

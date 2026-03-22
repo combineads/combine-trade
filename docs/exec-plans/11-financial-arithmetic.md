@@ -138,4 +138,5 @@ packages/shared/decimal/ must not call exchange APIs directly. Precision metadat
 | 2026-03-21 | Decimal.js 적용 경계: 지표=float, PnL=Decimal | 기술지표 계산은 float 성능이 필수(대량 백테스트), PnL/수수료/잔고는 정확성이 필수. 경계: strategy sandbox 출력(features)은 float, fee/PnL 계산부터 Decimal |
 
 ## Progress notes
-- Pending implementation.
+- 2026-03-22: Tasks generated — T-058 (decimal wrapper), T-059 (precision validator), T-060 (fee calculator), T-061 (funding rate), T-062 (integration test).
+- 2026-03-22: M1 (decimal precision) and M2 (fee engine) core logic completed. M3 (funding rate collection) and M4 (PnL pipeline integration) deferred (require DB/exchange). 542 tests passing.

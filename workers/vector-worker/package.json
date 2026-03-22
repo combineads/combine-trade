@@ -9,6 +9,7 @@
 		"start": "bun run src/index.ts"
 	},
 	"dependencies": {
+		"@combine/core": "workspace:*",
 		"@combine/shared": "workspace:*"
 	}
 }

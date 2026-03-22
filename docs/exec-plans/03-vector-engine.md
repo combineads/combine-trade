@@ -158,4 +158,5 @@
 | 2026-03-21 | EP03-M5 depends on EP04-M3 (circular dependency resolution) | EP03-M5 (vector-worker) calls EP04-M3 (decision engine) inline for latency optimization. This creates a reverse dependency: EP03-M5 must be scheduled after EP04-M3 completion. Decision engine is implemented as a pure function in packages/core/decision, importable by vector-worker without worker-level dependency. PLANS.md milestone graph updated to reflect: EP03-M5 depends on EP04-M3. |
 
 ## Progress notes
-- Pending implementation.
+- 2026-03-22: Tasks generated T-027 through T-034 (8 tasks). Includes decision engine (EP04-M3) as T-032 since it's required by vector worker (EP03-M5). Deferred: HNSW tuning benchmark, schema migration utility, orphan table cleanup.
+- 2026-03-22: All tasks implemented (T-027–T-034). 283 tests passing. Typecheck clean. Lint clean.

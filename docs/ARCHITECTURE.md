@@ -127,7 +127,10 @@ Combine Trade is a strategy-defined vectorization trading system. Strategies are
 │   ├── label-worker/           # Delayed result labeling
 │   ├── alert-worker/           # Slack notification dispatch
 │   ├── execution-worker/       # Order execution
-│   └── journal-worker/          # Trade journal entry creation
+│   ├── journal-worker/          # Trade journal entry creation
+│   ├── macro-collector/         # Economic calendar + event-triggered news collection
+│   ├── retrospective-worker/    # LLM retrospective report generation (claude -p)
+│   └── llm-decision-worker/     # LLM 2nd-stage decision filter (≥15m timeframes, opt-in)
 ├── db/
 │   ├── schema/                 # DrizzleORM schemas
 │   ├── migrations/             # Generated migrations
@@ -173,6 +176,9 @@ workers          → packages (core/exchange/candle/...) → packages/shared
 | execution-worker | packages/execution, packages/exchange, packages/core/risk, packages/shared |
 | alert-worker | packages/alert, packages/shared |
 | journal-worker | packages/core/journal, packages/candle, packages/shared |
+| macro-collector | packages/core/macro, packages/shared |
+| retrospective-worker | packages/core/macro, packages/core/journal, packages/shared |
+| llm-decision-worker | packages/core/macro, packages/core/journal, packages/shared |
 
 Workers must not import from `apps/` or from other workers.
 
@@ -534,6 +540,8 @@ created_at, updated_at
 | strategy_event_created | event_id, strategy_id, symbol | strategy-worker | vector-worker |
 | decision_completed | decision_id, event_id, strategy_id, direction, decision | vector-worker (inline) | alert-worker, execution-worker |
 | label_ready | event_id | label-worker | statistics refresh, journal-worker |
+| decision_pending_llm | decision_id, event_id, strategy_id | vector-worker | llm-decision-worker |
+| journal_ready | journal_id | journal-worker | retrospective-worker |
 
 Rules:
 - Notifications are signals only; workers re-read DB state
@@ -551,6 +559,13 @@ Candle close (exchange WS)
 → vector-worker: normalize features → store vector → L2 search → compute statistics
   → decision engine (inline): check ≥30 samples, ≥55% winrate, >0 expectancy
   → NOTIFY decision_completed
+→ IF strategy.use_llm_filter AND timeframe >= 15m AND direction IN (LONG, SHORT):
+  → NOTIFY decision_pending_llm
+  → llm-decision-worker: gather context (recent trades, macro) → claude -p → structured evaluation
+    → CONFIRM: NOTIFY decision_completed (original direction)
+    → PASS: NOTIFY decision_completed (direction=PASS, override logged)
+    → REDUCE_SIZE: NOTIFY decision_completed (original direction + size_modifier)
+→ ELSE: NOTIFY decision_completed (direct, no LLM)
 → alert-worker (LISTEN decision_completed): LONG/SHORT → Slack notification
 → execution-worker (LISTEN decision_completed): LONG/SHORT → order execution
 → PASS: log only
@@ -659,6 +674,9 @@ ENV vars  >  DB settings  >  code defaults
 | alert-worker | 2 |
 | execution-worker | 3 |
 | journal-worker | 2 |
+| macro-collector | 2 |
+| retrospective-worker | 2 |
+| llm-decision-worker | 2 |
 | API server | 5 |
 | LISTEN dedicated | 3 |
 | Headroom | 2 |

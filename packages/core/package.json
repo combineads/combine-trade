@@ -8,6 +8,7 @@
 	"dependencies": {
 		"@combine/shared": "workspace:*",
 		"@ixjb94/indicators": "^1.2.4",
+		"decimal.js": "^10.6.0",
 		"isolated-vm": "^6.1.2",
 		"quickjs-emscripten": "^0.32.0"
 	}

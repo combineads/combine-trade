@@ -141,4 +141,5 @@
 | 2026-03-22 | Decision confidence tiers added (Low/Medium/High/Very High) | min_samples=30 유지 (CLT 최소). 30개 샘플의 55% winrate CI는 37%-73%로 매우 넓음 — 사용자에게 불확실성을 명시적으로 표시. 기준을 올리면 초기에 진입 신호 부족. CI + tier 표시로 정보 비대칭 해소. decisions 테이블에 ci_lower, ci_upper, confidence_tier 컬럼 추가. |
 
 ## Progress notes
-- Pending implementation.
+- 2026-03-22: Tasks generated — T-035 (labeler), T-036 (label worker), T-037 (integration test). Decision engine covered by T-032 in EP03.
+- 2026-03-22: All tasks completed. T-035 labeler (Decimal.js, MFE/MAE tracking), T-036 label worker (scanner + health), T-037 integration test (7 scenarios). 307 tests passing.

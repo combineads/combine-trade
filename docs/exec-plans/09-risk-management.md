@@ -185,4 +185,5 @@
 | 2026-03-22 | Kill switch 자동 트리거 4개 카테고리 12개 조건 확정 | Discovery 세션에서 설계. Financial (즉시), Infrastructure (grace+position), Sandbox (즉시 per-strategy), Data integrity (즉시+position). 포지션 없을 때 infrastructure 장애는 신규 진입 차단만. 모든 자동 kill은 수동 해제 필수. Financial 해제는 원인 확인 체크박스 추가. |
 
 ## Progress notes
-- Pending implementation.
+- 2026-03-22: Tasks generated — T-053 (kill switch), T-054 (loss tracker), T-055 (position sizer), T-056 (risk gate), T-057 (integration test).
+- 2026-03-22: Core risk modules completed. M1-M3 pure logic implemented. M0/M4 deferred (require DB/exchange integration). 487 tests passing.

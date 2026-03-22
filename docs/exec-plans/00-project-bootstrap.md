@@ -157,26 +157,40 @@ Bootstrap the Combine Trade monorepo so that coding agents can begin implementin
 | 2026-03-21 | Event bus를 00에 배치 (07 아님) | 모든 워커가 LISTEN/NOTIFY 사용 — 공유 인프라로 선행 필요 |
 | 2026-03-21 | 로깅: stdout + structured JSON (초기). EP07에서 파일 로테이션 또는 외부 서비스로 확장 결정 | 초기에는 stdout으로 충분. 24/7 운영 시 디스크 소진 방지 위해 EP07 전에 결정 필요 |
 
-## Task candidates
-- T-001: Scaffold Bun monorepo with workspace packages
-- T-002: Setup Biome + TypeScript strict config
-- T-003: Create DrizzleORM schemas for core tables (candles, strategies, strategy_events, event_labels, decisions, alerts, orders, vector_table_registry)
-- T-004: Docker compose for PostgreSQL + pgvector
-- T-005: Implement technical indicator library (SMA, EMA, BB)
-- T-006: Implement candle model with continuity validation
-- T-007: Setup IoC container
-- T-008: Implement AOP decorators (@Transactional, @Log)
-- T-009: Elysia API skeleton with health endpoint
-- T-010: First integration test (candle insert + read)
-- T-010a: Implement PostgreSQL LISTEN/NOTIFY abstraction layer
-- T-010b: Implement event bus publisher/subscriber interfaces
-- T-010c: Implement LISTEN connection pool with auto-reconnect
-- T-010d: Create shared CCXT mock adapter for testing
-- T-010e: Create test candle data generator
-- T-010f: Setup test DB lifecycle (setup/teardown per suite)
-- T-010g: Implement pg_dump automated daily backup
-- T-010h: Configure WAL archiving for point-in-time recovery
-- T-010i: Implement weekly automated restore verification
+## Task candidates → Generated tasks mapping
+
+| Candidate | Generated task | Notes |
+|-----------|---------------|-------|
+| T-001: Scaffold monorepo | T-001 | Merged with T-002 (Biome/TS config) |
+| T-002: Biome + TS config | T-001 | Merged into scaffold task |
+| T-004: Docker compose | T-002 | Renumbered |
+| T-003: DrizzleORM schemas | T-003 | Kept |
+| T-005: Indicator library | T-004 | Renumbered |
+| T-006: Candle model | T-005 | Renumbered |
+| T-007: IoC container | T-006 | Renumbered |
+| T-008: AOP decorators | T-007 | Renumbered |
+| T-009: Elysia skeleton | T-008 | Renumbered |
+| T-010a/b/c: Event bus | T-009 | Merged into single task |
+| T-010d/e/f: Test infra | T-010 | Merged into single task |
+| T-010: Integration test | T-011 | Renumbered |
+| T-010g/h/i: Backup | **Deferred** | M8 backup infra — not needed for dev pipeline |
+
+## Dependency graph
+
+```
+T-001 (scaffold) ──┬── T-002 (Docker) ──┬── T-003 (schemas) ──┬── T-005 (candle)
+                   │                    │                     │
+                   │                    ├── T-009 (event bus) │
+                   │                    │                     │
+                   │                    └── T-010 (test infra)┤
+                   │                                          │
+                   ├── T-004 (indicators)                     ├── T-011 (integration)
+                   │                                          │
+                   ├── T-006 (IoC) ── T-007 (AOP)            │
+                   │                                          │
+                   └── T-008 (Elysia)                         │
+```
 
 ## Progress notes
 - 2026-03-21: M1 complete — harness docs generated and tailored to project
+- 2026-03-22: Tasks generated — 11 tasks (T-001 through T-011) covering M2–M7. M8 (backup) deferred.

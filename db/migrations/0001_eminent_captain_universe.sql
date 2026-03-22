@@ -1,0 +1,1 @@
+ALTER TABLE "candles" ADD CONSTRAINT "candles_pk" PRIMARY KEY("exchange","symbol","timeframe","open_time");

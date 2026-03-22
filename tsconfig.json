@@ -1,0 +1,41 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"exactOptionalPropertyTypes": false,
+		"noFallthroughCasesInSwitch": true,
+		"isolatedModules": true,
+		"types": ["@types/bun"]
+	},
+	"references": [
+		{ "path": "packages/shared" },
+		{ "path": "packages/core" },
+		{ "path": "packages/candle" },
+		{ "path": "packages/exchange" },
+		{ "path": "packages/backtest" },
+		{ "path": "packages/alert" },
+		{ "path": "packages/execution" },
+		{ "path": "apps/api" },
+		{ "path": "workers/candle-collector" },
+		{ "path": "workers/strategy-worker" },
+		{ "path": "workers/vector-worker" },
+		{ "path": "workers/label-worker" },
+		{ "path": "workers/alert-worker" },
+		{ "path": "workers/execution-worker" },
+		{ "path": "workers/journal-worker" }
+	],
+	"include": [],
+	"exclude": ["node_modules", "dist"]
+}

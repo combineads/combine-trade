@@ -1,99 +1,88 @@
 {
-  "project_name": "Combine Trade",
-  "language": "en",
-  "one_line_pitch": "A strategy-defined vectorization and pattern-matching trading system that decides LONG/SHORT/PASS based on historical pattern statistics within the same strategy, version, and symbol.",
-  "problem": "Discretionary trading lacks consistency because decisions rely on intuition rather than statistical evidence from similar historical patterns. This system eliminates guesswork by vectorizing strategy-defined events and using L2 similarity search against past patterns to make evidence-based entry decisions.",
-  "target_users": [
-    "Single private crypto futures trader developing and running quantitative strategies"
-  ],
-  "platforms": [
-    "api",
-    "worker",
-    "web",
-    "desktop",
-    "mobile"
-  ],
-  "primary_stack": {
-    "runtime": "Bun",
-    "backend": "Elysia + AOP (transaction/logging) + IoC/DI container",
-    "database": "PostgreSQL + pgvector + DrizzleORM",
-    "web_ui": "Next.js",
-    "desktop_mobile_ui": "Tauri",
-    "exchange_adapter": "CCXT",
-    "strategy_sandbox": "TypeScript runtime sandbox (DB-stored, Pine Script-level API)"
-  },
-  "core_capabilities": [
-    "Dynamic strategy system: TypeScript strategies stored in DB, executed in sandbox with Pine Script-level API (candle data, technical indicators, timeframe access, OHLCV logic)",
-    "Mandatory vector definition: strategies must define features[] with normalization methods, all features normalized to [0,1]",
-    "Event vectorization pipeline: candle close → strategy condition → event → vectorize → L2 similarity search → statistics → decision → alert/trade",
-    "Statistical decision engine: winrate ≥ 55%, expectancy > 0, min_samples ≥ 30 required for entry",
-    "Result labeling: TP/SL/TIME_EXIT judgment with pnl_pct, mfe_pct, mae_pct, hold_bars tracking",
-    "Backtesting: 3-year historical data validation with vector generation",
-    "Four execution modes: Analysis → Alert → Paper trading → Auto-trading (all in MVP)",
-    "Multi-strategy/symbol/exchange support: BTCUSDT/ETHUSDT/SOLUSDT on Binance/OKX",
-    "Strict isolation: vector search scoped to same strategy + version + symbol only",
-    "Strategy versioning: new version = new vector table + historical data re-vectorization"
-  ],
-  "non_goals": [
-    "Multi-user / SaaS",
-    "Spot market trading",
-    "Social / copy trading",
-    "Strategy marketplace"
-  ],
-  "constraints": [
-    "Candle close → alert/trade latency: under 1 second",
-    "3-year single strategy backtest: < 5 minutes",
-    "Architecture must have no ceiling on concurrent strategies/symbols",
-    "24/7 uptime target (initial deployment: local laptop, single user)",
-    "Vector isolation: no cross-strategy or cross-symbol vector comparison",
-    "New strategy version requires new physical vector table + re-vectorization",
-    "Strategy code must be DB-stored and sandbox-executed at runtime"
-  ],
-  "quality_attributes": {
-    "performance": "< 1s candle-to-decision latency; backtest 3yr in minutes; pgvector HNSW for sub-100ms vector search",
-    "reliability": "24/7 operation with graceful recovery; candle continuity validation; idempotent event processing",
-    "security": "Strategy sandbox isolation; exchange API key encryption; no external code execution outside sandbox",
-    "developer_experience": "Bun-native tooling; type-safe DrizzleORM schemas; hot-reload dev server; comprehensive test coverage for strategy API"
-  },
-  "repo_commands": {
-    "install": "bun install",
-    "dev": "bun run dev",
-    "test": "bun test",
-    "lint": "bun run lint",
-    "typecheck": "bun run typecheck",
-    "build": "bun run build",
-    "db:generate": "bun run drizzle-kit generate",
-    "db:migrate": "bun run drizzle-kit migrate",
-    "backtest": "bun run backtest  [defined in EP05; not available until EP05 is complete]"
-  },
-  "assumptions": [
-    "PostgreSQL with pgvector extension is available",
-    "Exchange API keys are pre-configured by the operator",
-    "CCXT library handles exchange-specific protocol differences",
-    "Strategy sandbox isolation mechanism TBD (Bun worker threads vs V8 isolates — validated in EP02-M0 PoC)",
-    "Initial deployment is local laptop; cloud migration is a future concern",
-    "Tauri and Next.js share a common API layer but have separate UI codebases"
-  ],
-  "operation_modes": [
-    "analysis",
-    "alert",
-    "paper",
-    "live"
-  ],
-  "pipeline_modules": [
-    "candle-collector",
-    "strategy-engine",
-    "strategy-sandbox",
-    "vector-engine",
-    "decision-engine",
-    "risk-engine",
-    "journal-engine",
-    "label-engine",
-    "backtest-engine",
-    "alert-engine",
-    "execution-engine",
-    "exchange-adapter"
-  ],
-  "epic_count_estimate": "16",
-  "task_size": "30min-3hr"
+	"project_name": "Combine Trade",
+	"language": "en",
+	"one_line_pitch": "A strategy-defined vectorization and pattern-matching trading system that decides LONG/SHORT/PASS based on historical pattern statistics within the same strategy, version, and symbol.",
+	"problem": "Discretionary trading lacks consistency because decisions rely on intuition rather than statistical evidence from similar historical patterns. This system eliminates guesswork by vectorizing strategy-defined events and using L2 similarity search against past patterns to make evidence-based entry decisions.",
+	"target_users": [
+		"Single private crypto futures trader developing and running quantitative strategies"
+	],
+	"platforms": ["api", "worker", "web", "desktop", "mobile"],
+	"primary_stack": {
+		"runtime": "Bun",
+		"backend": "Elysia + AOP (transaction/logging) + IoC/DI container",
+		"database": "PostgreSQL + pgvector + DrizzleORM",
+		"web_ui": "Next.js",
+		"desktop_mobile_ui": "Tauri",
+		"exchange_adapter": "CCXT",
+		"strategy_sandbox": "TypeScript runtime sandbox (DB-stored, Pine Script-level API)"
+	},
+	"core_capabilities": [
+		"Dynamic strategy system: TypeScript strategies stored in DB, executed in sandbox with Pine Script-level API (candle data, technical indicators, timeframe access, OHLCV logic)",
+		"Mandatory vector definition: strategies must define features[] with normalization methods, all features normalized to [0,1]",
+		"Event vectorization pipeline: candle close → strategy condition → event → vectorize → L2 similarity search → statistics → decision → alert/trade",
+		"Statistical decision engine: winrate ≥ 55%, expectancy > 0, min_samples ≥ 30 required for entry",
+		"Result labeling: TP/SL/TIME_EXIT judgment with pnl_pct, mfe_pct, mae_pct, hold_bars tracking",
+		"Backtesting: 3-year historical data validation with vector generation",
+		"Four execution modes: Analysis → Alert → Paper trading → Auto-trading (all in MVP)",
+		"Multi-strategy/symbol/exchange support: BTCUSDT/ETHUSDT/SOLUSDT on Binance/OKX",
+		"Strict isolation: vector search scoped to same strategy + version + symbol only",
+		"Strategy versioning: new version = new vector table + historical data re-vectorization"
+	],
+	"non_goals": [
+		"Multi-user / SaaS",
+		"Spot market trading",
+		"Social / copy trading",
+		"Strategy marketplace"
+	],
+	"constraints": [
+		"Candle close → alert/trade latency: under 1 second",
+		"3-year single strategy backtest: < 5 minutes",
+		"Architecture must have no ceiling on concurrent strategies/symbols",
+		"24/7 uptime target (initial deployment: local laptop, single user)",
+		"Vector isolation: no cross-strategy or cross-symbol vector comparison",
+		"New strategy version requires new physical vector table + re-vectorization",
+		"Strategy code must be DB-stored and sandbox-executed at runtime"
+	],
+	"quality_attributes": {
+		"performance": "< 1s candle-to-decision latency; backtest 3yr in minutes; pgvector HNSW for sub-100ms vector search",
+		"reliability": "24/7 operation with graceful recovery; candle continuity validation; idempotent event processing",
+		"security": "Strategy sandbox isolation; exchange API key encryption; no external code execution outside sandbox",
+		"developer_experience": "Bun-native tooling; type-safe DrizzleORM schemas; hot-reload dev server; comprehensive test coverage for strategy API"
+	},
+	"repo_commands": {
+		"install": "bun install",
+		"dev": "bun run dev",
+		"test": "bun test",
+		"lint": "bun run lint",
+		"typecheck": "bun run typecheck",
+		"build": "bun run build",
+		"db:generate": "bun run drizzle-kit generate",
+		"db:migrate": "bun run drizzle-kit migrate",
+		"backtest": "bun run backtest  [defined in EP05; not available until EP05 is complete]"
+	},
+	"assumptions": [
+		"PostgreSQL with pgvector extension is available",
+		"Exchange API keys are pre-configured by the operator",
+		"CCXT library handles exchange-specific protocol differences",
+		"Strategy sandbox isolation mechanism TBD (Bun worker threads vs V8 isolates — validated in EP02-M0 PoC)",
+		"Initial deployment is local laptop; cloud migration is a future concern",
+		"Tauri and Next.js share a common API layer but have separate UI codebases"
+	],
+	"operation_modes": ["analysis", "alert", "paper", "live"],
+	"pipeline_modules": [
+		"candle-collector",
+		"strategy-engine",
+		"strategy-sandbox",
+		"vector-engine",
+		"decision-engine",
+		"risk-engine",
+		"journal-engine",
+		"label-engine",
+		"backtest-engine",
+		"alert-engine",
+		"execution-engine",
+		"exchange-adapter"
+	],
+	"epic_count_estimate": "16",
+	"task_size": "30min-3hr"
 }

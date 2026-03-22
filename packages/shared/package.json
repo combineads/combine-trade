@@ -1,0 +1,14 @@
+{
+	"name": "@combine/shared",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"main": "index.ts",
+	"types": "index.ts",
+	"dependencies": {
+		"pino": "^9.0.0"
+	},
+	"devDependencies": {
+		"pino-pretty": "^13.0.0"
+	}
+}

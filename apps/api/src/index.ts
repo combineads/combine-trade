@@ -62,6 +62,12 @@ const stubDeps: ApiServerDeps = {
 		runBacktest: async () => { throw new Error("Not wired to backtest engine"); },
 		strategyExists: async () => false,
 	},
+	journalDeps: {
+		listJournals: async () => ({ data: [], total: 0 }),
+		getJournal: async () => null,
+		searchJournals: async () => ({ data: [], total: 0 }),
+		getJournalAnalytics: async () => ({ tagStats: [], overallWinrate: 0, overallExpectancy: 0 }),
+	},
 };
 
 export const app = createApiServer(stubDeps);

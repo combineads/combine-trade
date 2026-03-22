@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createApiServer, type ApiServerDeps } from "../src/server";
 import type { Credential, CredentialRouteDeps } from "../src/routes/credentials";
+import { makeAuthHeaders, TEST_SECRET } from "./helpers/auth";
 
 function createTestCredential(overrides: Partial<Credential> = {}): Credential {
 	return {
@@ -19,7 +20,7 @@ function createStubDeps(): ApiServerDeps {
 	const credentials: Credential[] = [createTestCredential()];
 
 	return {
-		jwtSecret: "test-secret",
+		jwtSecret: TEST_SECRET,
 		masterEncryptionKey: "a".repeat(64),
 		strategyRepository: {
 			findAll: async () => [],
@@ -64,13 +65,33 @@ function createStubDeps(): ApiServerDeps {
 			},
 			remove: async () => {},
 		},
+		eventDeps: {
+			findEventById: async () => null,
+			findEventsByStrategy: async () => ({ items: [], total: 0 }),
+			getStrategyStatistics: async () => ({ winRate: 0, expectancy: 0, avgPnl: 0, sampleCount: 0, totalEvents: 0, longCount: 0, shortCount: 0 }),
+			strategyExists: async () => true,
+		},
+		orderDeps: { findOrders: async () => ({ items: [], total: 0 }) },
+		candleDeps: { findCandles: async () => ({ items: [], total: 0 }) },
+		alertDeps: { findAlerts: async () => ({ items: [], total: 0 }) },
+		backtestDeps: {
+			runBacktest: async () => ({ trades: [], stats: {} as any }),
+			strategyExists: async () => true,
+		},
+		journalDeps: {
+			listJournals: async () => ({ data: [], total: 0 }),
+			getJournal: async () => null,
+			searchJournals: async () => ({ data: [], total: 0 }),
+			getJournalAnalytics: async () => ({ tagStats: [], overallWinrate: 0, overallExpectancy: 0 }),
+		},
 	};
 }
 
 describe("Credential routes wiring", () => {
 	test("GET /api/v1/credentials returns credentials list", async () => {
 		const app = createApiServer(createStubDeps());
-		const res = await app.handle(new Request("http://localhost/api/v1/credentials"));
+		const headers = await makeAuthHeaders();
+		const res = await app.handle(new Request("http://localhost/api/v1/credentials", { headers }));
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.data).toBeArray();
@@ -80,10 +101,11 @@ describe("Credential routes wiring", () => {
 
 	test("POST /api/v1/credentials creates a credential", async () => {
 		const app = createApiServer(createStubDeps());
+		const authHeaders = await makeAuthHeaders();
 		const res = await app.handle(
 			new Request("http://localhost/api/v1/credentials", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: { ...authHeaders, "Content-Type": "application/json" },
 				body: JSON.stringify({
 					exchange: "binance",
 					apiKey: "test-api-key",
@@ -99,10 +121,11 @@ describe("Credential routes wiring", () => {
 
 	test("PUT /api/v1/credentials/:id updates a credential", async () => {
 		const app = createApiServer(createStubDeps());
+		const authHeaders = await makeAuthHeaders();
 		const res = await app.handle(
 			new Request("http://localhost/api/v1/credentials/cred-1", {
 				method: "PUT",
-				headers: { "Content-Type": "application/json" },
+				headers: { ...authHeaders, "Content-Type": "application/json" },
 				body: JSON.stringify({ label: "Updated label" }),
 			}),
 		);
@@ -113,9 +136,11 @@ describe("Credential routes wiring", () => {
 
 	test("DELETE /api/v1/credentials/:id deletes a credential", async () => {
 		const app = createApiServer(createStubDeps());
+		const headers = await makeAuthHeaders();
 		const res = await app.handle(
 			new Request("http://localhost/api/v1/credentials/cred-1", {
 				method: "DELETE",
+				headers,
 			}),
 		);
 		expect(res.status).toBe(200);
@@ -125,10 +150,11 @@ describe("Credential routes wiring", () => {
 
 	test("PUT /api/v1/credentials/:unknown returns 404", async () => {
 		const app = createApiServer(createStubDeps());
+		const authHeaders = await makeAuthHeaders();
 		const res = await app.handle(
 			new Request("http://localhost/api/v1/credentials/unknown-id", {
 				method: "PUT",
-				headers: { "Content-Type": "application/json" },
+				headers: { ...authHeaders, "Content-Type": "application/json" },
 				body: JSON.stringify({ label: "test" }),
 			}),
 		);

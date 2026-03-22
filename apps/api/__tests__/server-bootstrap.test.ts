@@ -1,5 +1,6 @@
 import { describe, expect, test, mock } from "bun:test";
 import { createApiServer, type ApiServerDeps } from "../src/server.js";
+import { signAccessToken } from "../../../packages/shared/auth/jwt.js";
 
 function makeDeps(overrides: Partial<ApiServerDeps> = {}): ApiServerDeps {
 	return {
@@ -28,8 +29,41 @@ function makeDeps(overrides: Partial<ApiServerDeps> = {}): ApiServerDeps {
 		},
 		findUserByUsername: mock(() => Promise.resolve(null)),
 		sseSubscribe: mock(() => () => {}),
+		credentialDeps: {
+			masterKey: "0".repeat(64),
+			findByUserId: async () => [],
+			findById: async () => null,
+			create: async () => { throw new Error("stub"); },
+			update: async () => { throw new Error("stub"); },
+			remove: async () => {},
+		},
+		eventDeps: {
+			findEventById: async () => null,
+			findEventsByStrategy: async () => ({ items: [], total: 0 }),
+			getStrategyStatistics: async () => ({ winRate: 0, expectancy: 0, avgPnl: 0, sampleCount: 0, totalEvents: 0, longCount: 0, shortCount: 0 }),
+			strategyExists: async () => true,
+		},
+		orderDeps: { findOrders: async () => ({ items: [], total: 0 }) },
+		candleDeps: { findCandles: async () => ({ items: [], total: 0 }) },
+		alertDeps: { findAlerts: async () => ({ items: [], total: 0 }) },
+		backtestDeps: {
+			runBacktest: async () => ({ trades: [], stats: {} as never }),
+			strategyExists: async () => true,
+		},
+		journalDeps: {
+			listJournals: async () => ({ data: [], total: 0 }),
+			getJournal: async () => null,
+			searchJournals: async () => ({ data: [], total: 0 }),
+			getJournalAnalytics: async () => ({ tagStats: [], overallWinrate: 0, overallExpectancy: 0 }),
+		},
 		...overrides,
 	};
+}
+
+const TEST_SECRET = "test-secret-32-chars-long-at-least!!";
+async function makeAuthHeaders(): Promise<Record<string, string>> {
+	const token = await signAccessToken({ sub: "user-1", role: "admin" }, TEST_SECRET);
+	return { Authorization: `Bearer ${token}` };
 }
 
 describe("createApiServer", () => {
@@ -76,9 +110,10 @@ describe("createApiServer", () => {
 	test("kill switch status endpoint is accessible", async () => {
 		const deps = makeDeps();
 		const app = createApiServer(deps);
+		const headers = await makeAuthHeaders();
 
 		const res = await app.handle(
-			new Request("http://localhost/api/v1/risk/kill-switch/status"),
+			new Request("http://localhost/api/v1/risk/kill-switch/status", { headers }),
 		);
 		expect(res.status).toBe(200);
 	});
@@ -86,9 +121,10 @@ describe("createApiServer", () => {
 	test("SSE stream endpoint is accessible", async () => {
 		const deps = makeDeps();
 		const app = createApiServer(deps);
+		const headers = await makeAuthHeaders();
 
 		const res = await app.handle(
-			new Request("http://localhost/api/v1/stream"),
+			new Request("http://localhost/api/v1/stream", { headers }),
 		);
 		expect(res.status).toBe(200);
 		expect(res.headers.get("content-type")).toContain("text/event-stream");

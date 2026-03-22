@@ -35,6 +35,14 @@ const stubDeps: ApiServerDeps = {
 	},
 	findUserByUsername: async () => null,
 	sseSubscribe: () => () => {},
+	credentialDeps: {
+		masterKey: process.env.MASTER_ENCRYPTION_KEY ?? "0".repeat(64),
+		findByUserId: async () => [],
+		findById: async () => null,
+		create: async () => { throw new Error("Not wired to DB"); },
+		update: async () => { throw new Error("Not wired to DB"); },
+		remove: async () => { throw new Error("Not wired to DB"); },
+	},
 };
 
 export const app = createApiServer(stubDeps);

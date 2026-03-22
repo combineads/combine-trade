@@ -3,12 +3,14 @@ import { Elysia } from "elysia";
 import type { StrategyRepository } from "../../../packages/core/strategy/repository.js";
 import type { ExecutionModeDeps } from "../../../packages/execution/types.js";
 import type { KillSwitchRouteDeps } from "./routes/kill-switch.js";
+import type { CredentialRouteDeps } from "./routes/credentials.js";
 import type { SseEvent } from "./routes/sse.js";
 import { errorHandlerPlugin } from "./lib/errors.js";
 import { healthRoute } from "./routes/health.js";
 import { strategyRoutes } from "./routes/strategies.js";
 import { authRoutes } from "./routes/auth.js";
 import { killSwitchRoutes } from "./routes/kill-switch.js";
+import { credentialRoutes } from "./routes/credentials.js";
 import { sseRoutes } from "./routes/sse.js";
 
 export interface ApiServerDeps {
@@ -21,6 +23,7 @@ export interface ApiServerDeps {
 		username: string,
 	) => Promise<{ id: string; username: string; passwordHash: string; role: string } | null>;
 	sseSubscribe: (listener: (event: SseEvent) => void) => () => void;
+	credentialDeps: CredentialRouteDeps;
 }
 
 /**
@@ -46,5 +49,6 @@ export function createApiServer(deps: ApiServerDeps) {
 			}),
 		)
 		.use(killSwitchRoutes(deps.killSwitchDeps))
+		.use(credentialRoutes(deps.credentialDeps))
 		.use(sseRoutes({ subscribe: deps.sseSubscribe }));
 }

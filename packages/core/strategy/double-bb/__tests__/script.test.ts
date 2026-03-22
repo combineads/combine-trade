@@ -1,8 +1,14 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import type { CandleData } from "../../api.js";
-import { type ExecutionInput, StrategyExecutor } from "../../executor.js";
+import { type ExecutionInput, type IndicatorConfig, StrategyExecutor } from "../../executor.js";
 import { StrategySandbox } from "../../sandbox.js";
 import { DOUBLE_BB_SCRIPT } from "../script.js";
+
+/** Double-BB requires BB4(open,4,4), MA100, MA200 beyond defaults */
+const DOUBLE_BB_INDICATOR_CONFIG: IndicatorConfig = {
+	bb: [{ source: "open", period: 4, stddev: 4 }],
+	sma: [{ period: 100 }, { period: 200 }],
+};
 
 let sandbox: StrategySandbox;
 
@@ -69,6 +75,7 @@ describe("Double-BB sandbox script", () => {
 			direction: "both",
 			candles,
 			barIndex: 99,
+			indicatorConfig: DOUBLE_BB_INDICATOR_CONFIG,
 		};
 
 		const result = await executor.execute(input);
@@ -107,20 +114,19 @@ describe("Double-BB sandbox script", () => {
 			direction: "both",
 			candles,
 			barIndex: 99,
+			indicatorConfig: DOUBLE_BB_INDICATOR_CONFIG,
 		};
 
 		const result = await executor.execute(input);
 
-		if (result.features.length > 0) {
-			expect(result.features).toHaveLength(10);
-			expect(result.entryCondition).toBe(true);
+		expect(result.features).toHaveLength(10);
+		expect(result.entryCondition).toBe(true);
 
-			const featureNames = result.features.map((f) => f.name);
-			expect(featureNames).toContain("double_bb_variant");
-			expect(featureNames).toContain("candle_pattern_score");
-			expect(featureNames).toContain("price_in_bb20");
-			expect(featureNames).toContain("volume_ratio");
-		}
+		const featureNames = result.features.map((f) => f.name);
+		expect(featureNames).toContain("double_bb_variant");
+		expect(featureNames).toContain("candle_pattern_score");
+		expect(featureNames).toContain("price_in_bb20");
+		expect(featureNames).toContain("volume_ratio");
 	});
 
 	test("all feature values in [0, 1] range", async () => {
@@ -134,6 +140,7 @@ describe("Double-BB sandbox script", () => {
 			direction: "both",
 			candles,
 			barIndex: 99,
+			indicatorConfig: DOUBLE_BB_INDICATOR_CONFIG,
 		};
 
 		const result = await executor.execute(input);
@@ -162,6 +169,7 @@ describe("Double-BB sandbox script", () => {
 			direction: "long",
 			candles,
 			barIndex: 99,
+			indicatorConfig: DOUBLE_BB_INDICATOR_CONFIG,
 		};
 
 		const result = await executor.execute(input);
@@ -180,6 +188,7 @@ describe("Double-BB sandbox script", () => {
 			direction: "short",
 			candles,
 			barIndex: 99,
+			indicatorConfig: DOUBLE_BB_INDICATOR_CONFIG,
 		};
 
 		const result = await executor.execute(input);

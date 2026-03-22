@@ -7,6 +7,23 @@ export interface StrategyExecutorDeps {
 	sandbox: StrategySandbox;
 }
 
+export interface BbConfig {
+	source: "open" | "close";
+	period: number;
+	stddev: number;
+}
+
+export interface PeriodConfig {
+	period: number;
+}
+
+export interface IndicatorConfig {
+	bb?: BbConfig[];
+	sma?: PeriodConfig[];
+	ema?: PeriodConfig[];
+	atr?: PeriodConfig[];
+}
+
 export interface ExecutionInput {
 	code: string;
 	symbol: string;
@@ -15,6 +32,7 @@ export interface ExecutionInput {
 	candles: CandleData;
 	barIndex: number;
 	additionalCandles?: Record<string, CandleData>;
+	indicatorConfig?: IndicatorConfig;
 }
 
 export interface PreComputedIndicators {
@@ -32,6 +50,28 @@ export interface PreComputedIndicators {
 }
 
 /**
+ * Left-pad an indicator array with NaN so its length matches the source array.
+ * Indicator libraries often return shorter arrays (length = source.length - period + 1).
+ * Padding ensures array[bar_index] always maps to the correct candle.
+ */
+function padArray(arr: number[], targetLength: number): number[] {
+	if (arr.length >= targetLength) return arr;
+	const padding = new Array(targetLength - arr.length).fill(NaN);
+	return [...padding, ...arr];
+}
+
+function padBBResult(
+	bb: { upper: number[]; middle: number[]; lower: number[] },
+	targetLength: number,
+): { upper: number[]; middle: number[]; lower: number[] } {
+	return {
+		upper: padArray(bb.upper, targetLength),
+		middle: padArray(bb.middle, targetLength),
+		lower: padArray(bb.lower, targetLength),
+	};
+}
+
+/**
  * Orchestrates strategy execution:
  * 1. Pre-compute indicators
  * 2. Inject API + data into sandbox
@@ -42,8 +82,8 @@ export class StrategyExecutor {
 	constructor(private readonly deps: StrategyExecutorDeps) {}
 
 	async execute(input: ExecutionInput): Promise<SandboxResult> {
-		// Pre-compute common indicators
-		const preComputed = await this.preComputeIndicators(input.candles);
+		// Pre-compute common indicators + custom from indicatorConfig
+		const preComputed = await this.preComputeIndicators(input.candles, input.indicatorConfig);
 
 		// Build candle data map
 		const candleMap: Record<string, CandleData> = {
@@ -77,8 +117,11 @@ export class StrategyExecutor {
 		return this.deps.sandbox.execute(wrappedCode, globals, apiConfig);
 	}
 
-	private async preComputeIndicators(candles: CandleData): Promise<PreComputedIndicators> {
-		const { close, high, low, volume } = candles;
+	private async preComputeIndicators(
+		candles: CandleData,
+		config?: IndicatorConfig,
+	): Promise<PreComputedIndicators> {
+		const { close, open, high, low, volume } = candles;
 
 		// Pre-compute standard periods
 		const [sma20, sma50, sma200] = await Promise.all([
@@ -111,19 +154,97 @@ export class StrategyExecutor {
 			indicators.vwap(high, low, close, volume),
 		]);
 
-		return {
-			sma: { "20": sma20, "50": sma50, "200": sma200 },
-			ema: { "12": ema12, "20": ema20, "26": ema26, "50": ema50 },
-			rsi: { "14": rsi14 },
-			macd: { default: macdDefault },
-			bb: { "20": bb20 },
-			atr: { "14": atr14 },
-			stochastic: { "14": stoch14 },
-			cci: { "20": cci20 },
+		const len = close.length;
+
+		const result: PreComputedIndicators = {
+			sma: { "20": padArray(sma20, len), "50": padArray(sma50, len), "200": padArray(sma200, len) },
+			ema: { "12": padArray(ema12, len), "20": padArray(ema20, len), "26": padArray(ema26, len), "50": padArray(ema50, len) },
+			rsi: { "14": padArray(rsi14, len) },
+			macd: { default: { macd: padArray(macdDefault.macd, len), signal: padArray(macdDefault.signal, len), histogram: padArray(macdDefault.histogram, len) } },
+			bb: { "20": padBBResult(bb20, len) },
+			atr: { "14": padArray(atr14, len) },
+			stochastic: { "14": { k: padArray(stoch14.k, len), d: padArray(stoch14.d, len) } },
+			cci: { "20": padArray(cci20, len) },
 			adx: {}, // ADX needs more data, computed on demand
-			obv: obvResult,
-			vwap: vwapResult,
+			obv: padArray(obvResult, len),
+			vwap: padArray(vwapResult, len),
 		};
+
+		// Apply custom indicator config
+		if (config) {
+			await this.applyCustomConfig(result, candles, config);
+		}
+
+		return result;
+	}
+
+	private async applyCustomConfig(
+		result: PreComputedIndicators,
+		candles: CandleData,
+		config: IndicatorConfig,
+	): Promise<void> {
+		const promises: Promise<void>[] = [];
+
+		const len = candles.close.length;
+
+		// Custom BB entries
+		if (config.bb) {
+			for (const bbCfg of config.bb) {
+				const source = bbCfg.source === "open" ? candles.open : candles.close;
+				const key = String(bbCfg.period);
+				if (!result.bb[key]) {
+					promises.push(
+						indicators.bb(source, bbCfg.period, bbCfg.stddev).then((bb) => {
+							result.bb[key] = padBBResult(bb, len);
+						}),
+					);
+				}
+			}
+		}
+
+		// Custom SMA periods
+		if (config.sma) {
+			for (const smaCfg of config.sma) {
+				const key = String(smaCfg.period);
+				if (!result.sma[key]) {
+					promises.push(
+						indicators.sma(candles.close, smaCfg.period).then((sma) => {
+							result.sma[key] = padArray(sma, len);
+						}),
+					);
+				}
+			}
+		}
+
+		// Custom EMA periods
+		if (config.ema) {
+			for (const emaCfg of config.ema) {
+				const key = String(emaCfg.period);
+				if (!result.ema[key]) {
+					promises.push(
+						indicators.ema(candles.close, emaCfg.period).then((ema) => {
+							result.ema[key] = padArray(ema, len);
+						}),
+					);
+				}
+			}
+		}
+
+		// Custom ATR periods
+		if (config.atr) {
+			for (const atrCfg of config.atr) {
+				const key = String(atrCfg.period);
+				if (!result.atr[key]) {
+					promises.push(
+						indicators.atr(candles.high, candles.low, candles.close, atrCfg.period).then((atr) => {
+							result.atr[key] = padArray(atr, len);
+						}),
+					);
+				}
+			}
+		}
+
+		await Promise.all(promises);
 	}
 }
 

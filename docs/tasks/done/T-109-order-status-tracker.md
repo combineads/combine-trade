@@ -53,3 +53,15 @@ bun run typecheck
 - SL/TP order management
 - Position-level tracking
 - PnL calculation
+
+## Implementation Notes
+- **Date**: 2026-03-22
+- **Files changed**: `packages/execution/order-tracker.ts` (new), `packages/execution/__tests__/order-tracker.test.ts` (new — 9 tests), `packages/execution/index.ts` (added exports)
+- **Approach**: TDD. `pollOnce()` method for single poll cycle. Caller manages interval. Status transitions: submitted → filled/canceled/partially_filled/stale.
+- **Stale detection**: Orders >24h old with 0 fills marked as "stale" with warning.
+- **Error isolation**: Exchange fetch errors caught per-order — one failure doesn't affect other orders.
+- **Validation**: 9/9 tests pass, 1002 total pass, typecheck clean.
+
+## Outputs
+- `OrderStatusTracker` class with `pollOnce()` method
+- `TrackedOrder` interface, `OrderTrackerDeps` interface

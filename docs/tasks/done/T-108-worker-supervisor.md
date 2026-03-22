@@ -56,3 +56,16 @@ bun run typecheck
 - Docker Compose (EP07-M4)
 - Metrics collection
 - Health check HTTP endpoint
+
+## Implementation Notes
+- **Date**: 2026-03-22
+- **Files changed**: `packages/core/supervisor/supervisor.ts` (new — state management), `packages/core/supervisor/__tests__/supervisor.test.ts` (new — 18 tests), `scripts/supervisor.ts` (new — entry point with Bun.spawn)
+- **Approach**: TDD. Separated pure state management (testable) from process spawning (entry script). Supervisor tracks restart counts, backoff timers, stable periods.
+- **Design**: WorkerSupervisor class is pure state — no side effects. Entry script handles Bun.spawn, signal handling, and timer management.
+- **Validation**: 18/18 tests pass, 993 total pass, typecheck clean.
+
+## Outputs
+- `WorkerSupervisor` class — restart state management
+- `calculateBackoff(restartCount)` — exponential backoff (1s, 2s, 4s, 8s, 16s)
+- `shouldRestart(state, maxRestarts)` — restart decision
+- `scripts/supervisor.ts` — entry point to run all workers

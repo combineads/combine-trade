@@ -38,3 +38,10 @@ export {
 	type OrderValidationInput,
 	type GateResult,
 } from "./gate.js";
+export {
+	PositionMonitor,
+	type ExchangePosition,
+	type ExchangePositionProvider,
+	type TrackedPosition,
+	type PositionSyncResult,
+} from "./position-monitor.js";

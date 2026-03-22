@@ -7,7 +7,7 @@ import { ok, paginated } from "../lib/response.js";
 const MAX_PAGE_SIZE = 100;
 
 export interface EventQueryOptions {
-	strategyId: string;
+	id: string;
 	page: number;
 	pageSize: number;
 	symbol?: string;
@@ -22,7 +22,7 @@ export interface EventRouteDeps {
 		opts: EventQueryOptions,
 	) => Promise<{ items: StrategyEvent[]; total: number }>;
 	getStrategyStatistics: (
-		strategyId: string,
+		id: string,
 	) => Promise<PatternStatistics & { totalEvents: number; longCount: number; shortCount: number }>;
 	strategyExists: (id: string) => Promise<boolean>;
 }
@@ -30,16 +30,16 @@ export interface EventRouteDeps {
 export function eventRoutes(deps: EventRouteDeps) {
 	return new Elysia()
 		.get(
-			"/api/v1/strategies/:strategyId/events",
+			"/api/v1/strategies/:id/events",
 			async ({ params, query }) => {
-				const exists = await deps.strategyExists(params.strategyId);
-				if (!exists) throw new NotFoundError(`Strategy ${params.strategyId} not found`);
+				const exists = await deps.strategyExists(params.id);
+				if (!exists) throw new NotFoundError(`Strategy ${params.id} not found`);
 
 				const pageSize = Math.min(query.pageSize ?? 20, MAX_PAGE_SIZE);
 				const page = query.page ?? 1;
 
 				const opts: EventQueryOptions = {
-					strategyId: params.strategyId,
+					id: params.id,
 					page,
 					pageSize,
 					symbol: query.symbol,
@@ -52,7 +52,7 @@ export function eventRoutes(deps: EventRouteDeps) {
 				return paginated(result.items, result.total, page, pageSize);
 			},
 			{
-				params: t.Object({ strategyId: t.String() }),
+				params: t.Object({ id: t.String() }),
 				query: t.Object({
 					page: t.Optional(t.Numeric()),
 					pageSize: t.Optional(t.Numeric()),
@@ -64,16 +64,16 @@ export function eventRoutes(deps: EventRouteDeps) {
 			},
 		)
 		.get(
-			"/api/v1/strategies/:strategyId/statistics",
+			"/api/v1/strategies/:id/statistics",
 			async ({ params }) => {
-				const exists = await deps.strategyExists(params.strategyId);
-				if (!exists) throw new NotFoundError(`Strategy ${params.strategyId} not found`);
+				const exists = await deps.strategyExists(params.id);
+				if (!exists) throw new NotFoundError(`Strategy ${params.id} not found`);
 
-				const stats = await deps.getStrategyStatistics(params.strategyId);
+				const stats = await deps.getStrategyStatistics(params.id);
 				return ok(stats);
 			},
 			{
-				params: t.Object({ strategyId: t.String() }),
+				params: t.Object({ id: t.String() }),
 			},
 		)
 		.get(

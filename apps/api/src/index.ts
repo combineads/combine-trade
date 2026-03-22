@@ -43,6 +43,25 @@ const stubDeps: ApiServerDeps = {
 		update: async () => { throw new Error("Not wired to DB"); },
 		remove: async () => { throw new Error("Not wired to DB"); },
 	},
+	eventDeps: {
+		findEventById: async () => null,
+		findEventsByStrategy: async () => ({ items: [], total: 0 }),
+		getStrategyStatistics: async () => ({ winRate: 0, expectancy: 0, avgPnl: 0, sampleCount: 0, totalEvents: 0, longCount: 0, shortCount: 0 }),
+		strategyExists: async () => false,
+	},
+	orderDeps: {
+		findOrders: async () => ({ items: [], total: 0 }),
+	},
+	candleDeps: {
+		findCandles: async () => ({ items: [], total: 0 }),
+	},
+	alertDeps: {
+		findAlerts: async () => ({ items: [], total: 0 }),
+	},
+	backtestDeps: {
+		runBacktest: async () => { throw new Error("Not wired to backtest engine"); },
+		strategyExists: async () => false,
+	},
 };
 
 export const app = createApiServer(stubDeps);

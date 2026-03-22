@@ -4,6 +4,11 @@ import type { StrategyRepository } from "../../../packages/core/strategy/reposit
 import type { ExecutionModeDeps } from "../../../packages/execution/types.js";
 import type { KillSwitchRouteDeps } from "./routes/kill-switch.js";
 import type { CredentialRouteDeps } from "./routes/credentials.js";
+import type { EventRouteDeps } from "./routes/events.js";
+import type { OrderRouteDeps } from "./routes/orders.js";
+import type { CandleRouteDeps } from "./routes/candles.js";
+import type { AlertRouteDeps } from "./routes/alerts.js";
+import type { BacktestRouteDeps } from "./routes/backtest.js";
 import type { SseEvent } from "./routes/sse.js";
 import { errorHandlerPlugin } from "./lib/errors.js";
 import { healthRoute } from "./routes/health.js";
@@ -11,6 +16,11 @@ import { strategyRoutes } from "./routes/strategies.js";
 import { authRoutes } from "./routes/auth.js";
 import { killSwitchRoutes } from "./routes/kill-switch.js";
 import { credentialRoutes } from "./routes/credentials.js";
+import { eventRoutes } from "./routes/events.js";
+import { orderRoutes } from "./routes/orders.js";
+import { candleRoutes } from "./routes/candles.js";
+import { alertRoutes } from "./routes/alerts.js";
+import { backtestRoutes } from "./routes/backtest.js";
 import { sseRoutes } from "./routes/sse.js";
 
 export interface ApiServerDeps {
@@ -24,6 +34,11 @@ export interface ApiServerDeps {
 	) => Promise<{ id: string; username: string; passwordHash: string; role: string } | null>;
 	sseSubscribe: (listener: (event: SseEvent) => void) => () => void;
 	credentialDeps: CredentialRouteDeps;
+	eventDeps: EventRouteDeps;
+	orderDeps: OrderRouteDeps;
+	candleDeps: CandleRouteDeps;
+	alertDeps: AlertRouteDeps;
+	backtestDeps: BacktestRouteDeps;
 }
 
 /**
@@ -50,5 +65,10 @@ export function createApiServer(deps: ApiServerDeps) {
 		)
 		.use(killSwitchRoutes(deps.killSwitchDeps))
 		.use(credentialRoutes(deps.credentialDeps))
+		.use(eventRoutes(deps.eventDeps))
+		.use(orderRoutes(deps.orderDeps))
+		.use(candleRoutes(deps.candleDeps))
+		.use(alertRoutes(deps.alertDeps))
+		.use(backtestRoutes(deps.backtestDeps))
 		.use(sseRoutes({ subscribe: deps.sseSubscribe }));
 }

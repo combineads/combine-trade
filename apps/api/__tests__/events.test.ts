@@ -28,7 +28,7 @@ function createMockDeps(events: StrategyEvent[] = [makeEvent()]): EventRouteDeps
 	return {
 		findEventById: async (id: string) => events.find((e) => e.id === id) ?? null,
 		findEventsByStrategy: async (opts: EventQueryOptions) => {
-			let filtered = events.filter((e) => e.strategyId === opts.strategyId);
+			let filtered = events.filter((e) => e.strategyId === opts.id);
 			if (opts.symbol) filtered = filtered.filter((e) => e.symbol === opts.symbol);
 			if (opts.direction) filtered = filtered.filter((e) => e.direction === opts.direction);
 			const { dateFrom, dateTo } = opts;

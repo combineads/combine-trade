@@ -65,3 +65,17 @@ cd apps/web && bun run build
 - Multi-user registration
 - Password reset
 - Keychain integration (Tauri only)
+
+## Implementation Notes
+- Date: 2026-03-22
+- Files changed: packages/ui/src/views/auth/login-view.tsx, packages/ui/src/stores/auth-store.ts, apps/web/src/app/login/page.tsx, route group restructuring (app)/(auth)
+- Tests: 6 tests covering LoginView (form, error, loading) and AuthStore (init, login, logout)
+- Approach: Route groups separate auth pages (no sidebar) from app pages (with sidebar). Auth store uses vanilla pub/sub pattern (no zustand dependency yet). Login page wires to API with error handling.
+- Key decisions: Route group (app)/ for sidebar layout, (auth)/ for login without sidebar
+- Validation: 6/6 pass, typecheck clean, next build succeeds, full suite 1201 pass
+
+## Outputs
+- LoginView component (form with username/password, error, loading states)
+- AuthStore (createAuthStore with setUser/clearUser)
+- Login page wired to /api/v1/auth/login
+- Route group layout structure: (app)/ with sidebar, (auth)/ without

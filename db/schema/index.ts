@@ -16,3 +16,4 @@ export { paperPositions } from "./paper-positions.js";
 export { paperOrders } from "./paper-orders.js";
 export { killSwitchState, killSwitchEvents } from "./kill-switch.js";
 export { dailyLossLimits, dailyPnlTracking } from "./daily-loss-limits.js";
+export { economicEvents, newsItems } from "./macro.js";

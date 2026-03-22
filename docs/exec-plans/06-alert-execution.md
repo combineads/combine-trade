@@ -166,4 +166,5 @@ Until EP09 (risk management) is complete, the following hard caps apply:
 | 2026-03-21 | client_order_id 기반 중복 방지 | 네트워크 재시도 시 이중 주문 방지 |
 
 ## Progress notes
-- Pending implementation.
+- 2026-03-22: Tasks generated — T-043 (formatter), T-044 (mode service), T-045 (order builder), T-046 (alert handler), T-047 (integration).
+- 2026-03-22: M1 (formatter), M2 partial (alert handler), M3 partial (order builder), M5 (mode service) completed. 396 tests passing. Full workers and DB schemas deferred to future tasks.

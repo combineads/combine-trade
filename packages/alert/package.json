@@ -6,6 +6,7 @@
 	"main": "index.ts",
 	"types": "index.ts",
 	"dependencies": {
+		"@combine/core": "workspace:*",
 		"@combine/shared": "workspace:*"
 	}
 }

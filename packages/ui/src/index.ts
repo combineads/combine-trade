@@ -20,6 +20,9 @@ export { WorkerStatus, type WorkerStatusProps } from "./views/dashboard/worker-s
 export { StrategyListView, type StrategyListViewProps, type StrategyListItem } from "./views/strategies/strategy-list-view";
 export { StrategyCard, type StrategyCardProps } from "./views/strategies/strategy-card";
 export { ModeSelector, type ModeSelectorProps, type ExecutionMode } from "./views/strategies/mode-selector";
+export { StrategyEditorView, type StrategyEditorViewProps, type StrategyDetail } from "./views/strategies/strategy-editor-view";
+export { ConfigPanels, type ConfigPanelsProps, type StrategyConfig, type FeatureConfig, type SearchConfig, type ResultConfig, type DecisionConfig } from "./views/strategies/config-panels";
+export { StrategyStats, type StrategyStatsProps, type StrategyStatsData } from "./views/strategies/strategy-stats";
 
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

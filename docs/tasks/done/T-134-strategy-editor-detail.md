@@ -67,3 +67,33 @@ cd apps/web && bun run build
 - TypeScript autocomplete for Strategy API (future enhancement)
 - Backtest trigger from editor
 - TradingView chart overlay
+- Monaco wrapper component (deferred — requires @monaco-editor/react dependency and client-only dynamic import; SSR fallback renders code as <pre>)
+- Resizable split-pane drag handle (structural divider present, resize interaction deferred)
+
+## Implementation Plan
+- Create ConfigPanels with 6 accordion sections per §8
+- Create StrategyStats with 5 stat items
+- Create StrategyEditorView with split-pane layout (55/45), code SSR fallback, status bar
+- Create strategy detail page at apps/web /strategies/[id]
+- Export all new components from packages/ui barrel
+
+## Implementation Notes
+- Date: 2026-03-22
+- Files changed:
+  - `packages/ui/src/views/strategies/config-panels.tsx` (new)
+  - `packages/ui/src/views/strategies/strategy-stats.tsx` (new)
+  - `packages/ui/src/views/strategies/strategy-editor-view.tsx` (new)
+  - `packages/ui/__tests__/strategy-editor.test.tsx` (new)
+  - `packages/ui/src/index.ts` (updated — added editor exports)
+  - `apps/web/src/app/(app)/strategies/[id]/page.tsx` (new)
+- Tests written: 16 (ConfigPanels: 6, StrategyStats: 4, StrategyEditorView: 6)
+- Approach: TDD — tests first with SSR renderToString, then implementation. Monaco can't render in SSR so code displays as <pre> fallback.
+- Validation results: 16/16 tests pass, typecheck clean, Next.js build succeeds, 1227 total pass
+- Discovered work: Monaco wrapper component needs @monaco-editor/react + dynamic import (client-only). Deferred as separate enhancement.
+
+## Outputs
+- `StrategyEditorView` component — split-pane strategy editor with code display + config panels
+- `ConfigPanels` component — 6-section config display (basic, features, search, result, decision, mode)
+- `StrategyStats` component — 5-stat summary bar (winrate, expectancy, samples, events, avg hold)
+- `StrategyDetail` interface — canonical type for strategy detail data
+- `StrategyConfig` interface — nested config types (features, search, result, decision)

@@ -12,6 +12,7 @@ import type { CandleRouteDeps } from "./routes/candles.js";
 import type { AlertRouteDeps } from "./routes/alerts.js";
 import type { BacktestRouteDeps } from "./routes/backtest.js";
 import type { JournalRouteDeps } from "./routes/journals.js";
+import type { PaperRouteDeps } from "./routes/paper.js";
 import type { SseEvent } from "./routes/sse.js";
 import { UnauthorizedError, errorHandlerPlugin } from "./lib/errors.js";
 import { healthRoute } from "./routes/health.js";
@@ -25,6 +26,7 @@ import { candleRoutes } from "./routes/candles.js";
 import { alertRoutes } from "./routes/alerts.js";
 import { backtestRoutes } from "./routes/backtest.js";
 import { journalRoutes } from "./routes/journals.js";
+import { paperRoutes } from "./routes/paper.js";
 import { sseRoutes } from "./routes/sse.js";
 
 export interface ApiServerDeps {
@@ -44,6 +46,7 @@ export interface ApiServerDeps {
 	alertDeps: AlertRouteDeps;
 	backtestDeps: BacktestRouteDeps;
 	journalDeps: JournalRouteDeps;
+	paperDeps: PaperRouteDeps;
 }
 
 const PUBLIC_PATHS = [
@@ -110,5 +113,6 @@ export function createApiServer(deps: ApiServerDeps) {
 		.use(alertRoutes(deps.alertDeps))
 		.use(backtestRoutes(deps.backtestDeps))
 		.use(journalRoutes(deps.journalDeps))
+		.use(paperRoutes(deps.paperDeps))
 		.use(sseRoutes({ subscribe: deps.sseSubscribe }));
 }

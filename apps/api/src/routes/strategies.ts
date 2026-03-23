@@ -16,13 +16,17 @@ export function strategyRoutes(deps: StrategyRouteDeps) {
 
 	return new Elysia({ prefix: "/api/v1/strategies" })
 		.get("/", async () => {
-			const strategies = await deps.strategyRepository.findAll();
+			// TODO T-181: extract userId from session; placeholder until then
+			const userId = "placeholder-user-id";
+			const strategies = await deps.strategyRepository.findAll(userId);
 			return ok(strategies);
 		})
 		.get(
 			"/:id",
 			async ({ params }) => {
-				const strategy = await deps.strategyRepository.findById(params.id);
+				// TODO T-181: extract userId from session; placeholder until then
+				const userId = "placeholder-user-id";
+				const strategy = await deps.strategyRepository.findById(params.id, userId);
 				if (!strategy) throw new NotFoundError(`Strategy ${params.id} not found`);
 				return ok(strategy);
 			},
@@ -33,7 +37,9 @@ export function strategyRoutes(deps: StrategyRouteDeps) {
 		.post(
 			"/",
 			async ({ body }) => {
-				const strategy = await deps.strategyRepository.create(body);
+				// TODO T-181: extract userId from session; placeholder until then
+				const userId = "placeholder-user-id";
+				const strategy = await deps.strategyRepository.create(body, userId);
 				return ok(strategy);
 			},
 			{
@@ -72,9 +78,11 @@ export function strategyRoutes(deps: StrategyRouteDeps) {
 		.put(
 			"/:id",
 			async ({ params, body }) => {
-				const existing = await deps.strategyRepository.findById(params.id);
+				// TODO T-181: extract userId from session; placeholder until then
+				const userId = "placeholder-user-id";
+				const existing = await deps.strategyRepository.findById(params.id, userId);
 				if (!existing) throw new NotFoundError(`Strategy ${params.id} not found`);
-				const updated = await deps.strategyRepository.update(params.id, body);
+				const updated = await deps.strategyRepository.update(params.id, body, userId);
 				return ok(updated);
 			},
 			{
@@ -118,7 +126,9 @@ export function strategyRoutes(deps: StrategyRouteDeps) {
 		.put(
 			"/:id/mode",
 			async ({ params, body }) => {
-				const existing = await deps.strategyRepository.findById(params.id);
+				// TODO T-181: extract userId from session; placeholder until then
+				const userId = "placeholder-user-id";
+				const existing = await deps.strategyRepository.findById(params.id, userId);
 				if (!existing) throw new NotFoundError(`Strategy ${params.id} not found`);
 				try {
 					await modeService.setMode(params.id, body.mode);

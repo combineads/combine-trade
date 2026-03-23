@@ -43,11 +43,11 @@ function createMockDeps(): StrategyRouteDeps {
 	let currentMode: ExecutionMode = "analysis";
 
 	const strategyRepository = {
-		findAll: async () => [...strategies.values()],
-		findById: async (id: string) => strategies.get(id) ?? null,
+		findAll: async (_userId: string) => [...strategies.values()],
+		findById: async (id: string, _userId: string) => strategies.get(id) ?? null,
 		findByNameAndVersion: async () => null,
-		findActive: async () => [...strategies.values()],
-		create: async (input: CreateStrategyInput): Promise<Strategy> => {
+		findActive: async (_userId: string) => [...strategies.values()],
+		create: async (input: CreateStrategyInput, _userId: string): Promise<Strategy> => {
 			const s = makeStrategy({
 				id: "strat-new",
 				name: input.name,
@@ -57,7 +57,7 @@ function createMockDeps(): StrategyRouteDeps {
 			strategies.set(s.id, s);
 			return s;
 		},
-		update: async (id: string, input: UpdateStrategyInput): Promise<Strategy> => {
+		update: async (id: string, input: UpdateStrategyInput, _userId: string): Promise<Strategy> => {
 			const existing = strategies.get(id);
 			if (!existing) throw new Error(`Not found: ${id}`);
 			const updated = { ...existing, ...input, updatedAt: new Date() };
@@ -65,7 +65,7 @@ function createMockDeps(): StrategyRouteDeps {
 			return updated;
 		},
 		softDelete: async () => {},
-		createNewVersion: async (id: string) => makeStrategy({ id }),
+		createNewVersion: async (id: string, _input: UpdateStrategyInput, _userId: string) => makeStrategy({ id }),
 	};
 
 	const executionModeDeps: ExecutionModeDeps = {

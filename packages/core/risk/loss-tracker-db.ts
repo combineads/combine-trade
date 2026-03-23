@@ -10,9 +10,13 @@ export interface PnlRow {
 	updatedAt: Date;
 }
 
+/**
+ * Database query dependencies for loss-tracker operations.
+ * All read methods include a userId parameter to enforce row-level isolation.
+ */
 export interface LossTrackerDbDeps {
-	findByDateRange: (dateFrom: string, dateTo: string) => Promise<PnlRow[]>;
-	insertRecord: (row: PnlRow) => Promise<void>;
+	findByDateRange: (dateFrom: string, dateTo: string, userId: string) => Promise<PnlRow[]>;
+	insertRecord: (row: PnlRow & { userId: string }) => Promise<void>;
 }
 
 function getUtcDateString(date: Date): string {
@@ -36,23 +40,27 @@ function mapRowToRecord(row: PnlRow): PnlRecord {
 	};
 }
 
-export class LossTrackerDbService implements LossTrackerDeps {
+/**
+ * Loss-tracker DB service that enforces userId isolation.
+ * Callers must supply a userId so that PnL reads and writes are scoped per user.
+ */
+export class LossTrackerDbService {
 	constructor(private readonly deps: LossTrackerDbDeps) {}
 
-	async loadTodayRecords(): Promise<PnlRecord[]> {
+	async loadTodayRecords(userId: string): Promise<PnlRecord[]> {
 		const today = getUtcDateString(new Date());
-		const rows = await this.deps.findByDateRange(today, today);
+		const rows = await this.deps.findByDateRange(today, today, userId);
 		return rows.map(mapRowToRecord);
 	}
 
-	async loadWeekRecords(): Promise<PnlRecord[]> {
+	async loadWeekRecords(userId: string): Promise<PnlRecord[]> {
 		const today = getUtcDateString(new Date());
 		const weekStart = getWeekStartUtc(new Date());
-		const rows = await this.deps.findByDateRange(weekStart, today);
+		const rows = await this.deps.findByDateRange(weekStart, today, userId);
 		return rows.map(mapRowToRecord);
 	}
 
-	async saveRecord(record: PnlRecord): Promise<void> {
+	async saveRecord(record: PnlRecord, userId: string): Promise<void> {
 		await this.deps.insertRecord({
 			id: record.id,
 			date: getUtcDateString(record.closedAt),
@@ -60,6 +68,7 @@ export class LossTrackerDbService implements LossTrackerDeps {
 			symbol: null,
 			realizedPnl: record.pnl,
 			updatedAt: record.closedAt,
+			userId,
 		});
 	}
 }

@@ -3,33 +3,30 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoginView } from "@combine/ui/src/views/auth/login-view";
+import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
 	const router = useRouter();
 	const [error, setError] = useState<string>();
 	const [loading, setLoading] = useState(false);
 
-	async function handleSubmit(username: string, password: string) {
+	async function handleSubmit(email: string, password: string) {
 		setError(undefined);
 		setLoading(true);
 		try {
-			const res = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000"}/api/v1/auth/login`,
-				{
-					method: "POST",
-					credentials: "include",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ username, password }),
-				},
-			);
-			if (!res.ok) {
-				const body = await res.json().catch(() => ({}));
-				setError(body.message ?? "Login failed");
+			const result = await authClient.signIn.email({
+				email,
+				password,
+				callbackURL: "/dashboard",
+			});
+			if (result && typeof result === "object" && "error" in result && result.error) {
+				const err = result.error as { message?: string };
+				setError(err.message ?? "Login failed");
 				return;
 			}
 			router.push("/dashboard");
-		} catch {
-			setError("Network error");
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Network error");
 		} finally {
 			setLoading(false);
 		}

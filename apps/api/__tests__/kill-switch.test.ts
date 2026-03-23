@@ -66,6 +66,9 @@ function createApp(deps: KillSwitchRouteDeps) {
 	return new Elysia().use(errorHandlerPlugin).use(killSwitchRoutes(deps));
 }
 
+// The route uses "placeholder-user-id" until T-181 extracts it from session
+const PLACEHOLDER_USER_ID = "placeholder-user-id";
+
 describe("kill switch routes", () => {
 	test("POST /activate creates kill switch", async () => {
 		const deps = makeDeps();
@@ -86,7 +89,7 @@ describe("kill switch routes", () => {
 		expect(deps.activate).toHaveBeenCalledTimes(1);
 	});
 
-	test("POST /activate with strategy scope passes scopeTarget", async () => {
+	test("POST /activate with strategy scope passes scopeTarget and userId", async () => {
 		const deps = makeDeps();
 		const app = createApp(deps);
 
@@ -102,9 +105,10 @@ describe("kill switch routes", () => {
 		expect(call[0]).toBe("strategy");
 		expect(call[1]).toBe("strat-1");
 		expect(call[2]).toBe("loss_limit");
+		expect(call[3]).toBe(PLACEHOLDER_USER_ID);
 	});
 
-	test("POST /deactivate deactivates kill switch", async () => {
+	test("POST /deactivate deactivates kill switch with userId", async () => {
 		const deps = makeDeps();
 		const app = createApp(deps);
 
@@ -119,10 +123,10 @@ describe("kill switch routes", () => {
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.data.active).toBe(false);
-		expect(deps.deactivate).toHaveBeenCalledWith("ks-1");
+		expect(deps.deactivate).toHaveBeenCalledWith("ks-1", PLACEHOLDER_USER_ID);
 	});
 
-	test("GET /status returns active states", async () => {
+	test("GET /status returns active states with userId", async () => {
 		const deps = makeDeps();
 		const app = createApp(deps);
 
@@ -134,9 +138,10 @@ describe("kill switch routes", () => {
 		const body = await res.json();
 		expect(body.data).toHaveLength(1);
 		expect(body.data[0].scope).toBe("global");
+		expect(deps.getActiveStates).toHaveBeenCalledWith(PLACEHOLDER_USER_ID);
 	});
 
-	test("GET /events returns paginated audit events", async () => {
+	test("GET /events returns paginated audit events with userId", async () => {
 		const deps = makeDeps();
 		const app = createApp(deps);
 
@@ -148,6 +153,8 @@ describe("kill switch routes", () => {
 		const body = await res.json();
 		expect(body.data).toHaveLength(1);
 		expect(body.meta.total).toBe(1);
+		const call = (deps.getAuditEvents as ReturnType<typeof mock>).mock.calls[0];
+		expect(call[2]).toBe(PLACEHOLDER_USER_ID);
 	});
 
 	test("POST /deactivate with not-found returns error", async () => {

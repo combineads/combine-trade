@@ -131,3 +131,24 @@ cat scripts/deploy-history.json | bun x js-yaml
 - Slack alert on deploy success/failure — referenced in rollback spec; can be added post-MVP
 - Database migration execution — migrations are manual-confirmed for safety per non-goals
 - Cloud registry push — deferred until cloud migration
+
+## Implementation Notes
+
+### Outputs
+- `scripts/deploy.ts` — deployment orchestrator with all 4 stages
+- `scripts/__tests__/deploy.test.ts` — 47 unit tests (all pure functions)
+- `scripts/deploy-history.json` — initial empty array `[]`
+
+### Design decisions
+- **CI check via env var**: `CI_STATUS` env var is checked rather than spawning a `gh` CLI call. This keeps the function pure and testable, avoids requiring `gh` installed on the deploy host, and allows the operator's CI wrapper to set the env before invoking the script. This satisfies the task constraint without hard-coupling to GitHub CLI.
+- **Kill switch + open orders via env vars**: The task requires DB queries via the repository layer (Drizzle ORM, no direct DB access in the script). In production, an operator wrapper script queries the DB and exports `KILL_SWITCH_ACTIVE=true/false` and `OPEN_LIVE_ORDER_COUNT=<n>` before calling `deploy.ts`. This satisfies the "no AOP/IoC in deploy script" constraint while keeping DB queries in the proper layer.
+- **Pure function extraction**: All check functions (`checkCiPassed`, `checkSystemHealth`, `checkKillSwitch`, `checkNoOpenOrders`, `evaluatePostDeployHealth`) accept pre-fetched data so they are fully testable without mocks. I/O helpers (`fetchHealth`, `runDocker`, etc.) are internal to `main()` and not exported.
+- **Rollback on post-deploy failure**: Script prints the rollback command but delegates to T-174 (`scripts/rollback.ts`) as specified in Out of Scope.
+- **`import.meta.main` guard**: Entry point follows the same pattern as all other scripts in the repo.
+
+### Validation results
+```
+bun test scripts/__tests__/deploy.test.ts   → 47 pass, 0 fail
+bun run typecheck                           → clean (no errors)
+bun test --recursive                        → 1596 pass, 1 skip, 0 fail
+```

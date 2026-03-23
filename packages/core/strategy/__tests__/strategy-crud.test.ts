@@ -3,6 +3,8 @@ import type { StrategyRepository } from "../repository.js";
 import { StrategyCrudService } from "../service.js";
 import type { CreateStrategyInput, Strategy, UpdateStrategyInput } from "../types.js";
 
+const USER_ID = "user-test-uuid";
+
 function makeStrategy(overrides: Partial<Strategy> = {}): Strategy {
 	return {
 		id: "test-uuid-1",
@@ -38,7 +40,7 @@ function createMockRepository(): StrategyRepository & {
 
 	return {
 		strategies,
-		async create(input: CreateStrategyInput): Promise<Strategy> {
+		async create(input: CreateStrategyInput, _userId: string): Promise<Strategy> {
 			counter++;
 			const strategy = makeStrategy({
 				id: `uuid-${counter}`,
@@ -51,31 +53,31 @@ function createMockRepository(): StrategyRepository & {
 			strategies.push(strategy);
 			return strategy;
 		},
-		async findById(id: string): Promise<Strategy | null> {
+		async findById(id: string, _userId: string): Promise<Strategy | null> {
 			return strategies.find((s) => s.id === id && !s.deletedAt) ?? null;
 		},
-		async findByNameAndVersion(name: string, version: number): Promise<Strategy | null> {
+		async findByNameAndVersion(name: string, version: number, _userId: string): Promise<Strategy | null> {
 			return (
 				strategies.find((s) => s.name === name && s.version === version && !s.deletedAt) ?? null
 			);
 		},
-		async findActive(): Promise<Strategy[]> {
+		async findActive(_userId: string): Promise<Strategy[]> {
 			return strategies.filter((s) => s.status === "active" && !s.deletedAt);
 		},
-		async findAll(): Promise<Strategy[]> {
+		async findAll(_userId: string): Promise<Strategy[]> {
 			return strategies.filter((s) => !s.deletedAt);
 		},
-		async update(id: string, input: UpdateStrategyInput): Promise<Strategy> {
+		async update(id: string, input: UpdateStrategyInput, _userId: string): Promise<Strategy> {
 			const idx = strategies.findIndex((s) => s.id === id);
 			if (idx === -1) throw new Error("Not found");
 			Object.assign(strategies[idx]!, input, { updatedAt: new Date() });
 			return strategies[idx]!;
 		},
-		async softDelete(id: string): Promise<void> {
+		async softDelete(id: string, _userId: string): Promise<void> {
 			const strategy = strategies.find((s) => s.id === id);
 			if (strategy) strategy.deletedAt = new Date();
 		},
-		async createNewVersion(id: string, input: UpdateStrategyInput): Promise<Strategy> {
+		async createNewVersion(id: string, input: UpdateStrategyInput, _userId: string): Promise<Strategy> {
 			const existing = strategies.find((s) => s.id === id);
 			if (!existing) throw new Error("Not found");
 			counter++;
@@ -114,7 +116,7 @@ describe("StrategyCrudService", () => {
 		const repo = createMockRepository();
 		const service = new StrategyCrudService(repo);
 
-		const strategy = await service.create(validInput);
+		const strategy = await service.create(validInput, USER_ID);
 		expect(strategy.name).toBe("SMA Cross");
 		expect(strategy.featuresDefinition.length).toBe(1);
 		expect(strategy.status).toBe("draft");
@@ -124,7 +126,7 @@ describe("StrategyCrudService", () => {
 		const repo = createMockRepository();
 		const service = new StrategyCrudService(repo);
 
-		await expect(service.create({ ...validInput, featuresDefinition: [] })).rejects.toThrow(
+		await expect(service.create({ ...validInput, featuresDefinition: [] }, USER_ID)).rejects.toThrow(
 			"At least one feature definition is required",
 		);
 	});
@@ -139,7 +141,7 @@ describe("StrategyCrudService", () => {
 				featuresDefinition: [
 					{ name: "", expression: "close", normalization: { method: "minmax" } },
 				],
-			}),
+			}, USER_ID),
 		).rejects.toThrow("Feature must have name and expression");
 	});
 
@@ -147,8 +149,8 @@ describe("StrategyCrudService", () => {
 		const repo = createMockRepository();
 		const service = new StrategyCrudService(repo);
 
-		const created = await service.create(validInput);
-		const found = await service.findById(created.id);
+		const created = await service.create(validInput, USER_ID);
+		const found = await service.findById(created.id, USER_ID);
 		expect(found).not.toBeNull();
 		expect(found!.name).toBe("SMA Cross");
 	});
@@ -157,9 +159,9 @@ describe("StrategyCrudService", () => {
 		const repo = createMockRepository();
 		const service = new StrategyCrudService(repo);
 
-		await service.create(validInput);
+		await service.create(validInput, USER_ID);
 		// Default status is draft, not active
-		const active = await service.findActive();
+		const active = await service.findActive(USER_ID);
 		expect(active.length).toBe(0);
 	});
 
@@ -167,8 +169,8 @@ describe("StrategyCrudService", () => {
 		const repo = createMockRepository();
 		const service = new StrategyCrudService(repo);
 
-		const created = await service.create(validInput);
-		const updated = await service.update(created.id, { name: "Updated Cross" });
+		const created = await service.create(validInput, USER_ID);
+		const updated = await service.update(created.id, { name: "Updated Cross" }, USER_ID);
 		expect(updated.name).toBe("Updated Cross");
 	});
 
@@ -176,14 +178,14 @@ describe("StrategyCrudService", () => {
 		const repo = createMockRepository();
 		const service = new StrategyCrudService(repo);
 
-		const v1 = await service.create(validInput);
-		const v2 = await service.createNewVersion(v1.id, { name: "SMA Cross V2" });
+		const v1 = await service.create(validInput, USER_ID);
+		const v2 = await service.createNewVersion(v1.id, { name: "SMA Cross V2" }, USER_ID);
 
 		expect(v2.version).toBe(2);
 		expect(v2.name).toBe("SMA Cross V2");
 
 		// v1 still exists
-		const allStrategies = await service.findAll();
+		const allStrategies = await service.findAll(USER_ID);
 		expect(allStrategies.length).toBe(2);
 	});
 
@@ -191,10 +193,10 @@ describe("StrategyCrudService", () => {
 		const repo = createMockRepository();
 		const service = new StrategyCrudService(repo);
 
-		const created = await service.create(validInput);
-		await service.softDelete(created.id);
+		const created = await service.create(validInput, USER_ID);
+		await service.softDelete(created.id, USER_ID);
 
-		const found = await service.findById(created.id);
+		const found = await service.findById(created.id, USER_ID);
 		expect(found).toBeNull();
 	});
 
@@ -202,8 +204,8 @@ describe("StrategyCrudService", () => {
 		const repo = createMockRepository();
 		const service = new StrategyCrudService(repo);
 
-		const created = await service.create(validInput);
-		await expect(service.update(created.id, { featuresDefinition: [] })).rejects.toThrow(
+		const created = await service.create(validInput, USER_ID);
+		await expect(service.update(created.id, { featuresDefinition: [] }, USER_ID)).rejects.toThrow(
 			"At least one feature definition is required",
 		);
 	});

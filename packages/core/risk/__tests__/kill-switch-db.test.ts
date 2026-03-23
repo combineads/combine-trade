@@ -8,6 +8,7 @@ import {
 import type { KillSwitchState } from "../types.js";
 
 const NOW = new Date("2026-03-22T12:00:00Z");
+const USER_ID = "user-test-uuid";
 
 function makeRow(overrides: Partial<KillSwitchRow> = {}): KillSwitchRow {
 	return {
@@ -34,7 +35,7 @@ function makeDeps(overrides: Partial<KillSwitchDbDeps> = {}): KillSwitchDbDeps {
 }
 
 describe("KillSwitchDbService", () => {
-	test("loadActiveStates returns mapped states", async () => {
+	test("loadActiveStates passes userId and returns mapped states", async () => {
 		const deps = makeDeps({
 			findActiveStates: mock(() =>
 				Promise.resolve([
@@ -45,7 +46,7 @@ describe("KillSwitchDbService", () => {
 		});
 		const svc = new KillSwitchDbService(deps);
 
-		const states = await svc.loadActiveStates();
+		const states = await svc.loadActiveStates(USER_ID);
 		expect(states).toHaveLength(2);
 		expect(states[0].id).toBe("ks-1");
 		expect(states[0].scope).toBe("global");
@@ -53,6 +54,7 @@ describe("KillSwitchDbService", () => {
 		expect(states[1].id).toBe("ks-2");
 		expect(states[1].scope).toBe("strategy");
 		expect(states[1].scopeTarget).toBe("strat-1");
+		expect(deps.findActiveStates).toHaveBeenCalledWith(USER_ID);
 	});
 
 	test("loadActiveStates returns empty array when none active", async () => {
@@ -61,11 +63,11 @@ describe("KillSwitchDbService", () => {
 		});
 		const svc = new KillSwitchDbService(deps);
 
-		const states = await svc.loadActiveStates();
+		const states = await svc.loadActiveStates(USER_ID);
 		expect(states).toHaveLength(0);
 	});
 
-	test("saveState activating creates state and audit event", async () => {
+	test("saveState activating creates state and audit event with userId", async () => {
 		const deps = makeDeps();
 		const svc = new KillSwitchDbService(deps);
 
@@ -80,15 +82,21 @@ describe("KillSwitchDbService", () => {
 			acknowledgedAt: null,
 		};
 
-		await svc.saveState(state);
+		await svc.saveState(state, USER_ID);
 		expect(deps.upsertState).toHaveBeenCalledTimes(1);
 		expect(deps.insertAuditEvent).toHaveBeenCalledTimes(1);
 
+		// Verify userId is passed to upsertState
+		const upsertCall = (deps.upsertState as ReturnType<typeof mock>).mock.calls[0];
+		const upsertRow = upsertCall[0] as { userId: string };
+		expect(upsertRow.userId).toBe(USER_ID);
+
 		const auditCall = (deps.insertAuditEvent as ReturnType<typeof mock>).mock.calls[0];
-		const audit = auditCall[0] as KillSwitchEventRow;
+		const audit = auditCall[0] as KillSwitchEventRow & { userId: string };
 		expect(audit.scope).toBe("global");
 		expect(audit.triggerType).toBe("manual");
 		expect(audit.triggeredAt).toBe(NOW);
+		expect(audit.userId).toBe(USER_ID);
 	});
 
 	test("saveState deactivating updates state and audit deactivation", async () => {
@@ -106,7 +114,7 @@ describe("KillSwitchDbService", () => {
 			acknowledgedAt: null,
 		};
 
-		await svc.saveState(state);
+		await svc.saveState(state, USER_ID);
 		expect(deps.upsertState).toHaveBeenCalledTimes(1);
 		expect(deps.updateAuditEventDeactivation).toHaveBeenCalledTimes(1);
 		// Should NOT insert a new audit event for deactivation
@@ -121,7 +129,7 @@ describe("KillSwitchDbService", () => {
 		});
 		const svc = new KillSwitchDbService(deps);
 
-		const [state] = await svc.loadActiveStates();
+		const [state] = await svc.loadActiveStates(USER_ID);
 		expect(state.scope).toBe("global");
 		expect(state.scopeTarget).toBeNull();
 	});
@@ -134,7 +142,7 @@ describe("KillSwitchDbService", () => {
 		});
 		const svc = new KillSwitchDbService(deps);
 
-		const [state] = await svc.loadActiveStates();
+		const [state] = await svc.loadActiveStates(USER_ID);
 		expect(state.scope).toBe("strategy");
 		expect(state.scopeTarget).toBe("strat-42");
 	});
@@ -147,7 +155,7 @@ describe("KillSwitchDbService", () => {
 		});
 		const svc = new KillSwitchDbService(deps);
 
-		const [state] = await svc.loadActiveStates();
+		const [state] = await svc.loadActiveStates(USER_ID);
 		expect(state.triggeredBy).toBe("api_error");
 	});
 });

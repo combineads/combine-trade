@@ -35,15 +35,16 @@ export interface StrategyRow {
 /**
  * Database query dependencies for strategy operations.
  * Concrete Drizzle queries are injected, keeping the repository testable.
+ * All methods include a userId parameter to enforce row-level isolation.
  */
 export interface StrategyDbDeps {
-	findAll: () => Promise<StrategyRow[]>;
-	findById: (id: string) => Promise<StrategyRow | null>;
-	findByNameAndVersion: (name: string, version: number) => Promise<StrategyRow | null>;
-	findActive: () => Promise<StrategyRow[]>;
-	create: (input: CreateStrategyInput) => Promise<StrategyRow>;
-	update: (id: string, input: UpdateStrategyInput) => Promise<StrategyRow>;
-	softDelete: (id: string) => Promise<void>;
+	findAll: (userId: string) => Promise<StrategyRow[]>;
+	findById: (id: string, userId: string) => Promise<StrategyRow | null>;
+	findByNameAndVersion: (name: string, version: number, userId: string) => Promise<StrategyRow | null>;
+	findActive: (userId: string) => Promise<StrategyRow[]>;
+	create: (input: CreateStrategyInput, userId: string) => Promise<StrategyRow>;
+	update: (id: string, input: UpdateStrategyInput, userId: string) => Promise<StrategyRow>;
+	softDelete: (id: string, userId: string) => Promise<void>;
 }
 
 function mapRowToStrategy(row: StrategyRow): Strategy {
@@ -73,42 +74,42 @@ function mapRowToStrategy(row: StrategyRow): Strategy {
 export class DrizzleStrategyRepository implements StrategyRepository {
 	constructor(private readonly deps: StrategyDbDeps) {}
 
-	async findAll(): Promise<Strategy[]> {
-		const rows = await this.deps.findAll();
+	async findAll(userId: string): Promise<Strategy[]> {
+		const rows = await this.deps.findAll(userId);
 		return rows.map(mapRowToStrategy);
 	}
 
-	async findById(id: string): Promise<Strategy | null> {
-		const row = await this.deps.findById(id);
+	async findById(id: string, userId: string): Promise<Strategy | null> {
+		const row = await this.deps.findById(id, userId);
 		return row ? mapRowToStrategy(row) : null;
 	}
 
-	async findByNameAndVersion(name: string, version: number): Promise<Strategy | null> {
-		const row = await this.deps.findByNameAndVersion(name, version);
+	async findByNameAndVersion(name: string, version: number, userId: string): Promise<Strategy | null> {
+		const row = await this.deps.findByNameAndVersion(name, version, userId);
 		return row ? mapRowToStrategy(row) : null;
 	}
 
-	async findActive(): Promise<Strategy[]> {
-		const rows = await this.deps.findActive();
+	async findActive(userId: string): Promise<Strategy[]> {
+		const rows = await this.deps.findActive(userId);
 		return rows.map(mapRowToStrategy);
 	}
 
-	async create(input: CreateStrategyInput): Promise<Strategy> {
-		const row = await this.deps.create(input);
+	async create(input: CreateStrategyInput, userId: string): Promise<Strategy> {
+		const row = await this.deps.create(input, userId);
 		return mapRowToStrategy(row);
 	}
 
-	async update(id: string, input: UpdateStrategyInput): Promise<Strategy> {
-		const row = await this.deps.update(id, input);
+	async update(id: string, input: UpdateStrategyInput, userId: string): Promise<Strategy> {
+		const row = await this.deps.update(id, input, userId);
 		return mapRowToStrategy(row);
 	}
 
-	async softDelete(id: string): Promise<void> {
-		await this.deps.softDelete(id);
+	async softDelete(id: string, userId: string): Promise<void> {
+		await this.deps.softDelete(id, userId);
 	}
 
-	async createNewVersion(id: string, input: UpdateStrategyInput): Promise<Strategy> {
-		const existing = await this.deps.findById(id);
+	async createNewVersion(id: string, input: UpdateStrategyInput, userId: string): Promise<Strategy> {
+		const existing = await this.deps.findById(id, userId);
 		if (!existing) {
 			throw new Error(`Strategy ${id} not found`);
 		}
@@ -133,7 +134,7 @@ export class DrizzleStrategyRepository implements StrategyRepository {
 
 		// The deps.create implementation should handle version incrementing
 		// by setting version = existing.version + 1
-		const row = await this.deps.create(createInput);
+		const row = await this.deps.create(createInput, userId);
 		return mapRowToStrategy(row);
 	}
 }

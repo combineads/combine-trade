@@ -11,17 +11,24 @@ export interface KillSwitchAuditEvent {
 	deactivatedAt: Date | null;
 }
 
+/**
+ * Route dependency interface for kill-switch operations.
+ * All methods require a userId parameter to enforce per-user isolation.
+ * The route layer is responsible for extracting userId from the session (T-181).
+ */
 export interface KillSwitchRouteDeps {
 	activate: (
 		scope: KillSwitchScope,
 		scopeTarget: string | null,
 		trigger: KillSwitchTrigger,
+		userId: string,
 	) => Promise<KillSwitchState>;
-	deactivate: (id: string) => Promise<KillSwitchState>;
-	getActiveStates: () => Promise<KillSwitchState[]>;
+	deactivate: (id: string, userId: string) => Promise<KillSwitchState>;
+	getActiveStates: (userId: string) => Promise<KillSwitchState[]>;
 	getAuditEvents: (
 		page: number,
 		pageSize: number,
+		userId: string,
 	) => Promise<{ items: KillSwitchAuditEvent[]; total: number }>;
 }
 
@@ -30,10 +37,13 @@ export function killSwitchRoutes(deps: KillSwitchRouteDeps) {
 		.post(
 			"/activate",
 			async ({ body }) => {
+				// TODO T-181: extract userId from session; placeholder until then
+				const userId = "placeholder-user-id";
 				const state = await deps.activate(
 					body.scope,
 					body.scopeTarget ?? null,
 					body.trigger,
+					userId,
 				);
 				return ok(state);
 			},
@@ -57,7 +67,9 @@ export function killSwitchRoutes(deps: KillSwitchRouteDeps) {
 		.post(
 			"/deactivate",
 			async ({ body }) => {
-				const state = await deps.deactivate(body.id);
+				// TODO T-181: extract userId from session; placeholder until then
+				const userId = "placeholder-user-id";
+				const state = await deps.deactivate(body.id, userId);
 				return ok(state);
 			},
 			{
@@ -67,15 +79,19 @@ export function killSwitchRoutes(deps: KillSwitchRouteDeps) {
 			},
 		)
 		.get("/status", async () => {
-			const states = await deps.getActiveStates();
+			// TODO T-181: extract userId from session; placeholder until then
+			const userId = "placeholder-user-id";
+			const states = await deps.getActiveStates(userId);
 			return ok(states);
 		})
 		.get(
 			"/events",
 			async ({ query }) => {
+				// TODO T-181: extract userId from session; placeholder until then
+				const userId = "placeholder-user-id";
 				const page = query.page ?? 1;
 				const pageSize = Math.min(query.pageSize ?? 20, 100);
-				const result = await deps.getAuditEvents(page, pageSize);
+				const result = await deps.getAuditEvents(page, pageSize, userId);
 				return paginated(result.items, result.total, page, pageSize);
 			},
 			{

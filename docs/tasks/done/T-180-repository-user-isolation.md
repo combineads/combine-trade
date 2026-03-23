@@ -116,3 +116,45 @@ bun test --filter "repository|user-isolation|strategy-repo|kill-switch-repo"
 - Extracting `userId` from the HTTP session in route handlers — T-181
 - DB schema changes — T-179
 - SSE authentication — T-183
+
+## Implementation Notes
+
+### TDD Cycle
+- **RED**: Wrote new test files `packages/core/strategy/__tests__/user-isolation.test.ts`, `packages/core/risk/__tests__/user-isolation.test.ts`, and `apps/api/__tests__/route-user-isolation.test.ts` that exercise the updated interface signatures with in-memory isolated mock repositories.
+- **GREEN**: Updated all interfaces and implementations so tests pass.
+- **REFACTOR**: Cross-user isolation tests confirm `findById(id, wrongUserId) → null`, `softDelete(id, wrongUserId)` is a no-op, `update(id, input, wrongUserId)` throws, `findAll(userId)` scopes to the calling user.
+
+### Files Changed
+
+**Interface updates:**
+- `packages/core/strategy/repository.ts` — all 8 methods now require `userId: string`
+- `packages/core/strategy/drizzle-repository.ts` — `StrategyDbDeps` and `DrizzleStrategyRepository` updated; all methods accept and forward `userId`
+- `packages/core/strategy/service.ts` — `StrategyCrudService` methods updated to accept and pass `userId`
+- `packages/core/risk/kill-switch-db.ts` — `KillSwitchDbDeps` and `KillSwitchDbService` updated; `findActiveStates`, `upsertState`, `insertAuditEvent` now require `userId`
+- `packages/core/risk/loss-tracker-db.ts` — `LossTrackerDbDeps` and `LossTrackerDbService` updated; `findByDateRange` and `insertRecord` now require `userId`
+- `apps/api/src/routes/kill-switch.ts` — `KillSwitchRouteDeps` methods now require `userId`; route handlers pass placeholder `"placeholder-user-id"` (TODO T-181)
+- `apps/api/src/routes/orders.ts` — `OrderQueryOptions` now includes `userId: string`; route handler passes placeholder (TODO T-181)
+- `apps/api/src/routes/strategies.ts` — all repository calls now pass placeholder `userId` (TODO T-181)
+
+**Test updates:**
+- `packages/core/strategy/__tests__/drizzle-repository.test.ts` — all calls pass `USER_ID`; assertions verify `userId` is forwarded
+- `packages/core/strategy/__tests__/strategy-crud.test.ts` — all service calls pass `USER_ID`
+- `packages/core/risk/__tests__/kill-switch-db.test.ts` — all calls pass `USER_ID`; asserts `userId` in upsertState and insertAuditEvent args
+- `packages/core/risk/__tests__/loss-tracker-db.test.ts` — all calls pass `USER_ID`; asserts `userId` in insertRecord
+- `apps/api/__tests__/kill-switch.test.ts` — asserts placeholder userId is forwarded correctly
+- `apps/api/__tests__/strategies.test.ts` — mock repository accepts `_userId` parameter
+
+**New test files:**
+- `packages/core/strategy/__tests__/user-isolation.test.ts` — 8 tests covering full isolation behavior
+- `packages/core/risk/__tests__/user-isolation.test.ts` — 2 tests for KillSwitchDbDeps and LossTrackerDbDeps isolation
+- `apps/api/__tests__/route-user-isolation.test.ts` — 4 tests for KillSwitchRouteDeps and OrderRouteDeps isolation
+
+### Architecture Note
+The domain-layer interfaces `KillSwitchDeps` (kill-switch.ts) and `LossTrackerDeps` (loss-tracker.ts) are **not changed** — they are used by pure domain functions (`activate`, `deactivate`, `checkLimits`) that receive already-user-scoped data from the caller. `KillSwitchDbService` no longer implements `KillSwitchDeps`; the route layer (T-181) will create user-scoped closures at request time.
+
+### Route Placeholder Pattern
+Per task scope ("Out of Scope: Extracting userId from session — T-181"), all route handlers use `const userId = "placeholder-user-id"` marked with `// TODO T-181` comments.
+
+## Outputs
+- 1596 tests pass, 0 fail (full suite)
+- `bun run typecheck` passes with zero errors

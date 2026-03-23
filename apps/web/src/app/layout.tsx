@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { ThemeProvider, AuthProvider } from "@combine/ui";
+import { ThemeProvider } from "@combine/ui";
+import { AuthProviderWrapper } from "@/components/auth-provider-wrapper";
 import "./globals.css";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3100";
 
 export const metadata: Metadata = {
 	title: "Combine Trade",
@@ -25,9 +24,9 @@ export default function RootLayout({
 				}}
 			>
 				<ThemeProvider defaultTheme="dark">
-					<AuthProvider apiBaseUrl={API_BASE_URL}>
+					<AuthProviderWrapper>
 						{children}
-					</AuthProvider>
+					</AuthProviderWrapper>
 				</ThemeProvider>
 			</body>
 		</html>

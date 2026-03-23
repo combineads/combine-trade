@@ -17,6 +17,7 @@ export interface Order {
 }
 
 export interface OrderQueryOptions {
+	userId: string;
 	symbol?: string;
 	status?: string;
 	strategyId?: string;
@@ -24,6 +25,11 @@ export interface OrderQueryOptions {
 	pageSize: number;
 }
 
+/**
+ * Route dependency interface for order operations.
+ * userId is part of OrderQueryOptions to enforce per-user isolation.
+ * The route layer is responsible for extracting userId from the session (T-181).
+ */
 export interface OrderRouteDeps {
 	findOrders: (opts: OrderQueryOptions) => Promise<{ items: Order[]; total: number }>;
 }
@@ -32,10 +38,13 @@ export function orderRoutes(deps: OrderRouteDeps) {
 	return new Elysia().get(
 		"/api/v1/orders",
 		async ({ query }) => {
+			// TODO T-181: extract userId from session; placeholder until then
+			const userId = "placeholder-user-id";
 			const pageSize = Math.min(query.pageSize ?? 50, MAX_PAGE_SIZE);
 			const page = query.page ?? 1;
 
 			const result = await deps.findOrders({
+				userId,
 				symbol: query.symbol,
 				status: query.status,
 				strategyId: query.strategyId,

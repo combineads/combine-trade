@@ -102,6 +102,7 @@ export { AuthProvider, AuthContext, initialAuthState, type AuthUser, type AuthSt
 export { useAuth } from "./auth/use-auth";
 export { ProtectedRoute, shouldRedirect, shouldRenderChildren, shouldRenderNothing, type ProtectedRouteProps } from "./auth/protected-route";
 export { createAuthApiClient, type AuthApiClientOptions, type AuthApiClient } from "./auth/auth-api-client";
+export { createBetterAuthClient, type BetterAuthClientOptions, type BetterAuthClientInstance } from "./auth/better-auth-client";
 
 // API Client
 export { createApiClient, buildQueryString, apiPaths, type ApiClient, type ApiClientConfig, type ApiError, type PaginatedResponse } from "./lib/api-client";

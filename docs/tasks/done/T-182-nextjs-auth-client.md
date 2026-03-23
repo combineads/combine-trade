@@ -140,3 +140,36 @@ bun test --filter "auth-client|login|useAuth"
 - Keychain session persistence — Tauri-specific
 - OAuth / social login
 - 2FA
+
+## Implementation Notes
+
+**Approach taken:**
+
+- `packages/ui/src/auth/better-auth-client.ts` — thin factory wrapper around `better-auth/react`'s `createAuthClient`. Exposes `BetterAuthClientInstance` interface with `signIn`, `signOut`, `useSession`, `getSession`. Keeps `packages/ui` independent of `apps/web` env vars.
+- `apps/web/src/lib/auth-client.ts` — creates the singleton `authClient` instance bound to `NEXT_PUBLIC_API_URL ?? http://localhost:3100`.
+- `apps/web/src/app/(auth)/login/page.tsx` — updated to use `authClient.signIn.email()` instead of raw fetch.
+- `apps/web/src/middleware.ts` — new Next.js middleware that redirects unauthenticated requests to `/login`. Cookie name `combine-trade.session_token` matches `cookiePrefix = "combine-trade"` in `better-auth.ts`.
+- `apps/web/src/components/auth-provider-wrapper.tsx` — client component that binds `authClient` to `AuthProvider` (root layout is a Server Component and cannot import hooks directly).
+- `apps/web/src/app/layout.tsx` — updated to use `AuthProviderWrapper` instead of direct `AuthProvider`.
+- `packages/ui/src/auth/auth-context.tsx` — refactored to use composition pattern: `BetterAuthProvider` (calls `useSession` unconditionally, React-hooks-correct) and `LegacyAuthProvider` (legacy fetch path). Public `AuthProvider` selects between them based on the `authClient` prop.
+- `packages/ui/src/index.ts` — exports `createBetterAuthClient`, `BetterAuthClientOptions`, `BetterAuthClientInstance`.
+
+**Deviations from task spec:**
+- Task spec used `@better-auth/react` import path but the installed package exposes it at `better-auth/react` — used the correct path.
+- Task spec suggested updating `packages/ui/hooks/useAuth.ts` but the file is at `packages/ui/src/auth/use-auth.ts` and was not changed — it reads from `AuthContext` which is now backed by better-auth when `authClient` is passed, so no change needed.
+- `LoginView` already existed at `packages/ui/src/views/auth/login-view.tsx` with email/password fields and was not replaced — it accepts `onSubmit` which the login page wraps to call `authClient.signIn.email()`.
+
+**Test results:**
+- `bun test packages/ui/__tests__/auth-client-better.test.ts` — 7/7 pass
+- `bun run typecheck` — 0 errors
+
+## Outputs
+- `packages/ui/src/auth/better-auth-client.ts` (new)
+- `packages/ui/__tests__/auth-client-better.test.ts` (new)
+- `apps/web/src/lib/auth-client.ts` (new)
+- `apps/web/src/middleware.ts` (new)
+- `apps/web/src/components/auth-provider-wrapper.tsx` (new)
+- `apps/web/src/app/(auth)/login/page.tsx` (updated)
+- `apps/web/src/app/layout.tsx` (updated)
+- `packages/ui/src/auth/auth-context.tsx` (updated)
+- `packages/ui/src/index.ts` (updated)

@@ -7,6 +7,7 @@ import {
 import type { Strategy, CreateStrategyInput } from "../types.js";
 
 const NOW = new Date("2026-03-22T12:00:00Z");
+const USER_ID = "user-test-uuid";
 
 function makeRow(overrides: Partial<StrategyRow> = {}): StrategyRow {
 	return {
@@ -51,22 +52,23 @@ describe("DrizzleStrategyRepository", () => {
 		const deps = makeDeps();
 		const repo = new DrizzleStrategyRepository(deps);
 
-		const result = await repo.findAll();
+		const result = await repo.findAll(USER_ID);
 		expect(result).toHaveLength(1);
 		expect(result[0].id).toBe("strat-1");
 		expect(result[0].name).toBe("Double BB");
 		expect(result[0].symbols).toEqual(["BTCUSDT"]);
 		expect(deps.findAll).toHaveBeenCalledTimes(1);
+		expect(deps.findAll).toHaveBeenCalledWith(USER_ID);
 	});
 
 	test("findById returns mapped strategy", async () => {
 		const deps = makeDeps();
 		const repo = new DrizzleStrategyRepository(deps);
 
-		const result = await repo.findById("strat-1");
+		const result = await repo.findById("strat-1", USER_ID);
 		expect(result).not.toBeNull();
 		expect(result!.id).toBe("strat-1");
-		expect(deps.findById).toHaveBeenCalledWith("strat-1");
+		expect(deps.findById).toHaveBeenCalledWith("strat-1", USER_ID);
 	});
 
 	test("findById returns null when not found", async () => {
@@ -75,7 +77,7 @@ describe("DrizzleStrategyRepository", () => {
 		});
 		const repo = new DrizzleStrategyRepository(deps);
 
-		const result = await repo.findById("nonexistent");
+		const result = await repo.findById("nonexistent", USER_ID);
 		expect(result).toBeNull();
 	});
 
@@ -83,8 +85,8 @@ describe("DrizzleStrategyRepository", () => {
 		const deps = makeDeps();
 		const repo = new DrizzleStrategyRepository(deps);
 
-		await repo.findByNameAndVersion("Double BB", 1);
-		expect(deps.findByNameAndVersion).toHaveBeenCalledWith("Double BB", 1);
+		await repo.findByNameAndVersion("Double BB", 1, USER_ID);
+		expect(deps.findByNameAndVersion).toHaveBeenCalledWith("Double BB", 1, USER_ID);
 	});
 
 	test("findActive returns only active strategies", async () => {
@@ -98,11 +100,12 @@ describe("DrizzleStrategyRepository", () => {
 		});
 		const repo = new DrizzleStrategyRepository(deps);
 
-		const result = await repo.findActive();
+		const result = await repo.findActive(USER_ID);
 		expect(result).toHaveLength(2);
+		expect(deps.findActive).toHaveBeenCalledWith(USER_ID);
 	});
 
-	test("create passes input and returns mapped result", async () => {
+	test("create passes input and userId, returns mapped result", async () => {
 		const input: CreateStrategyInput = {
 			name: "New Strategy",
 			code: "export default {}",
@@ -125,27 +128,27 @@ describe("DrizzleStrategyRepository", () => {
 		});
 		const repo = new DrizzleStrategyRepository(deps);
 
-		const result = await repo.create(input);
+		const result = await repo.create(input, USER_ID);
 		expect(result.id).toBe("strat-new");
 		expect(result.name).toBe("New Strategy");
-		expect(deps.create).toHaveBeenCalledWith(input);
+		expect(deps.create).toHaveBeenCalledWith(input, USER_ID);
 	});
 
-	test("update passes id and input", async () => {
+	test("update passes id, input, and userId", async () => {
 		const deps = makeDeps();
 		const repo = new DrizzleStrategyRepository(deps);
 
-		const result = await repo.update("strat-1", { name: "Updated" });
-		expect(deps.update).toHaveBeenCalledWith("strat-1", { name: "Updated" });
+		const result = await repo.update("strat-1", { name: "Updated" }, USER_ID);
+		expect(deps.update).toHaveBeenCalledWith("strat-1", { name: "Updated" }, USER_ID);
 		expect(result).not.toBeNull();
 	});
 
-	test("softDelete delegates to deps", async () => {
+	test("softDelete delegates to deps with userId", async () => {
 		const deps = makeDeps();
 		const repo = new DrizzleStrategyRepository(deps);
 
-		await repo.softDelete("strat-1");
-		expect(deps.softDelete).toHaveBeenCalledWith("strat-1");
+		await repo.softDelete("strat-1", USER_ID);
+		expect(deps.softDelete).toHaveBeenCalledWith("strat-1", USER_ID);
 	});
 
 	test("createNewVersion increments version and creates", async () => {
@@ -157,12 +160,16 @@ describe("DrizzleStrategyRepository", () => {
 		});
 		const repo = new DrizzleStrategyRepository(deps);
 
-		const result = await repo.createNewVersion("strat-1", { code: "new code" });
+		const result = await repo.createNewVersion("strat-1", { code: "new code" }, USER_ID);
 		expect(result.version).toBe(3);
+
+		expect(deps.findById).toHaveBeenCalledWith("strat-1", USER_ID);
 
 		const createCall = (deps.create as ReturnType<typeof mock>).mock.calls[0];
 		const createInput = createCall[0] as Record<string, unknown>;
 		expect(createInput.code).toBe("new code");
+		// userId is passed as second arg to create
+		expect(createCall[1]).toBe(USER_ID);
 	});
 
 	test("createNewVersion throws if strategy not found", async () => {
@@ -171,7 +178,7 @@ describe("DrizzleStrategyRepository", () => {
 		});
 		const repo = new DrizzleStrategyRepository(deps);
 
-		await expect(repo.createNewVersion("nonexistent", {})).rejects.toThrow("not found");
+		await expect(repo.createNewVersion("nonexistent", {}, USER_ID)).rejects.toThrow("not found");
 	});
 
 	test("maps row fields correctly to Strategy domain type", async () => {
@@ -188,7 +195,7 @@ describe("DrizzleStrategyRepository", () => {
 		});
 		const repo = new DrizzleStrategyRepository(deps);
 
-		const result = await repo.findById("strat-1");
+		const result = await repo.findById("strat-1", USER_ID);
 		expect(result!.featuresDefinition[0].name).toBe("f1");
 		expect(result!.featuresDefinition[0].normalization.method).toBe("zscore");
 		expect(result!.executionMode).toBe("paper");

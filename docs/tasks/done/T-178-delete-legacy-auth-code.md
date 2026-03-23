@@ -90,3 +90,42 @@ test -f apps/api/src/middleware/auth.ts && echo "FAIL: auth middleware still exi
 - Updating `TECH_STACK.md` or `SECURITY.md` documentation — T-183
 - Marking `docs/exec-plans/10-auth.md` as deprecated — T-183
 - Changing any business route logic — T-181
+
+## Implementation Notes
+
+**TDD cycle followed**: RED (legacy-cleanup.test.ts written first, 5 fails) → GREEN (deletions made, 8 pass) → REFACTOR (full suite verified).
+
+**Import audit findings**: The only non-self-referencing imports of the deleted files were:
+- `apps/api/__tests__/auth.test.ts` — test file for the deleted route/middleware, deleted along with them
+- `apps/api/src/routes/auth.ts` — imported from `packages/shared/auth/jwt.js` and `types.js`
+- `apps/api/src/middleware/auth.ts` — imported from `packages/shared/auth/jwt.js` and `types.js`
+
+**server.ts status**: T-177 had already removed the `authRoutes` import and `.use()` call. No changes needed.
+
+**types.ts decision**: `types.ts` exported `JwtPayload`, `TokenPair`, and `TokenError`. All consumers (`jwt.ts`, `apps/api/src/routes/auth.ts`, `apps/api/src/middleware/auth.ts`) were themselves deleted. No migration needed — deleted.
+
+**Pre-existing failures (unrelated)**: `DrizzleStrategyRepository` tests (5 failures) in `packages/core/strategy/__tests__/drizzle-repository.test.ts` were already failing before this task. They test mock call argument matching and have no connection to auth code.
+
+**Files deleted**:
+- `packages/shared/auth/jwt.ts`
+- `packages/shared/auth/token.ts`
+- `packages/shared/auth/middleware.ts`
+- `packages/shared/auth/service.ts`
+- `packages/shared/auth/types.ts`
+- `packages/shared/auth/__tests__/jwt.test.ts`
+- `packages/shared/auth/__tests__/token.test.ts`
+- `packages/shared/auth/__tests__/middleware.test.ts`
+- `packages/shared/auth/__tests__/service.test.ts`
+- `apps/api/src/middleware/auth.ts`
+- `apps/api/src/routes/auth.ts`
+- `apps/api/__tests__/auth.test.ts`
+
+**Files created**:
+- `packages/shared/auth/__tests__/legacy-cleanup.test.ts` — verifies correct files are absent/present
+
+## Outputs
+
+- `bun run typecheck`: PASS (0 errors)
+- `bun test` (auth tests): 8/8 pass in `legacy-cleanup.test.ts`
+- `packages/shared/auth/` now contains only: `better-auth.ts`, `encryption.ts`, `password.ts`, `__tests__/`
+- `packages/shared/auth/__tests__/` now contains only: `better-auth-config.test.ts`, `encryption.test.ts`, `legacy-cleanup.test.ts`, `password.test.ts`

@@ -268,3 +268,11 @@ export {
 	type ApiError,
 	type PaginatedResponse,
 } from "./lib/api-client";
+
+// Platform Adapter
+export {
+	PlatformProvider,
+	usePlatform,
+	type PlatformAdapter,
+	type PlatformProviderProps,
+} from "./platform/index.js";

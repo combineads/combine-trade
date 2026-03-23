@@ -1,5 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 import { webAdapter } from "../web.js";
+import { tauriAdapter } from "../tauri.js";
 
 describe("webAdapter", () => {
 	test("isDesktop is false", () => {
@@ -103,5 +104,104 @@ describe("webAdapter", () => {
 		} finally {
 			globalThis.Notification = original;
 		}
+	});
+});
+
+describe("tauriAdapter", () => {
+	test("isDesktop is true", () => {
+		expect(tauriAdapter.isDesktop).toBe(true);
+	});
+
+	test("sendNotification calls @tauri-apps/plugin-notification sendNotification", async () => {
+		const mockSendNotification = mock(async (_opts: { title: string; body: string }) => {});
+
+		mock.module("@tauri-apps/plugin-notification", () => ({
+			sendNotification: mockSendNotification,
+		}));
+
+		await tauriAdapter.sendNotification("Alert", "Price reached target");
+
+		expect(mockSendNotification).toHaveBeenCalledTimes(1);
+		expect(mockSendNotification).toHaveBeenCalledWith({
+			title: "Alert",
+			body: "Price reached target",
+		});
+	});
+
+	test("storeRefreshToken stores token via @tauri-apps/plugin-store Store", async () => {
+		const mockSet = mock(async (_key: string, _value: unknown) => {});
+		const mockSave = mock(async () => {});
+		const mockLoad = mock(async (_path: string) => ({
+			set: mockSet,
+			save: mockSave,
+			get: mock(async (_key: string) => null),
+		}));
+
+		mock.module("@tauri-apps/plugin-store", () => ({
+			Store: { load: mockLoad },
+		}));
+
+		await tauriAdapter.storeRefreshToken("my-refresh-token");
+
+		expect(mockLoad).toHaveBeenCalledWith("auth.json");
+		expect(mockSet).toHaveBeenCalledWith("refreshToken", "my-refresh-token");
+		expect(mockSave).toHaveBeenCalledTimes(1);
+	});
+
+	test("getRefreshToken retrieves token via @tauri-apps/plugin-store Store", async () => {
+		const mockGet = mock(async (_key: string) => "stored-token");
+		const mockLoad = mock(async (_path: string) => ({
+			set: mock(async () => {}),
+			save: mock(async () => {}),
+			get: mockGet,
+		}));
+
+		mock.module("@tauri-apps/plugin-store", () => ({
+			Store: { load: mockLoad },
+		}));
+
+		const result = await tauriAdapter.getRefreshToken();
+
+		expect(mockLoad).toHaveBeenCalledWith("auth.json");
+		expect(mockGet).toHaveBeenCalledWith("refreshToken");
+		expect(result).toBe("stored-token");
+	});
+
+	test("getRefreshToken returns undefined when store has no token", async () => {
+		const mockGet = mock(async (_key: string) => null);
+		const mockLoad = mock(async (_path: string) => ({
+			set: mock(async () => {}),
+			save: mock(async () => {}),
+			get: mockGet,
+		}));
+
+		mock.module("@tauri-apps/plugin-store", () => ({
+			Store: { load: mockLoad },
+		}));
+
+		const result = await tauriAdapter.getRefreshToken();
+
+		expect(result).toBeUndefined();
+	});
+
+	test("storeRefreshToken + getRefreshToken round-trip (shared store mock)", async () => {
+		const storage: Record<string, unknown> = {};
+
+		const makeStore = () => ({
+			set: mock(async (key: string, value: unknown) => {
+				storage[key] = value;
+			}),
+			save: mock(async () => {}),
+			get: mock(async (key: string) => storage[key] ?? null),
+		});
+
+		mock.module("@tauri-apps/plugin-store", () => ({
+			Store: { load: mock(async (_path: string) => makeStore()) },
+		}));
+
+		await tauriAdapter.storeRefreshToken("round-trip-token");
+		const retrieved = await tauriAdapter.getRefreshToken();
+
+		expect(retrieved).toBe("round-trip-token");
 	});
 });

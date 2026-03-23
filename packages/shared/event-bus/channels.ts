@@ -33,6 +33,10 @@ export interface KillSwitchActivatedPayload {
 	activatedAt: string; // ISO timestamp
 }
 
+export interface JournalReadyPayload {
+	journalId: string;
+}
+
 /** Typed channel definitions for the pipeline event bus */
 export const Channels = {
 	candleClosed: createChannel<CandleClosedPayload>("candle_closed"),
@@ -40,4 +44,5 @@ export const Channels = {
 	decisionCompleted: createChannel<DecisionCompletedPayload>("decision_completed"),
 	labelReady: createChannel<LabelReadyPayload>("label_ready"),
 	killSwitchActivated: createChannel<KillSwitchActivatedPayload>("kill_switch_activated"),
+	journalReady: createChannel<JournalReadyPayload>("journal_ready"),
 } as const;

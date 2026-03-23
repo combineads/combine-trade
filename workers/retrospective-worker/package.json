@@ -3,12 +3,13 @@
 	"version": "0.0.1",
 	"private": true,
 	"type": "module",
-	"main": "src/index.ts",
+	"main": "src/main.ts",
 	"scripts": {
-		"dev": "bun run --hot src/index.ts",
-		"start": "bun run src/index.ts"
+		"dev": "bun run --hot src/main.ts",
+		"start": "bun run src/main.ts"
 	},
 	"dependencies": {
+		"@combine/core": "workspace:*",
 		"@combine/shared": "workspace:*"
 	}
 }

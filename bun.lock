@@ -202,6 +202,7 @@
       "name": "@combine/retrospective-worker",
       "version": "0.0.1",
       "dependencies": {
+        "@combine/core": "workspace:*",
         "@combine/shared": "workspace:*",
       },
     },

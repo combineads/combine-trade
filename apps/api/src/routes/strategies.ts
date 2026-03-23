@@ -50,6 +50,7 @@ export function strategyRoutes(deps: StrategyRouteDeps) {
 				const userId = extractUserId(ctx as unknown as Record<string, unknown>);
 				if (!userId) throw new UnauthorizedError();
 				const strategy = await deps.strategyRepository.create(ctx.body, userId);
+				(ctx as unknown as { set: { status: number } }).set.status = 201;
 				return ok(strategy);
 			},
 			{

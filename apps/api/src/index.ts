@@ -1,137 +1,68 @@
-import { type ApiServerDeps, type AuthLike, createApiServer } from "./server.js";
+import { createAuth } from "@combine/shared/auth/better-auth.js";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { db } from "../../../db/index.js";
+import {
+	authAccount,
+	authSession,
+	authUser,
+	authVerification,
+} from "../../../db/schema/better-auth.js";
+import { DrizzleStrategyRepository } from "../../../packages/core/strategy/drizzle-repository.js";
+import { ExecutionModeDbService } from "../../../packages/execution/mode-db.js";
+import { createAlertDeps } from "./db/alerts-queries.js";
+import { createBacktestDeps } from "./db/backtest-queries.js";
+import { createCandleDeps } from "./db/candles-queries.js";
+import { createCredentialDeps } from "./db/credentials-queries.js";
+import { createEventDeps } from "./db/events-queries.js";
+import { createExecutionModeDbDeps } from "./db/execution-glue.js";
+import { createJournalDeps } from "./db/journals-queries.js";
+import { createKillSwitchDeps } from "./db/kill-switch-glue.js";
+import { createOrderDeps } from "./db/orders-queries.js";
+import { createPaperDeps } from "./db/paper-queries.js";
+import { createSseBridge } from "./db/sse-bridge.js";
+import { createStrategyDbDeps } from "./db/strategy-glue.js";
+import { type ApiServerDeps, createApiServer } from "./server.js";
 
 const PORT = Number(process.env.PORT) || 3000;
 
-/**
- * Stub auth instance for development before the DB is wired.
- * Replace with a real createAuth(drizzleAdapter(db)) call once DB wiring is complete.
- */
-const stubAuth: AuthLike = {
-	handler: async (_req: Request): Promise<Response> => {
-		return new Response(JSON.stringify({ error: "Auth not wired to DB yet" }), {
-			status: 503,
-			headers: { "content-type": "application/json" },
-		});
-	},
-	api: {
-		getSession: async (_ctx: { headers: Headers }) => {
-			// In development without DB, reject all sessions
-			return null;
+const auth = createAuth({
+	database: drizzleAdapter(db, {
+		provider: "pg",
+		schema: {
+			user: authUser,
+			session: authSession,
+			account: authAccount,
+			verification: authVerification,
 		},
-	},
+	}),
+	trustedOrigins: [process.env.ALLOWED_ORIGIN ?? "http://localhost:3001"],
+});
+
+const masterEncryptionKey = process.env.MASTER_ENCRYPTION_KEY ?? "0".repeat(64);
+
+const strategyRepository = new DrizzleStrategyRepository(createStrategyDbDeps(db));
+const executionModeDeps = new ExecutionModeDbService(createExecutionModeDbDeps(db));
+const killSwitchDeps = createKillSwitchDeps(db);
+const { sseSubscribe } = createSseBridge();
+
+const deps: ApiServerDeps = {
+	auth,
+	masterEncryptionKey,
+	strategyRepository,
+	executionModeDeps,
+	killSwitchDeps,
+	sseSubscribe,
+	credentialDeps: createCredentialDeps(db, masterEncryptionKey),
+	eventDeps: createEventDeps(db),
+	orderDeps: createOrderDeps(db),
+	candleDeps: createCandleDeps(db),
+	alertDeps: createAlertDeps(db),
+	backtestDeps: createBacktestDeps(db),
+	journalDeps: createJournalDeps(db),
+	paperDeps: createPaperDeps(db),
 };
 
-/**
- * Server entry point.
- *
- * In production, deps are wired to real Drizzle repositories and services.
- * For now, the server starts with stub deps that log warnings.
- * Replace these with real implementations as DB wiring tasks complete.
- */
-const stubDeps: ApiServerDeps = {
-	auth: stubAuth,
-	masterEncryptionKey: process.env.MASTER_ENCRYPTION_KEY ?? "0".repeat(64),
-	strategyRepository: {
-		findAll: async () => [],
-		findById: async () => null,
-		findByNameAndVersion: async () => null,
-		findActive: async () => [],
-		create: async () => {
-			throw new Error("Not wired to DB");
-		},
-		update: async () => {
-			throw new Error("Not wired to DB");
-		},
-		softDelete: async () => {
-			throw new Error("Not wired to DB");
-		},
-		createNewVersion: async () => {
-			throw new Error("Not wired to DB");
-		},
-	},
-	executionModeDeps: {
-		loadMode: async () => "analysis",
-		saveMode: async () => {},
-		getSafetyGateStatus: async () => ({
-			killSwitchEnabled: false,
-			dailyLossLimitConfigured: false,
-		}),
-	},
-	killSwitchDeps: {
-		activate: async () => {
-			throw new Error("Not wired to DB");
-		},
-		deactivate: async () => {
-			throw new Error("Not wired to DB");
-		},
-		getActiveStates: async () => [],
-		getAuditEvents: async () => ({ items: [], total: 0 }),
-	},
-	sseSubscribe: () => () => {},
-	credentialDeps: {
-		masterKey: process.env.MASTER_ENCRYPTION_KEY ?? "0".repeat(64),
-		findByUserId: async () => [],
-		findById: async () => null,
-		create: async () => {
-			throw new Error("Not wired to DB");
-		},
-		update: async () => {
-			throw new Error("Not wired to DB");
-		},
-		remove: async () => {
-			throw new Error("Not wired to DB");
-		},
-	},
-	eventDeps: {
-		findEventById: async () => null,
-		findEventsByStrategy: async () => ({ items: [], total: 0 }),
-		getStrategyStatistics: async () => ({
-			winRate: 0,
-			expectancy: 0,
-			avgPnl: 0,
-			sampleCount: 0,
-			totalEvents: 0,
-			longCount: 0,
-			shortCount: 0,
-		}),
-		strategyExists: async () => false,
-	},
-	orderDeps: {
-		findOrders: async () => ({ items: [], total: 0 }),
-	},
-	candleDeps: {
-		findCandles: async () => ({ items: [], total: 0 }),
-	},
-	alertDeps: {
-		findAlerts: async () => ({ items: [], total: 0 }),
-	},
-	backtestDeps: {
-		runBacktest: async () => {
-			throw new Error("Not wired to backtest engine");
-		},
-		strategyExists: async () => false,
-	},
-	journalDeps: {
-		listJournals: async () => ({ data: [], total: 0 }),
-		getJournal: async () => null,
-		searchJournals: async () => ({ data: [], total: 0 }),
-		getJournalAnalytics: async () => ({ tagStats: [], overallWinrate: 0, overallExpectancy: 0 }),
-	},
-	paperDeps: {
-		getPaperStatus: async () => ({
-			balance: "0",
-			positions: [],
-			unrealizedPnl: "0",
-			totalPnl: "0",
-		}),
-		listPaperOrders: async () => ({ data: [], total: 0 }),
-		getPaperPerformance: async () => ({ summaries: [] }),
-		getPaperComparison: async () => ({ backtest: {}, paper: {}, delta: {} }),
-		resetPaper: async (b) => ({ success: true as const, balance: b }),
-	},
-};
-
-export const app = createApiServer(stubDeps);
+export const app = createApiServer(deps);
 
 app.listen(PORT);
 

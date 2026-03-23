@@ -134,7 +134,10 @@ docker compose up -d
 # 5. DB 마이그레이션 적용
 bun run db:migrate
 
-# 6. API 서버 시작
+# 6. 어드민 계정 생성
+bun run db:seed:admin
+
+# 7. API 서버 시작
 bun run dev
 ```
 

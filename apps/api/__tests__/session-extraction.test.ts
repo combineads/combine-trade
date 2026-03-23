@@ -186,7 +186,7 @@ describe("Strategy routes — userId forwarding", () => {
 			}),
 		);
 
-		expect(res.status).toBe(200);
+		expect(res.status).toBe(201);
 		expect(capturedUserId).toBe(USER_A);
 	});
 

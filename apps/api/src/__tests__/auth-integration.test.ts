@@ -455,7 +455,7 @@ describe("auth integration — user isolation", () => {
 				}),
 			}),
 		);
-		expect(createResp.status).toBe(200);
+		expect(createResp.status).toBe(201);
 		const createBody = (await createResp.json()) as { data: { id: string } };
 		const strategyId = createBody.data.id;
 

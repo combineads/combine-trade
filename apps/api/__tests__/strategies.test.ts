@@ -180,7 +180,7 @@ describe("Strategy routes", () => {
 					}),
 				}),
 			);
-			expect(res.status).toBe(200);
+			expect(res.status).toBe(201);
 			const body = await res.json();
 			expect(body.data.name).toBe("New Strategy");
 		});

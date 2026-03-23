@@ -23,6 +23,8 @@ export interface BetterAuthConfig {
 	database: unknown;
 	/** Origins permitted to include credentials. Defaults to localhost dev port. */
 	trustedOrigins?: string[];
+	/** Base URL of the server (e.g. http://localhost:3000). Needed for callbacks and redirects. */
+	baseURL?: string;
 }
 
 /**
@@ -36,6 +38,7 @@ export function createAuth(config: BetterAuthConfig) {
 		// biome-ignore lint/suspicious/noExplicitAny: better-auth accepts any adapter-compatible value
 		database: config.database as any,
 		emailAndPassword: { enabled: true },
+		baseURL: config.baseURL ?? process.env.BETTER_AUTH_URL,
 		advanced: {
 			cookiePrefix: "combine-trade",
 			generateId: () => crypto.randomUUID(),

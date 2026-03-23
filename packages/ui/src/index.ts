@@ -275,4 +275,4 @@ export {
 	usePlatform,
 	type PlatformAdapter,
 	type PlatformProviderProps,
-} from "./platform/index.js";
+} from "./platform/index";

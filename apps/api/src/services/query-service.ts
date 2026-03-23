@@ -1,6 +1,6 @@
-import type { Candle } from "../../../../packages/candle/types.js";
-import type { StrategyEvent } from "../../../../packages/core/strategy/event-types.js";
-import type { PatternStatistics } from "../../../../packages/core/vector/types.js";
+import type { Candle } from "@combine/candle/types.js";
+import type { StrategyEvent } from "@combine/core/strategy/event-types.js";
+import type { PatternStatistics } from "@combine/core/vector/types.js";
 import type { Alert, AlertQueryOptions } from "../routes/alerts.js";
 import type { CandleQueryOptions } from "../routes/candles.js";
 import type { EventQueryOptions } from "../routes/events.js";

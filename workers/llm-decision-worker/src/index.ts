@@ -4,7 +4,7 @@ import {
 	type LlmDecision,
 	type RecentTrade,
 	buildDecisionPrompt,
-} from "../../../packages/core/macro/decision-prompt-builder.js";
+} from "@combine/core/macro/decision-prompt-builder.js";
 
 export interface LlmDecisionRepository {
 	getKnnDecision(decisionId: string): Promise<{

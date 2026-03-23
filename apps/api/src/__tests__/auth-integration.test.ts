@@ -20,7 +20,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import type { StrategyRepository } from "../../../../packages/core/strategy/repository.js";
+import type { StrategyRepository } from "@combine/core/strategy/repository.js";
 import type { AuthLike } from "../server.js";
 import { createApiServer } from "../server.js";
 

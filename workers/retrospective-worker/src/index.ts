@@ -1,7 +1,7 @@
 import {
 	type RetrospectivePromptInput,
 	buildRetrospectivePrompt,
-} from "../../../packages/core/macro/prompt-builder.js";
+} from "@combine/core/macro/prompt-builder.js";
 
 export type SpawnRunner = (prompt: string) => Promise<string>;
 

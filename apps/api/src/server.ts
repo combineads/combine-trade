@@ -1,8 +1,8 @@
 import cors from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { elysiaHelmet } from "elysiajs-helmet";
-import type { StrategyRepository } from "../../../packages/core/strategy/repository.js";
-import type { ExecutionModeDeps } from "../../../packages/execution/types.js";
+import type { StrategyRepository } from "@combine/core/strategy/repository.js";
+import type { ExecutionModeDeps } from "@combine/execution/types.js";
 import { UnauthorizedError, errorHandlerPlugin } from "./lib/errors.js";
 import type { AlertRouteDeps } from "./routes/alerts.js";
 import { alertRoutes } from "./routes/alerts.js";

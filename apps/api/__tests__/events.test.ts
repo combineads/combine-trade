@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { Elysia } from "elysia";
-import type { StrategyEvent } from "../../../packages/core/strategy/event-types.js";
+import type { StrategyEvent } from "@combine/core/strategy/event-types.js";
 import { errorHandlerPlugin } from "../src/lib/errors.js";
 import { type EventQueryOptions, type EventRouteDeps, eventRoutes } from "../src/routes/events.js";
 

@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import type { Candle } from "../../../../packages/candle/types.js";
+import type { Candle } from "@combine/candle/types.js";
 import { paginated } from "../lib/response.js";
 
 const MAX_PAGE_SIZE = 200;

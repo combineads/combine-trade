@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { Elysia } from "elysia";
-import type { Candle } from "../../../packages/candle/types.js";
+import type { Candle } from "@combine/candle/types.js";
 import { errorHandlerPlugin } from "../src/lib/errors.js";
 import { type Alert, type AlertRouteDeps, alertRoutes } from "../src/routes/alerts.js";
 import { type CandleRouteDeps, candleRoutes } from "../src/routes/candles.js";

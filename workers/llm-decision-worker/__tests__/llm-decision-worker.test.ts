@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import type { LlmDecision } from "../../../../packages/core/macro/decision-prompt-builder.js";
+import type { LlmDecision } from "@combine/core/macro/decision-prompt-builder.js";
 import { type LlmDecisionRepository, LlmDecisionWorker } from "../src/index.js";
 
 interface KnnDecisionRecord {

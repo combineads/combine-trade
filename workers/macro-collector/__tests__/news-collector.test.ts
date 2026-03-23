@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import type { CreateNewsItemInput } from "../../../../packages/core/macro/types.js";
+import type { CreateNewsItemInput } from "@combine/core/macro/types.js";
 import {
 	NewsCollector,
 	type NewsEventRepository,

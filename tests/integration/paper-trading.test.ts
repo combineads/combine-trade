@@ -6,18 +6,18 @@ import {
 	calculateUnrealizedPnl,
 	computePeriodSummary,
 	createBalance,
-} from "../../packages/execution/paper/balance.js";
+} from "@combine/execution/paper/balance.js";
 import {
 	maxDrawdown,
 	sharpeRatio,
 	zTestWinRate,
-} from "../../packages/execution/paper/comparator.js";
-import { scanForExit, simulateMarketFill } from "../../packages/execution/paper/matcher.js";
+} from "@combine/execution/paper/comparator.js";
+import { scanForExit, simulateMarketFill } from "@combine/execution/paper/matcher.js";
 import {
 	type ReadinessInput,
 	calculateReadinessScore,
-} from "../../packages/execution/paper/readiness.js";
-import type { PaperCandle } from "../../packages/execution/paper/types.js";
+} from "@combine/execution/paper/readiness.js";
+import type { PaperCandle } from "@combine/execution/paper/types.js";
 
 describe("Paper Trading Integration", () => {
 	test("A: full winning LONG trade lifecycle", () => {

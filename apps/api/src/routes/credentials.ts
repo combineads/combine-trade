@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { encrypt } from "../../../../packages/shared/crypto/encryption.js";
+import { encrypt } from "@combine/shared/crypto/encryption.js";
 import { NotFoundError, UnauthorizedError } from "../lib/errors.js";
 import { ok } from "../lib/response.js";
 

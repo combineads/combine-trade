@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
-import type { StrategyEvent } from "../../../../packages/core/strategy/event-types.js";
-import type { PatternStatistics } from "../../../../packages/core/vector/types.js";
+import type { StrategyEvent } from "@combine/core/strategy/event-types.js";
+import type { PatternStatistics } from "@combine/core/vector/types.js";
 import { NotFoundError } from "../lib/errors.js";
 import { ok, paginated } from "../lib/response.js";
 

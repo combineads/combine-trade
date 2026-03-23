@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { Elysia } from "elysia";
-import type { BacktestReport } from "../../../packages/backtest/report.js";
+import type { BacktestReport } from "@combine/backtest/report.js";
 import { errorHandlerPlugin } from "../src/lib/errors.js";
 import { type BacktestRouteDeps, backtestRoutes } from "../src/routes/backtest.js";
 

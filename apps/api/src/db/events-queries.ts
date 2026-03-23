@@ -1,8 +1,8 @@
 import { and, count, eq, gte, lte, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../../../../db/schema/index.js";
-import type { StrategyEvent } from "../../../../packages/core/strategy/event-types.js";
-import type { PatternStatistics } from "../../../../packages/core/vector/types.js";
+import type { StrategyEvent } from "@combine/core/strategy/event-types.js";
+import type { PatternStatistics } from "@combine/core/vector/types.js";
 import type { EventQueryOptions, EventRouteDeps } from "../routes/events.js";
 
 type Db = PostgresJsDatabase<typeof schema>;

@@ -1,4 +1,4 @@
-import type { CreateNewsItemInput } from "../../../packages/core/macro/types.js";
+import type { CreateNewsItemInput } from "@combine/core/macro/types.js";
 
 export interface PendingEvent {
 	id: string;

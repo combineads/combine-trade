@@ -1,5 +1,5 @@
-import { shouldCollect } from "../../../packages/core/macro/impact-parser.js";
-import type { CreateEconomicEventInput } from "../../../packages/core/macro/types.js";
+import { shouldCollect } from "@combine/core/macro/impact-parser.js";
+import type { CreateEconomicEventInput } from "@combine/core/macro/types.js";
 
 export interface CalendarEventRepository {
 	upsertByExternalId(input: CreateEconomicEventInput): Promise<void>;

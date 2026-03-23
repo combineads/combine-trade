@@ -15,15 +15,15 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
-import { createAuth } from "../../packages/shared/auth/better-auth.js";
+import { createAuth } from "@combine/shared/auth/better-auth.js";
 import {
 	authAccount,
 	authSession,
 	authUser,
 	authVerification,
 } from "../../db/schema/better-auth.js";
-import { DrizzleStrategyRepository } from "../../packages/core/strategy/drizzle-repository.js";
-import { ExecutionModeDbService } from "../../packages/execution/mode-db.js";
+import { DrizzleStrategyRepository } from "@combine/core/strategy/drizzle-repository.js";
+import { ExecutionModeDbService } from "@combine/execution/mode-db.js";
 import { createApiServer } from "../../apps/api/src/server.js";
 import { createStrategyDbDeps } from "../../apps/api/src/db/strategy-glue.js";
 import { createExecutionModeDbDeps } from "../../apps/api/src/db/execution-glue.js";

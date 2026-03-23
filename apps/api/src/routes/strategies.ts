@@ -1,8 +1,8 @@
 import { Elysia, t } from "elysia";
-import type { StrategyRepository } from "../../../../packages/core/strategy/repository.js";
-import { ExecutionModeService } from "../../../../packages/execution/mode.js";
-import type { ExecutionModeDeps } from "../../../../packages/execution/types.js";
-import { ModeTransitionError } from "../../../../packages/execution/types.js";
+import type { StrategyRepository } from "@combine/core/strategy/repository.js";
+import { ExecutionModeService } from "@combine/execution/mode.js";
+import type { ExecutionModeDeps } from "@combine/execution/types.js";
+import { ModeTransitionError } from "@combine/execution/types.js";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../lib/errors.js";
 import { ok } from "../lib/response.js";
 

@@ -12,8 +12,8 @@ import type {
 	CreateStrategyInput,
 	Strategy,
 	UpdateStrategyInput,
-} from "../../../packages/core/strategy/types.js";
-import type { ExecutionMode, ExecutionModeDeps } from "../../../packages/execution/types.js";
+} from "@combine/core/strategy/types.js";
+import type { ExecutionMode, ExecutionModeDeps } from "@combine/execution/types.js";
 import { errorHandlerPlugin } from "../src/lib/errors.js";
 import { type KillSwitchRouteDeps, killSwitchRoutes } from "../src/routes/kill-switch.js";
 import { type OrderRouteDeps, orderRoutes } from "../src/routes/orders.js";

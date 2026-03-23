@@ -4,7 +4,7 @@
  *
  * Usage: bun run scripts/supervisor.ts
  */
-import { type WorkerConfig, WorkerSupervisor } from "../packages/core/supervisor/supervisor.js";
+import { type WorkerConfig, WorkerSupervisor } from "@combine/core/supervisor/supervisor.js";
 
 const WORKER_CONFIGS: WorkerConfig[] = [
 	{ name: "candle-collector", command: "bun run workers/candle-collector/src/index.ts" },

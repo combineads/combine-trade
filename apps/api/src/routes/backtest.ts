@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import type { BacktestReport } from "../../../../packages/backtest/report.js";
+import type { BacktestReport } from "@combine/backtest/report.js";
 import { ApiError, NotFoundError, ValidationError } from "../lib/errors.js";
 import { ok } from "../lib/response.js";
 

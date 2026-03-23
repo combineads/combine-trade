@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import type { CreateEconomicEventInput } from "../../../../packages/core/macro/types.js";
+import type { CreateEconomicEventInput } from "@combine/core/macro/types.js";
 import { CalendarCollector, type CalendarEventRepository } from "../src/calendar-collector.js";
 
 function makeEvent(overrides: Partial<CreateEconomicEventInput> = {}): CreateEconomicEventInput {

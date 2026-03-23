@@ -35,6 +35,9 @@
 		{ "path": "workers/alert-worker" },
 		{ "path": "workers/execution-worker" },
 		{ "path": "workers/journal-worker" },
+		{ "path": "workers/llm-decision-worker" },
+		{ "path": "workers/macro-collector" },
+		{ "path": "workers/retrospective-worker" },
 		{ "path": "packages/ui" }
 	],
 	"include": [],

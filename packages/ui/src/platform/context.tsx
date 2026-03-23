@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, createContext, useContext, useEffect, useState } from "react";
-import { webAdapter } from "./web.js";
+import { webAdapter } from "./web";
 
 export interface PlatformAdapter {
 	isDesktop: boolean;
@@ -23,7 +23,8 @@ export function PlatformProvider({ children }: PlatformProviderProps) {
 		// SSR-safe Tauri detection: __TAURI_INTERNALS__ is injected by the Tauri WebView at runtime.
 		// Dynamic import avoids bundling @tauri-apps/* into the web build.
 		if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
-			import("../platform/tauri.js")
+			// @ts-expect-error — tauri adapter created in EP20 (desktop app epic)
+			import(/* webpackIgnore: true */ "../platform/tauri.js")
 				.then((mod) => {
 					setAdapter(mod.tauriAdapter);
 				})

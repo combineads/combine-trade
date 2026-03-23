@@ -7,8 +7,8 @@ import {
 	authUser,
 	authVerification,
 } from "../../../db/schema/better-auth.js";
-import { DrizzleStrategyRepository } from "../../../packages/core/strategy/drizzle-repository.js";
-import { ExecutionModeDbService } from "../../../packages/execution/mode-db.js";
+import { DrizzleStrategyRepository } from "@combine/core/strategy/drizzle-repository.js";
+import { ExecutionModeDbService } from "@combine/execution/mode-db.js";
 import { createAlertDeps } from "./db/alerts-queries.js";
 import { createBacktestDeps } from "./db/backtest-queries.js";
 import { createCandleDeps } from "./db/candles-queries.js";

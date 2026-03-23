@@ -53,8 +53,8 @@ Thumbs.db
 *.swo
 *~
 
-# Tauri
-src-tauri/target/
+# Tauri / Rust
+target/
 src-tauri/WixTools/
 
 # Coverage

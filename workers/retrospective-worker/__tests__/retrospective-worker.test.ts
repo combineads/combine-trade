@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import type { RetrospectivePromptInput } from "../../../../packages/core/macro/prompt-builder.js";
+import type { RetrospectivePromptInput } from "@combine/core/macro/prompt-builder.js";
 import {
 	type RetrospectiveRepository,
 	RetrospectiveWorker,

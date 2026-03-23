@@ -1,16 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import type { DecisionResult } from "../../packages/core/decision/types.js";
-import { type AssemblerInput, assembleJournal } from "../../packages/core/journal/assembler.js";
+import type { DecisionResult } from "@combine/core/decision/types.js";
+import { type AssemblerInput, assembleJournal } from "@combine/core/journal/assembler.js";
 import {
 	type EntrySnapshotInput,
 	buildEntrySnapshot,
-} from "../../packages/core/journal/entry-snapshot.js";
+} from "@combine/core/journal/entry-snapshot.js";
 import {
 	type MarketContextInput,
 	buildMarketContext,
-} from "../../packages/core/journal/market-context.js";
-import { generateTags } from "../../packages/core/journal/tagger.js";
-import type { LabelResult } from "../../packages/core/label/types.js";
+} from "@combine/core/journal/market-context.js";
+import { generateTags } from "@combine/core/journal/tagger.js";
+import type { LabelResult } from "@combine/core/label/types.js";
 
 const DECISION_LONG: DecisionResult = {
 	decision: "LONG",

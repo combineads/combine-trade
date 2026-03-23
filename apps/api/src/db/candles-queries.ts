@@ -1,7 +1,7 @@
 import { and, count, eq, gte, lte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../../../../db/schema/index.js";
-import type { Candle } from "../../../../packages/candle/types.js";
+import type { Candle } from "@combine/candle/types.js";
 import type { CandleQueryOptions, CandleRouteDeps } from "../routes/candles.js";
 
 type Db = PostgresJsDatabase<typeof schema>;

@@ -1,7 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../../../../db/schema/index.js";
-import type { ExecutionModeDbDeps } from "../../../../packages/execution/mode-db.js";
+import type { ExecutionModeDbDeps } from "@combine/execution/mode-db.js";
 
 type Db = PostgresJsDatabase<typeof schema>;
 

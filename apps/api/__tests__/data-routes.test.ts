@@ -5,6 +5,7 @@ import { errorHandlerPlugin } from "../src/lib/errors.js";
 import { type Alert, type AlertRouteDeps, alertRoutes } from "../src/routes/alerts.js";
 import { type CandleRouteDeps, candleRoutes } from "../src/routes/candles.js";
 import { type Order, type OrderRouteDeps, orderRoutes } from "../src/routes/orders.js";
+import { withMockUserId } from "./helpers/auth.js";
 
 const BASE = "http://localhost/api/v1";
 
@@ -99,6 +100,7 @@ function createApp(
 	orderDeps?: OrderRouteDeps,
 ) {
 	return new Elysia()
+		.use(withMockUserId())
 		.use(errorHandlerPlugin)
 		.use(candleRoutes(candleDeps ?? mockCandleDeps()))
 		.use(alertRoutes(alertDeps ?? mockAlertDeps()))

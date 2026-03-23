@@ -1,6 +1,8 @@
+import { Elysia } from "elysia";
 import type { AuthLike } from "../../src/server.js";
 
 export const TEST_SECRET = "test-secret";
+export const TEST_USER_ID = "user-1";
 
 /**
  * Returns Authorization headers with a Bearer token.
@@ -30,10 +32,21 @@ export function createMockAuth(): AuthLike {
 				if (!token) return null;
 				// Accept any non-empty bearer token as a valid session in tests
 				return {
-					user: { id: "user-1" },
+					user: { id: TEST_USER_ID },
 					session: { id: "session-1" },
 				};
 			},
 		},
 	};
+}
+
+/**
+ * Elysia plugin that injects a `userId` into context for route unit tests.
+ * Use this when testing route handlers in isolation (without the full server),
+ * to simulate the userId that betterAuthPlugin derives globally in production.
+ */
+export function withMockUserId(userId: string = TEST_USER_ID) {
+	return new Elysia({ name: `mock-user-id-${userId}` }).derive({ as: "global" }, () => ({
+		userId,
+	}));
 }

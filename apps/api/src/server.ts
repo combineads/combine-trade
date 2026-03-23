@@ -3,29 +3,29 @@ import { Elysia } from "elysia";
 import { elysiaHelmet } from "elysiajs-helmet";
 import type { StrategyRepository } from "../../../packages/core/strategy/repository.js";
 import type { ExecutionModeDeps } from "../../../packages/execution/types.js";
-import type { KillSwitchRouteDeps } from "./routes/kill-switch.js";
-import type { CredentialRouteDeps } from "./routes/credentials.js";
-import type { EventRouteDeps } from "./routes/events.js";
-import type { OrderRouteDeps } from "./routes/orders.js";
-import type { CandleRouteDeps } from "./routes/candles.js";
-import type { AlertRouteDeps } from "./routes/alerts.js";
-import type { BacktestRouteDeps } from "./routes/backtest.js";
-import type { JournalRouteDeps } from "./routes/journals.js";
-import type { PaperRouteDeps } from "./routes/paper.js";
-import type { SseEvent } from "./routes/sse.js";
 import { UnauthorizedError, errorHandlerPlugin } from "./lib/errors.js";
-import { healthRoute } from "./routes/health.js";
-import { strategyRoutes } from "./routes/strategies.js";
-import { killSwitchRoutes } from "./routes/kill-switch.js";
-import { credentialRoutes } from "./routes/credentials.js";
-import { eventRoutes } from "./routes/events.js";
-import { orderRoutes } from "./routes/orders.js";
-import { candleRoutes } from "./routes/candles.js";
+import type { AlertRouteDeps } from "./routes/alerts.js";
 import { alertRoutes } from "./routes/alerts.js";
+import type { BacktestRouteDeps } from "./routes/backtest.js";
 import { backtestRoutes } from "./routes/backtest.js";
+import type { CandleRouteDeps } from "./routes/candles.js";
+import { candleRoutes } from "./routes/candles.js";
+import type { CredentialRouteDeps } from "./routes/credentials.js";
+import { credentialRoutes } from "./routes/credentials.js";
+import type { EventRouteDeps } from "./routes/events.js";
+import { eventRoutes } from "./routes/events.js";
+import { healthRoute } from "./routes/health.js";
+import type { JournalRouteDeps } from "./routes/journals.js";
 import { journalRoutes } from "./routes/journals.js";
+import type { KillSwitchRouteDeps } from "./routes/kill-switch.js";
+import { killSwitchRoutes } from "./routes/kill-switch.js";
+import type { OrderRouteDeps } from "./routes/orders.js";
+import { orderRoutes } from "./routes/orders.js";
+import type { PaperRouteDeps } from "./routes/paper.js";
 import { paperRoutes } from "./routes/paper.js";
+import type { SseEvent } from "./routes/sse.js";
 import { sseRoutes } from "./routes/sse.js";
+import { strategyRoutes } from "./routes/strategies.js";
 
 /**
  * Minimal interface for the better-auth instance required by the server.
@@ -67,34 +67,49 @@ const BETTER_AUTH_PATH_PREFIX = "/api/auth/";
  *  - Forwards all /api/auth/** requests to the better-auth handler
  *  - Validates session for all other routes (returns 401 when no valid session)
  *  - Passes /api/v1/health without authentication
+ *  - Derives `userId` from the verified session and injects it into context
  */
 function betterAuthPlugin(auth: AuthLike) {
-	return new Elysia({ name: "better-auth" })
-		// Register the better-auth catch-all routes so Elysia resolves them
-		.all("/api/auth/*", async ({ request }) => {
-			return auth.handler(request);
-		})
-		// Global auth guard for all other routes
-		.onBeforeHandle({ as: "global" }, async ({ request }) => {
-			const url = new URL(request.url);
-			const path = url.pathname;
+	return (
+		new Elysia({ name: "better-auth" })
+			// Register the better-auth catch-all routes so Elysia resolves them
+			.all("/api/auth/*", async ({ request }) => {
+				return auth.handler(request);
+			})
+			// Derive userId from the verified session for all protected routes.
+			// Returns "" for public/auth paths — the guard below handles those.
+			.derive({ as: "global" }, async ({ request }) => {
+				const url = new URL(request.url);
+				const path = url.pathname;
 
-			// Pass health check without auth
-			if (path === PUBLIC_PATH) {
-				return;
-			}
+				if (path === PUBLIC_PATH || path.startsWith(BETTER_AUTH_PATH_PREFIX)) {
+					return { userId: "" };
+				}
 
-			// better-auth routes are handled by the route above — skip guard
-			if (path.startsWith(BETTER_AUTH_PATH_PREFIX)) {
-				return;
-			}
+				const session = await auth.api.getSession({ headers: request.headers });
+				return { userId: session?.user.id ?? "" };
+			})
+			// Global auth guard — rejects requests with no valid session
+			.onBeforeHandle({ as: "global" }, async ({ request, userId }) => {
+				const url = new URL(request.url);
+				const path = url.pathname;
 
-			// Validate session for all other routes
-			const session = await auth.api.getSession({ headers: request.headers });
-			if (!session) {
-				throw new UnauthorizedError("No valid session");
-			}
-		});
+				// Pass health check without auth
+				if (path === PUBLIC_PATH) {
+					return;
+				}
+
+				// better-auth routes are handled by the route above — skip guard
+				if (path.startsWith(BETTER_AUTH_PATH_PREFIX)) {
+					return;
+				}
+
+				// userId is "" when session was null — reject the request
+				if (!userId) {
+					throw new UnauthorizedError("No valid session");
+				}
+			})
+	);
 }
 
 /**
@@ -104,10 +119,12 @@ function betterAuthPlugin(auth: AuthLike) {
 export function createApiServer(deps: ApiServerDeps) {
 	return new Elysia()
 		.use(elysiaHelmet())
-		.use(cors({
-			origin: process.env.ALLOWED_ORIGIN ?? "http://localhost:3001",
-			credentials: true,
-		}))
+		.use(
+			cors({
+				origin: process.env.ALLOWED_ORIGIN ?? "http://localhost:3001",
+				credentials: true,
+			}),
+		)
 		.use(errorHandlerPlugin)
 		.use(betterAuthPlugin(deps.auth))
 		.use(healthRoute)

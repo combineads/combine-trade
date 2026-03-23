@@ -106,3 +106,46 @@ bun test --filter "route|user-isolation|strategy-auth|kill-switch-auth"
 - Client-side session management — T-182
 - Rate limiting enforcement — T-183
 - Session extraction helper refactoring into a decorator — future task
+
+## Implementation Notes
+
+### Design choice: Elysia derive + extractUserId helper
+
+Used Option A from the task spec: `betterAuthPlugin` in `apps/api/src/server.ts` now calls `.derive({ as: "global" }, ...)` to extract `userId` from the better-auth session and inject it into the Elysia context for all downstream routes. The derive runs before the `onBeforeHandle` guard — public/auth paths return `userId: ""`, the guard then rejects empty userId values.
+
+Each route file implements a local `extractUserId(ctx: Record<string, unknown>): string` helper that reads `ctx.userId` with a safe type check (returns `""` if absent). This avoids fighting Elysia's TypeScript context inference while being safe at runtime.
+
+A defensive `if (!userId) throw new UnauthorizedError()` is present in each handler. This is belt-and-suspenders: the global guard should already have rejected unauthenticated requests before the handler runs.
+
+### Routes updated
+- `apps/api/src/routes/strategies.ts` — all 5 handlers (GET /, GET /:id, POST /, PUT /:id, PUT /:id/mode)
+- `apps/api/src/routes/kill-switch.ts` — all 4 handlers (activate, deactivate, status, events)
+- `apps/api/src/routes/orders.ts` — GET /orders
+- `apps/api/src/routes/credentials.ts` — GET / and POST / (replaced `store.userId` pattern with `extractUserId`)
+
+### Routes verified not user-scoped (not changed)
+- `apps/api/src/routes/backtest.ts` — `strategyExists` check uses no userId; backtest is read-only computation
+- `apps/api/src/routes/paper.ts` — deps have no userId parameter; paper trading is single-account
+- `apps/api/src/routes/events.ts` — events are scoped via strategyId, not userId
+- `apps/api/src/routes/alerts.ts` — system-wide, not user-scoped
+- `apps/api/src/routes/candles.ts` — market data, not user-scoped
+- `apps/api/src/routes/journals.ts` — no userId in deps interface
+
+### Test helper added
+`apps/api/__tests__/helpers/auth.ts` now exports:
+- `TEST_USER_ID = "user-1"` — canonical test user id constant
+- `withMockUserId(userId?)` — Elysia plugin that derives `userId` globally for route unit tests
+
+### Tests updated
+- `apps/api/__tests__/strategies.test.ts` — uses `withMockUserId()`, added userId-forwarding assertions
+- `apps/api/__tests__/kill-switch.test.ts` — uses `withMockUserId()`, updated assertions from `PLACEHOLDER_USER_ID` to `TEST_USER_ID`
+- `apps/api/__tests__/data-routes.test.ts` — uses `withMockUserId()` for order route tests
+- `apps/api/__tests__/credentials.test.ts` — uses `withMockUserId()`, updated credential userId from "default-user" to `TEST_USER_ID`
+- `apps/api/__tests__/session-extraction.test.ts` — new test file (13 tests) covering userId forwarding and cross-user 404 behavior
+
+### Validation results
+```
+bun run typecheck  → 0 errors
+bun test           → 1642 pass, 0 fail, 1 skip (across 173 files)
+biome check (modified files only) → 0 errors
+```

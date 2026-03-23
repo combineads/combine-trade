@@ -1,5 +1,23 @@
 # T-174 Rollback script with deploy-history.json tracking
 
+## Implementation Notes
+
+- `scripts/rollback.ts` implemented with full TDD cycle (RED → GREEN → REFACTOR).
+- All core logic exported as pure functions: `parseRollbackArgs`, `getPreviousSuccessfulTag`, `buildRollbackRecord`, `evaluatePostRollbackHealth`, `buildRollbackPlan`.
+- Re-uses types and constants from `scripts/deploy.ts` (`DeployRecord`, `HEALTH_URL`, `DOCKER_COMPOSE_FILE`, `POST_DEPLOY_PIPELINE_P95_LIMIT_MS`, `appendDeployEntry`) to avoid duplication.
+- `getPreviousSuccessfulTag` accepts an optional `overrideTag` (CLI `--target-tag`) as the third argument; when provided, it returns it directly. When absent, it scans history in reverse skipping the current tag.
+- `RollbackRecord` has `sha: null` (no code commit on rollback) and `rolled_back_from` field per task spec.
+- Exit codes: 1 = no previous deploy, 2 = docker swap failed, 3 = health check timeout.
+- `DEPLOY_HISTORY_PATH` can be overridden via `DEPLOY_HISTORY_PATH` env var (enables integration testing with a mock file).
+- Slack alert is conditional on `SLACK_WEBHOOK_URL`; failure to notify never aborts rollback.
+- `--dry-run` prints full plan and exits 0 without touching Docker or history.
+- 30 unit tests; `bun run typecheck` passes clean.
+
+## Outputs
+
+- `scripts/rollback.ts`
+- `scripts/__tests__/rollback.test.ts` (30 tests, all passing)
+
 ## Goal
 Implement `scripts/rollback.ts` that reads the previous successful image tag from `scripts/deploy-history.json`, brings up that tag via `docker compose -f docker-compose.prod.yml up -d`, verifies system health, and appends the rollback event to the history log. Rollback must restore the previous version within 2 minutes.
 

@@ -1,5 +1,10 @@
 import { Elysia, t } from "elysia";
-import type { KillSwitchScope, KillSwitchState, KillSwitchTrigger } from "../../../../packages/core/risk/types.js";
+import type {
+	KillSwitchScope,
+	KillSwitchState,
+	KillSwitchTrigger,
+} from "../../../../packages/core/risk/types.js";
+import { UnauthorizedError } from "../lib/errors.js";
 import { ok, paginated } from "../lib/response.js";
 
 export interface KillSwitchAuditEvent {
@@ -32,28 +37,32 @@ export interface KillSwitchRouteDeps {
 	) => Promise<{ items: KillSwitchAuditEvent[]; total: number }>;
 }
 
+/**
+ * Extract userId from Elysia context.
+ * betterAuthPlugin derives `userId` globally (T-181).
+ */
+function extractUserId(ctx: Record<string, unknown>): string {
+	return typeof ctx.userId === "string" ? ctx.userId : "";
+}
+
 export function killSwitchRoutes(deps: KillSwitchRouteDeps) {
 	return new Elysia({ prefix: "/api/v1/risk/kill-switch" })
 		.post(
 			"/activate",
-			async ({ body }) => {
-				// TODO T-181: extract userId from session; placeholder until then
-				const userId = "placeholder-user-id";
+			async (ctx) => {
+				const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+				if (!userId) throw new UnauthorizedError();
 				const state = await deps.activate(
-					body.scope,
-					body.scopeTarget ?? null,
-					body.trigger,
+					ctx.body.scope,
+					ctx.body.scopeTarget ?? null,
+					ctx.body.trigger,
 					userId,
 				);
 				return ok(state);
 			},
 			{
 				body: t.Object({
-					scope: t.Union([
-						t.Literal("global"),
-						t.Literal("exchange"),
-						t.Literal("strategy"),
-					]),
+					scope: t.Union([t.Literal("global"), t.Literal("exchange"), t.Literal("strategy")]),
 					scopeTarget: t.Optional(t.String()),
 					trigger: t.Union([
 						t.Literal("manual"),
@@ -66,10 +75,10 @@ export function killSwitchRoutes(deps: KillSwitchRouteDeps) {
 		)
 		.post(
 			"/deactivate",
-			async ({ body }) => {
-				// TODO T-181: extract userId from session; placeholder until then
-				const userId = "placeholder-user-id";
-				const state = await deps.deactivate(body.id, userId);
+			async (ctx) => {
+				const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+				if (!userId) throw new UnauthorizedError();
+				const state = await deps.deactivate(ctx.body.id, userId);
 				return ok(state);
 			},
 			{
@@ -78,19 +87,19 @@ export function killSwitchRoutes(deps: KillSwitchRouteDeps) {
 				}),
 			},
 		)
-		.get("/status", async () => {
-			// TODO T-181: extract userId from session; placeholder until then
-			const userId = "placeholder-user-id";
+		.get("/status", async (ctx) => {
+			const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+			if (!userId) throw new UnauthorizedError();
 			const states = await deps.getActiveStates(userId);
 			return ok(states);
 		})
 		.get(
 			"/events",
-			async ({ query }) => {
-				// TODO T-181: extract userId from session; placeholder until then
-				const userId = "placeholder-user-id";
-				const page = query.page ?? 1;
-				const pageSize = Math.min(query.pageSize ?? 20, 100);
+			async (ctx) => {
+				const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+				if (!userId) throw new UnauthorizedError();
+				const page = ctx.query.page ?? 1;
+				const pageSize = Math.min(ctx.query.pageSize ?? 20, 100);
 				const result = await deps.getAuditEvents(page, pageSize, userId);
 				return paginated(result.items, result.total, page, pageSize);
 			},

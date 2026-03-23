@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
 import { encrypt } from "../../../../packages/shared/crypto/encryption.js";
-import { NotFoundError } from "../lib/errors.js";
+import { NotFoundError, UnauthorizedError } from "../lib/errors.js";
 import { ok } from "../lib/response.js";
 
 export interface Credential {
@@ -35,27 +35,37 @@ export interface CredentialRouteDeps {
 	remove: (id: string) => Promise<void>;
 }
 
+/**
+ * Extract userId from Elysia context.
+ * betterAuthPlugin derives `userId` globally (T-181).
+ */
+function extractUserId(ctx: Record<string, unknown>): string {
+	return typeof ctx.userId === "string" ? ctx.userId : "";
+}
+
 export function credentialRoutes(deps: CredentialRouteDeps) {
 	return new Elysia({ prefix: "/api/v1/credentials" })
-		.get("/", async ({ store }) => {
-			const userId = (store as Record<string, string>).userId ?? "default-user";
+		.get("/", async (ctx) => {
+			const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+			if (!userId) throw new UnauthorizedError();
 			const creds = await deps.findByUserId(userId);
 			return ok(creds);
 		})
 		.post(
 			"/",
-			async ({ body, store }) => {
-				const userId = (store as Record<string, string>).userId ?? "default-user";
+			async (ctx) => {
+				const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+				if (!userId) throw new UnauthorizedError();
 				const [apiKeyEncrypted, apiSecretEncrypted] = await Promise.all([
-					encrypt(body.apiKey, deps.masterKey),
-					encrypt(body.apiSecret, deps.masterKey),
+					encrypt(ctx.body.apiKey, deps.masterKey),
+					encrypt(ctx.body.apiSecret, deps.masterKey),
 				]);
 				const cred = await deps.create({
 					userId,
-					exchange: body.exchange,
+					exchange: ctx.body.exchange,
 					apiKeyEncrypted,
 					apiSecretEncrypted,
-					label: body.label ?? null,
+					label: ctx.body.label ?? null,
 				});
 				return ok(cred);
 			},
@@ -70,10 +80,10 @@ export function credentialRoutes(deps: CredentialRouteDeps) {
 		)
 		.put(
 			"/:id",
-			async ({ params, body }) => {
-				const existing = await deps.findById(params.id);
-				if (!existing) throw new NotFoundError(`Credential ${params.id} not found`);
-				const updated = await deps.update(params.id, body);
+			async (ctx) => {
+				const existing = await deps.findById(ctx.params.id);
+				if (!existing) throw new NotFoundError(`Credential ${ctx.params.id} not found`);
+				const updated = await deps.update(ctx.params.id, ctx.body);
 				return ok(updated);
 			},
 			{
@@ -86,10 +96,10 @@ export function credentialRoutes(deps: CredentialRouteDeps) {
 		)
 		.delete(
 			"/:id",
-			async ({ params }) => {
-				const existing = await deps.findById(params.id);
-				if (!existing) throw new NotFoundError(`Credential ${params.id} not found`);
-				await deps.remove(params.id);
+			async (ctx) => {
+				const existing = await deps.findById(ctx.params.id);
+				if (!existing) throw new NotFoundError(`Credential ${ctx.params.id} not found`);
+				await deps.remove(ctx.params.id);
 				return ok({ deleted: true });
 			},
 			{

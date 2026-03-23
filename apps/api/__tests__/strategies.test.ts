@@ -8,6 +8,7 @@ import type {
 import type { ExecutionMode, ExecutionModeDeps } from "../../../packages/execution/types.js";
 import { errorHandlerPlugin } from "../src/lib/errors.js";
 import { type StrategyRouteDeps, strategyRoutes } from "../src/routes/strategies.js";
+import { TEST_USER_ID, withMockUserId } from "./helpers/auth.js";
 
 function makeStrategy(overrides: Partial<Strategy> = {}): Strategy {
 	return {
@@ -65,7 +66,8 @@ function createMockDeps(): StrategyRouteDeps {
 			return updated;
 		},
 		softDelete: async () => {},
-		createNewVersion: async (id: string, _input: UpdateStrategyInput, _userId: string) => makeStrategy({ id }),
+		createNewVersion: async (id: string, _input: UpdateStrategyInput, _userId: string) =>
+			makeStrategy({ id }),
 	};
 
 	const executionModeDeps: ExecutionModeDeps = {
@@ -80,7 +82,10 @@ function createMockDeps(): StrategyRouteDeps {
 }
 
 function createApp(deps?: StrategyRouteDeps) {
-	return new Elysia().use(errorHandlerPlugin).use(strategyRoutes(deps ?? createMockDeps()));
+	return new Elysia()
+		.use(withMockUserId())
+		.use(errorHandlerPlugin)
+		.use(strategyRoutes(deps ?? createMockDeps()));
 }
 
 const BASE = "http://localhost/api/v1/strategies";
@@ -105,6 +110,21 @@ describe("Strategy routes", () => {
 			const body = await res.json();
 			expect(body.data).toBeArrayOfSize(0);
 		});
+
+		test("passes userId from context to repository", async () => {
+			const deps = createMockDeps();
+			let capturedUserId = "";
+			deps.strategyRepository.findAll = async (uid) => {
+				capturedUserId = uid;
+				return [];
+			};
+			const app = new Elysia()
+				.use(withMockUserId(TEST_USER_ID))
+				.use(errorHandlerPlugin)
+				.use(strategyRoutes(deps));
+			await app.handle(new Request(BASE));
+			expect(capturedUserId).toBe(TEST_USER_ID);
+		});
 	});
 
 	describe("GET /api/v1/strategies/:id", () => {
@@ -123,6 +143,21 @@ describe("Strategy routes", () => {
 			expect(res.status).toBe(404);
 			const body = JSON.parse(await res.text());
 			expect(body.error.code).toBe("NOT_FOUND");
+		});
+
+		test("returns 404 when userId does not own the strategy", async () => {
+			const deps = createMockDeps();
+			// Repository returns null for wrong userId
+			deps.strategyRepository.findById = async (_id: string, uid: string) => {
+				if (uid !== TEST_USER_ID) return null;
+				return makeStrategy();
+			};
+			const app = new Elysia()
+				.use(withMockUserId("other-user"))
+				.use(errorHandlerPlugin)
+				.use(strategyRoutes(deps));
+			const res = await app.handle(new Request(`${BASE}/strat-1`));
+			expect(res.status).toBe(404);
 		});
 	});
 
@@ -160,6 +195,36 @@ describe("Strategy routes", () => {
 				}),
 			);
 			expect(res.status).toBe(422);
+		});
+
+		test("passes userId from context to repository on create", async () => {
+			const deps = createMockDeps();
+			let capturedUserId = "";
+			deps.strategyRepository.create = async (_input: CreateStrategyInput, uid: string) => {
+				capturedUserId = uid;
+				return makeStrategy({ id: "strat-new" });
+			};
+			const app = new Elysia()
+				.use(withMockUserId(TEST_USER_ID))
+				.use(errorHandlerPlugin)
+				.use(strategyRoutes(deps));
+			await app.handle(
+				new Request(BASE, {
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({
+						name: "New Strategy",
+						code: "return [];",
+						symbols: ["ETH/USDT"],
+						timeframe: "4h",
+						direction: "both",
+						featuresDefinition: [
+							{ name: "sma", expression: "SMA(close,20)", normalization: { method: "zscore" } },
+						],
+					}),
+				}),
+			);
+			expect(capturedUserId).toBe(TEST_USER_ID);
 		});
 	});
 

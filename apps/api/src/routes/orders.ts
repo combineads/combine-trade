@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { UnauthorizedError } from "../lib/errors.js";
 import { paginated } from "../lib/response.js";
 
 const MAX_PAGE_SIZE = 200;
@@ -34,20 +35,28 @@ export interface OrderRouteDeps {
 	findOrders: (opts: OrderQueryOptions) => Promise<{ items: Order[]; total: number }>;
 }
 
+/**
+ * Extract userId from Elysia context.
+ * betterAuthPlugin derives `userId` globally (T-181).
+ */
+function extractUserId(ctx: Record<string, unknown>): string {
+	return typeof ctx.userId === "string" ? ctx.userId : "";
+}
+
 export function orderRoutes(deps: OrderRouteDeps) {
 	return new Elysia().get(
 		"/api/v1/orders",
-		async ({ query }) => {
-			// TODO T-181: extract userId from session; placeholder until then
-			const userId = "placeholder-user-id";
-			const pageSize = Math.min(query.pageSize ?? 50, MAX_PAGE_SIZE);
-			const page = query.page ?? 1;
+		async (ctx) => {
+			const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+			if (!userId) throw new UnauthorizedError();
+			const pageSize = Math.min(ctx.query.pageSize ?? 50, MAX_PAGE_SIZE);
+			const page = ctx.query.page ?? 1;
 
 			const result = await deps.findOrders({
 				userId,
-				symbol: query.symbol,
-				status: query.status,
-				strategyId: query.strategyId,
+				symbol: ctx.query.symbol,
+				status: ctx.query.status,
+				strategyId: ctx.query.strategyId,
 				page,
 				pageSize,
 			});

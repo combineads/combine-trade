@@ -3,7 +3,7 @@ import type { StrategyRepository } from "../../../../packages/core/strategy/repo
 import { ExecutionModeService } from "../../../../packages/execution/mode.js";
 import type { ExecutionModeDeps } from "../../../../packages/execution/types.js";
 import { ModeTransitionError } from "../../../../packages/execution/types.js";
-import { NotFoundError, ValidationError } from "../lib/errors.js";
+import { NotFoundError, UnauthorizedError, ValidationError } from "../lib/errors.js";
 import { ok } from "../lib/response.js";
 
 export interface StrategyRouteDeps {
@@ -11,23 +11,33 @@ export interface StrategyRouteDeps {
 	executionModeDeps: ExecutionModeDeps;
 }
 
+/**
+ * Extract userId from Elysia context.
+ * betterAuthPlugin derives `userId` globally (T-181). When routes are tested
+ * in isolation without the full server, `userId` is absent — the defensive
+ * check in each handler covers this case.
+ */
+function extractUserId(ctx: Record<string, unknown>): string {
+	return typeof ctx.userId === "string" ? ctx.userId : "";
+}
+
 export function strategyRoutes(deps: StrategyRouteDeps) {
 	const modeService = new ExecutionModeService(deps.executionModeDeps);
 
 	return new Elysia({ prefix: "/api/v1/strategies" })
-		.get("/", async () => {
-			// TODO T-181: extract userId from session; placeholder until then
-			const userId = "placeholder-user-id";
+		.get("/", async (ctx) => {
+			const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+			if (!userId) throw new UnauthorizedError();
 			const strategies = await deps.strategyRepository.findAll(userId);
 			return ok(strategies);
 		})
 		.get(
 			"/:id",
-			async ({ params }) => {
-				// TODO T-181: extract userId from session; placeholder until then
-				const userId = "placeholder-user-id";
-				const strategy = await deps.strategyRepository.findById(params.id, userId);
-				if (!strategy) throw new NotFoundError(`Strategy ${params.id} not found`);
+			async (ctx) => {
+				const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+				if (!userId) throw new UnauthorizedError();
+				const strategy = await deps.strategyRepository.findById(ctx.params.id, userId);
+				if (!strategy) throw new NotFoundError(`Strategy ${ctx.params.id} not found`);
 				return ok(strategy);
 			},
 			{
@@ -36,10 +46,10 @@ export function strategyRoutes(deps: StrategyRouteDeps) {
 		)
 		.post(
 			"/",
-			async ({ body }) => {
-				// TODO T-181: extract userId from session; placeholder until then
-				const userId = "placeholder-user-id";
-				const strategy = await deps.strategyRepository.create(body, userId);
+			async (ctx) => {
+				const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+				if (!userId) throw new UnauthorizedError();
+				const strategy = await deps.strategyRepository.create(ctx.body, userId);
 				return ok(strategy);
 			},
 			{
@@ -77,12 +87,12 @@ export function strategyRoutes(deps: StrategyRouteDeps) {
 		)
 		.put(
 			"/:id",
-			async ({ params, body }) => {
-				// TODO T-181: extract userId from session; placeholder until then
-				const userId = "placeholder-user-id";
-				const existing = await deps.strategyRepository.findById(params.id, userId);
-				if (!existing) throw new NotFoundError(`Strategy ${params.id} not found`);
-				const updated = await deps.strategyRepository.update(params.id, body, userId);
+			async (ctx) => {
+				const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+				if (!userId) throw new UnauthorizedError();
+				const existing = await deps.strategyRepository.findById(ctx.params.id, userId);
+				if (!existing) throw new NotFoundError(`Strategy ${ctx.params.id} not found`);
+				const updated = await deps.strategyRepository.update(ctx.params.id, ctx.body, userId);
 				return ok(updated);
 			},
 			{
@@ -125,20 +135,20 @@ export function strategyRoutes(deps: StrategyRouteDeps) {
 		)
 		.put(
 			"/:id/mode",
-			async ({ params, body }) => {
-				// TODO T-181: extract userId from session; placeholder until then
-				const userId = "placeholder-user-id";
-				const existing = await deps.strategyRepository.findById(params.id, userId);
-				if (!existing) throw new NotFoundError(`Strategy ${params.id} not found`);
+			async (ctx) => {
+				const userId = extractUserId(ctx as unknown as Record<string, unknown>);
+				if (!userId) throw new UnauthorizedError();
+				const existing = await deps.strategyRepository.findById(ctx.params.id, userId);
+				if (!existing) throw new NotFoundError(`Strategy ${ctx.params.id} not found`);
 				try {
-					await modeService.setMode(params.id, body.mode);
+					await modeService.setMode(ctx.params.id, ctx.body.mode);
 				} catch (err) {
 					if (err instanceof ModeTransitionError) {
 						throw new ValidationError(err.message);
 					}
 					throw err;
 				}
-				return ok({ strategyId: params.id, mode: body.mode });
+				return ok({ strategyId: ctx.params.id, mode: ctx.body.mode });
 			},
 			{
 				params: t.Object({ id: t.String() }),

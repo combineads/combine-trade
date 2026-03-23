@@ -6,13 +6,14 @@ import {
 	type CredentialRouteDeps,
 	credentialRoutes,
 } from "../src/routes/credentials.js";
+import { TEST_USER_ID, withMockUserId } from "./helpers/auth.js";
 
 const MASTER_KEY = "test-master-key-for-encryption-32chars!";
 
 function makeCred(overrides: Partial<Credential> = {}): Credential {
 	return {
 		id: "cred-1",
-		userId: "default-user",
+		userId: TEST_USER_ID,
 		exchange: "binance",
 		label: "main account",
 		isActive: true,
@@ -33,6 +34,7 @@ function createMockDeps(): CredentialRouteDeps {
 		create: async (input) => {
 			const cred = makeCred({
 				id: "cred-new",
+				userId: input.userId,
 				exchange: input.exchange,
 				label: input.label,
 			});
@@ -53,7 +55,10 @@ function createMockDeps(): CredentialRouteDeps {
 }
 
 function createApp(deps?: CredentialRouteDeps) {
-	return new Elysia().use(errorHandlerPlugin).use(credentialRoutes(deps ?? createMockDeps()));
+	return new Elysia()
+		.use(withMockUserId())
+		.use(errorHandlerPlugin)
+		.use(credentialRoutes(deps ?? createMockDeps()));
 }
 
 const BASE = "http://localhost/api/v1/credentials";

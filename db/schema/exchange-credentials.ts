@@ -1,11 +1,11 @@
 import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { users } from "./users.js";
+import { authUser } from "./better-auth.js";
 
 export const exchangeCredentials = pgTable("exchange_credentials", {
 	id: uuid("id").defaultRandom().primaryKey(),
-	userId: uuid("user_id")
+	userId: text("user_id")
 		.notNull()
-		.references(() => users.id),
+		.references(() => authUser.id),
 	exchange: text("exchange").notNull(),
 	apiKeyEncrypted: text("api_key_encrypted").notNull(),
 	apiSecretEncrypted: text("api_secret_encrypted").notNull(),

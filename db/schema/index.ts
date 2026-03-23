@@ -7,7 +7,6 @@ export { decisions } from "./decisions.js";
 export { alerts } from "./alerts.js";
 export { orders } from "./orders.js";
 export { vectorTableRegistry } from "./vector-table-registry.js";
-export { users } from "./users.js";
 export { exchangeCredentials } from "./exchange-credentials.js";
 export { fundingRates } from "./funding-rates.js";
 export { entrySnapshots } from "./entry-snapshots.js";

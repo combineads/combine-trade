@@ -1,15 +1,15 @@
 import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { authUser } from "./better-auth.js";
 import { entrySnapshots } from "./entry-snapshots.js";
 import { orders } from "./orders.js";
 import { strategies } from "./strategies.js";
 import { strategyEvents } from "./strategy-events.js";
-import { users } from "./users.js";
 
 export const tradeJournals = pgTable("trade_journals", {
 	id: uuid("id").defaultRandom().primaryKey(),
-	userId: uuid("user_id")
+	userId: text("user_id")
 		.notNull()
-		.references(() => users.id),
+		.references(() => authUser.id),
 	eventId: uuid("event_id")
 		.notNull()
 		.references(() => strategyEvents.id),

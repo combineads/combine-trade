@@ -84,3 +84,34 @@ bun test
 - `user` 테이블에 `role`, `is_active` 컬럼 추가 (Better Auth 확장은 별도 태스크)
 - 기존 `users` 데이터 마이그레이션 (현재 비어있음)
 - seed 스크립트 수정 (T-196 범위)
+
+## Implementation Notes
+
+- **Date:** 2026-03-24
+- **Files changed:**
+  - `db/schema/exchange-credentials.ts`
+  - `db/schema/paper-balances.ts`
+  - `db/schema/paper-orders.ts`
+  - `db/schema/paper-positions.ts`
+  - `db/schema/trade-journals.ts`
+  - `db/schema/index.ts`
+  - `db/schema/users.ts` (삭제)
+  - `db/migrations/0005_migrate_users_to_better_auth.sql` (신규)
+  - `db/migrations/meta/_journal.json`
+- **Tests written:** 없음 (스키마 변경 — 기존 1677개 테스트로 커버)
+- **Approach:** 5개 스키마 파일의 import를 `users` → `authUser`, `uuid` → `text`로 변경. drizzle-kit generate가 TTY 필요하여 마이그레이션 SQL 수동 작성 (프로젝트의 기존 방식 0002–0004와 동일). FK drop → 타입 변경 → FK 재생성 → users 테이블 drop 순서.
+- **Validation results:**
+  - `bun run typecheck` ✅
+  - `bun run db:migrate` ✅ (0005 적용)
+  - DB: `users` 테이블 없음 ✅
+  - DB: 5개 테이블 FK가 `user` 테이블 참조 ✅
+  - 코드 내 `schema/users` 참조 0건 ✅
+  - `bun test` ✅ 1673 pass, 0 fail
+  - 수정 파일 lint ✅ (전체 lint 266 warnings/13 errors는 pre-existing, 수정 파일과 무관)
+- **Discovered work:** 없음
+- **Blockers:** 없음
+
+## Outputs
+- `db/schema/` — 5개 스키마 파일 (userId: text, FK → authUser.id)
+- `db/migrations/0005_migrate_users_to_better_auth.sql`
+- DB 상태: `users` 테이블 없음, 5개 테이블의 `user_id`가 `user.id` (text) 참조

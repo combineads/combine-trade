@@ -1,11 +1,11 @@
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { users } from "./users.js";
+import { authUser } from "./better-auth.js";
 
 export const paperBalances = pgTable("paper_balances", {
 	id: uuid("id").defaultRandom().primaryKey(),
-	userId: uuid("user_id")
+	userId: text("user_id")
 		.notNull()
-		.references(() => users.id),
+		.references(() => authUser.id),
 	exchange: text("exchange").notNull(),
 	balance: text("balance").notNull(),
 	initialBalance: text("initial_balance").notNull(),

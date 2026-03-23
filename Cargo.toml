@@ -1,0 +1,13 @@
+[workspace]
+members = ["apps/desktop/src-tauri"]
+resolver = "2"
+
+[workspace.dependencies]
+serde_with = "=3.16.1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

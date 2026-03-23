@@ -16,6 +16,7 @@ export function FilterBar({ filters, values, onChange }: FilterBarProps) {
 			{filters.map((filter) => (
 				<div key={filter.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
 					<label
+						htmlFor={`filter-${filter.key}`}
 						style={{
 							fontSize: 12,
 							color: "var(--text-muted)",
@@ -25,6 +26,7 @@ export function FilterBar({ filters, values, onChange }: FilterBarProps) {
 						{filter.label}
 					</label>
 					<select
+						id={`filter-${filter.key}`}
 						value={values[filter.key] ?? ""}
 						onChange={(e) => onChange(filter.key, e.target.value)}
 						style={{

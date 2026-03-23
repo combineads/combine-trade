@@ -1,4 +1,3 @@
-import type { LossTrackerDeps } from "./loss-tracker.js";
 import type { PnlRecord } from "./types.js";
 
 export interface PnlRow {

@@ -1,7 +1,7 @@
-import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { ExecutionWorkerHandler, type ExecutionWorkerDeps } from "../src/handler.js";
+import { describe, expect, mock, test } from "bun:test";
 import type { DecisionResult } from "@combine/core/decision";
 import type { ExecutionMode } from "@combine/execution";
+import { type ExecutionWorkerDeps, ExecutionWorkerHandler } from "../src/handler.js";
 
 function makeDecisionResult(decision: "LONG" | "SHORT" | "PASS"): DecisionResult {
 	return {

@@ -1,11 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { DoubleBBResult } from "../detector.js";
 import type { EvidenceResult } from "../evidence.js";
-import {
-	type GateContext,
-	type GateResult,
-	evaluateGate,
-} from "../gate.js";
+import { type GateContext, evaluateGate } from "../gate.js";
 
 function makeEvidence(overrides: Partial<EvidenceResult> = {}): EvidenceResult {
 	return {

@@ -16,11 +16,11 @@ export interface PaginatedResponse<T> {
 }
 
 export function buildQueryString(params: Record<string, unknown>): string {
-	const entries = Object.entries(params).filter(
-		([, v]) => v !== undefined && v !== null,
-	);
+	const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null);
 	if (entries.length === 0) return "";
-	return entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join("&");
+	return entries
+		.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+		.join("&");
 }
 
 export interface ApiClient {
@@ -62,14 +62,12 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 
 	return {
 		baseUrl: config.baseUrl,
-		get: <T>(path: string, params?: Record<string, unknown>) =>
-			request<T>(path, undefined, params),
+		get: <T>(path: string, params?: Record<string, unknown>) => request<T>(path, undefined, params),
 		post: <T>(path: string, body?: unknown) =>
 			request<T>(path, { method: "POST", body: JSON.stringify(body) }),
 		put: <T>(path: string, body?: unknown) =>
 			request<T>(path, { method: "PUT", body: JSON.stringify(body) }),
-		delete: <T>(path: string) =>
-			request<T>(path, { method: "DELETE" }),
+		delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 	};
 }
 

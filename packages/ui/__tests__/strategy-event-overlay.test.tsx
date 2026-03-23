@@ -1,18 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import React from "react";
 import { renderToString } from "react-dom/server";
 import {
-	StrategyEventOverlay,
 	type ChartStrategyEvent,
+	StrategyEventOverlay,
 	type StrategyEventOverlayProps,
 } from "../src/views/charts/strategy-event-overlay";
 
 describe("StrategyEventOverlay", () => {
 	test("renders null (no DOM nodes)", () => {
 		const ref = { current: null };
-		const html = renderToString(
-			<StrategyEventOverlay seriesRef={ref} events={[]} />,
-		);
+		const html = renderToString(<StrategyEventOverlay seriesRef={ref} events={[]} />);
 		expect(html).toBe("");
 	});
 

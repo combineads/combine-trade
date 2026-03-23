@@ -1,7 +1,7 @@
-import { describe, expect, test, mock, beforeEach } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
+import { RetryableError, UserError } from "@combine/shared";
 import ccxt from "ccxt";
 import { BinanceAdapter } from "../binance/adapter.js";
-import { UserError, RetryableError } from "@combine/shared";
 
 /**
  * Creates a BinanceAdapter with its internal CCXT instance mocked.

@@ -15,16 +15,19 @@ export interface StrategyCreateViewProps {
 	isSubmitting?: boolean;
 }
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
+function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
 	return (
-		<label style={{
-			fontSize: 11,
-			color: "var(--text-muted)",
-			textTransform: "uppercase",
-			letterSpacing: "0.05em",
-			marginBottom: 4,
-			display: "block",
-		}}>
+		<label
+			htmlFor={htmlFor}
+			style={{
+				fontSize: 11,
+				color: "var(--text-muted)",
+				textTransform: "uppercase",
+				letterSpacing: "0.05em",
+				marginBottom: 4,
+				display: "block",
+			}}
+		>
 			{children}
 		</label>
 	);
@@ -45,7 +48,10 @@ export function StrategyCreateView({ onSubmit, onCancel, isSubmitting }: Strateg
 						onSubmit({
 							name: fd.get("name") as string,
 							direction: (fd.get("direction") as StrategyDirection) || "LONG",
-							symbols: (fd.get("symbols") as string).split(",").map((s) => s.trim()).filter(Boolean),
+							symbols: (fd.get("symbols") as string)
+								.split(",")
+								.map((s) => s.trim())
+								.filter(Boolean),
 							timeframes: TIMEFRAMES.filter((tf) => fd.get(`tf-${tf}`)),
 						});
 					}

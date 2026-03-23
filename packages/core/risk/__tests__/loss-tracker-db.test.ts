@@ -1,9 +1,5 @@
-import { describe, expect, test, mock } from "bun:test";
-import {
-	LossTrackerDbService,
-	type LossTrackerDbDeps,
-	type PnlRow,
-} from "../loss-tracker-db.js";
+import { describe, expect, mock, test } from "bun:test";
+import { type LossTrackerDbDeps, LossTrackerDbService, type PnlRow } from "../loss-tracker-db.js";
 
 const NOW = new Date("2026-03-22T12:00:00Z");
 const USER_ID = "user-test-uuid";
@@ -89,8 +85,16 @@ describe("LossTrackerDbService", () => {
 		const deps = makeDeps({
 			findByDateRange: mock(() =>
 				Promise.resolve([
-					makeRow({ id: "pnl-1", realizedPnl: "-100.00", updatedAt: new Date("2026-03-22T10:00:00Z") }),
-					makeRow({ id: "pnl-2", realizedPnl: "30.00", updatedAt: new Date("2026-03-22T11:00:00Z") }),
+					makeRow({
+						id: "pnl-1",
+						realizedPnl: "-100.00",
+						updatedAt: new Date("2026-03-22T10:00:00Z"),
+					}),
+					makeRow({
+						id: "pnl-2",
+						realizedPnl: "30.00",
+						updatedAt: new Date("2026-03-22T11:00:00Z"),
+					}),
 				]),
 			),
 		});

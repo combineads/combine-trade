@@ -1,4 +1,4 @@
-import { UserError, RetryableError } from "@combine/shared";
+import { RetryableError, UserError } from "@combine/shared";
 import type { Timeframe } from "@combine/shared";
 import ccxt from "ccxt";
 import type {
@@ -160,7 +160,10 @@ export class BinanceAdapter implements ExchangeAdapter {
 			return new UserError("ERR_USER_INVALID_SYMBOL", `Invalid symbol: ${(err as Error).message}`);
 		}
 		if (err instanceof ccxt.InsufficientFunds) {
-			return new UserError("ERR_USER_INSUFFICIENT_FUNDS", `Insufficient funds: ${(err as Error).message}`);
+			return new UserError(
+				"ERR_USER_INSUFFICIENT_FUNDS",
+				`Insufficient funds: ${(err as Error).message}`,
+			);
 		}
 		if (err instanceof ccxt.InvalidOrder) {
 			return new UserError("ERR_USER_INVALID_ORDER", `Invalid order: ${(err as Error).message}`);

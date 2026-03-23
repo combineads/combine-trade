@@ -1,6 +1,6 @@
-import { TradeStats, type TradeStatsData } from "./trade-stats";
 import { EquityCurve, type EquityPoint } from "./equity-curve";
-import { PnlDistribution, type PnlBucket } from "./pnl-distribution";
+import { type PnlBucket, PnlDistribution } from "./pnl-distribution";
+import { TradeStats, type TradeStatsData } from "./trade-stats";
 
 export interface BacktestResult {
 	stats: TradeStatsData;
@@ -26,10 +26,19 @@ export function BacktestPage({ strategies, onRun, isRunning, result, error }: Ba
 			{/* Form */}
 			<div style={{ display: "flex", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
 				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+					<label
+						htmlFor="backtest-strategy"
+						style={{
+							fontSize: 11,
+							color: "var(--text-muted)",
+							textTransform: "uppercase",
+							letterSpacing: "0.05em",
+						}}
+					>
 						Strategy
 					</label>
 					<select
+						id="backtest-strategy"
 						style={{
 							padding: "8px 12px",
 							fontSize: 13,
@@ -42,16 +51,27 @@ export function BacktestPage({ strategies, onRun, isRunning, result, error }: Ba
 					>
 						{strategies.length === 0 && <option>No strategies</option>}
 						{strategies.map((s) => (
-							<option key={s.id} value={s.id}>{s.name}</option>
+							<option key={s.id} value={s.id}>
+								{s.name}
+							</option>
 						))}
 					</select>
 				</div>
 
 				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+					<label
+						htmlFor="backtest-start-date"
+						style={{
+							fontSize: 11,
+							color: "var(--text-muted)",
+							textTransform: "uppercase",
+							letterSpacing: "0.05em",
+						}}
+					>
 						Start Date
 					</label>
 					<input
+						id="backtest-start-date"
 						type="date"
 						style={{
 							padding: "8px 12px",
@@ -66,10 +86,19 @@ export function BacktestPage({ strategies, onRun, isRunning, result, error }: Ba
 				</div>
 
 				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+					<label
+						htmlFor="backtest-end-date"
+						style={{
+							fontSize: 11,
+							color: "var(--text-muted)",
+							textTransform: "uppercase",
+							letterSpacing: "0.05em",
+						}}
+					>
 						End Date
 					</label>
 					<input
+						id="backtest-end-date"
 						type="date"
 						style={{
 							padding: "8px 12px",
@@ -110,36 +139,42 @@ export function BacktestPage({ strategies, onRun, isRunning, result, error }: Ba
 			{/* Results */}
 			<div>
 				{error && (
-					<div style={{
-						padding: 16,
-						backgroundColor: "rgba(239,68,68,0.1)",
-						border: "1px solid rgba(239,68,68,0.3)",
-						borderRadius: "var(--radius-md)",
-						color: "#EF4444",
-						fontSize: 13,
-					}}>
+					<div
+						style={{
+							padding: 16,
+							backgroundColor: "rgba(239,68,68,0.1)",
+							border: "1px solid rgba(239,68,68,0.3)",
+							borderRadius: "var(--radius-md)",
+							color: "#EF4444",
+							fontSize: 13,
+						}}
+					>
 						{error}
 					</div>
 				)}
 
 				{!result && !isRunning && !error && (
-					<div style={{
-						padding: 48,
-						textAlign: "center",
-						color: "var(--text-muted)",
-						fontSize: 14,
-					}}>
+					<div
+						style={{
+							padding: 48,
+							textAlign: "center",
+							color: "var(--text-muted)",
+							fontSize: 14,
+						}}
+					>
 						Run a backtest to see results
 					</div>
 				)}
 
 				{isRunning && (
-					<div style={{
-						padding: 48,
-						textAlign: "center",
-						color: "var(--text-muted)",
-						fontSize: 14,
-					}}>
+					<div
+						style={{
+							padding: 48,
+							textAlign: "center",
+							color: "var(--text-muted)",
+							fontSize: 14,
+						}}
+					>
 						Running backtest...
 					</div>
 				)}

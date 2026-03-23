@@ -38,11 +38,7 @@ export class FundingRateCollector {
 		for (const rate of rates) {
 			const fundingTime = new Date(rate.nextFundingTime);
 
-			const stored = await this.deps.isAlreadyStored(
-				this.deps.exchange,
-				rate.symbol,
-				fundingTime,
-			);
+			const stored = await this.deps.isAlreadyStored(this.deps.exchange, rate.symbol, fundingTime);
 
 			if (stored) {
 				skipped++;

@@ -1,8 +1,5 @@
-import { describe, expect, test, mock, beforeEach } from "bun:test";
-import {
-	createAuthApiClient,
-	type AuthApiClientOptions,
-} from "../src/auth/auth-api-client.js";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { createAuthApiClient } from "../src/auth/auth-api-client.js";
 
 describe("createAuthApiClient", () => {
 	let fetchMock: ReturnType<typeof mock>;
@@ -76,9 +73,7 @@ describe("createAuthApiClient", () => {
 
 	test("throws on second 401 (no infinite retry)", async () => {
 		const onUnauthorized = mock(() => Promise.resolve());
-		fetchMock = mock(() =>
-			Promise.resolve(new Response("{}", { status: 401 })),
-		);
+		fetchMock = mock(() => Promise.resolve(new Response("{}", { status: 401 })));
 		globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 		const client = createAuthApiClient({

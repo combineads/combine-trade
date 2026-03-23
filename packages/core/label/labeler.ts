@@ -91,8 +91,7 @@ export function labelEvent(input: LabelInput): LabelResult {
 	}
 
 	// TIME_EXIT: max_hold_bars reached or no candles
-	const lastClose =
-		barsToScan > 0 ? new Decimal(forwardCandles[barsToScan - 1]!.close) : entry;
+	const lastClose = barsToScan > 0 ? new Decimal(forwardCandles[barsToScan - 1]!.close) : entry;
 	const pnlPct = computePnl(entry, lastClose, isLong);
 
 	return {

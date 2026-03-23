@@ -1,9 +1,9 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import {
-	KillSwitchDbService,
 	type KillSwitchDbDeps,
-	type KillSwitchRow,
+	KillSwitchDbService,
 	type KillSwitchEventRow,
+	type KillSwitchRow,
 } from "../kill-switch-db.js";
 import type { KillSwitchState } from "../types.js";
 
@@ -123,9 +123,7 @@ describe("KillSwitchDbService", () => {
 
 	test("maps global scope correctly (no strategyId)", async () => {
 		const deps = makeDeps({
-			findActiveStates: mock(() =>
-				Promise.resolve([makeRow({ strategyId: null })]),
-			),
+			findActiveStates: mock(() => Promise.resolve([makeRow({ strategyId: null })])),
 		});
 		const svc = new KillSwitchDbService(deps);
 
@@ -136,9 +134,7 @@ describe("KillSwitchDbService", () => {
 
 	test("maps strategy scope correctly", async () => {
 		const deps = makeDeps({
-			findActiveStates: mock(() =>
-				Promise.resolve([makeRow({ strategyId: "strat-42" })]),
-			),
+			findActiveStates: mock(() => Promise.resolve([makeRow({ strategyId: "strat-42" })])),
 		});
 		const svc = new KillSwitchDbService(deps);
 
@@ -149,9 +145,7 @@ describe("KillSwitchDbService", () => {
 
 	test("maps triggeredBy to KillSwitchTrigger type", async () => {
 		const deps = makeDeps({
-			findActiveStates: mock(() =>
-				Promise.resolve([makeRow({ activatedBy: "api_error" })]),
-			),
+			findActiveStates: mock(() => Promise.resolve([makeRow({ activatedBy: "api_error" })])),
 		});
 		const svc = new KillSwitchDbService(deps);
 

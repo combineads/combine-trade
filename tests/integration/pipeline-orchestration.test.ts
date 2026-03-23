@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
+import { type CatchUpDeps, runCatchUp } from "@combine/shared/pipeline/catch-up.js";
 import {
 	createCorrelationContext,
 	endStage,
 	getPipelineLatencyMs,
 	startStage,
 } from "@combine/shared/pipeline/correlation.js";
-import { handleFailure, shouldRetry, type DeadLetterDeps } from "@combine/shared/pipeline/dead-letter.js";
-import { runCatchUp, type CatchUpDeps } from "@combine/shared/pipeline/catch-up.js";
+import { type DeadLetterDeps, handleFailure } from "@combine/shared/pipeline/dead-letter.js";
 import { PipelineMetrics } from "@combine/shared/pipeline/metrics.js";
 
 describe("Pipeline orchestration integration", () => {
@@ -36,7 +36,9 @@ describe("Pipeline orchestration integration", () => {
 		const saved: Array<Record<string, unknown>> = [];
 		const deps: DeadLetterDeps = {
 			loadRetryCount: async () => 2,
-			saveDeadLetter: async (entry) => { saved.push(entry); },
+			saveDeadLetter: async (entry) => {
+				saved.push(entry);
+			},
 		};
 
 		// Retry count 2 → still retryable
@@ -47,7 +49,9 @@ describe("Pipeline orchestration integration", () => {
 		// Retry count 3 → dead-letter
 		const deps2: DeadLetterDeps = {
 			loadRetryCount: async () => 3,
-			saveDeadLetter: async (entry) => { saved.push(entry); },
+			saveDeadLetter: async (entry) => {
+				saved.push(entry);
+			},
 		};
 		const r2 = await handleFailure("evt-1", "vector", new Error("timeout"), deps2);
 		expect(r2.action).toBe("dead_letter");
@@ -69,7 +73,9 @@ describe("Pipeline orchestration integration", () => {
 				if (evt.data === "fail") throw new Error("process error");
 				processed.push(evt.id);
 			},
-			markProcessed: async (evt) => { marked.push(evt.id); },
+			markProcessed: async (evt) => {
+				marked.push(evt.id);
+			},
 			getEventId: (evt) => evt.id,
 		};
 

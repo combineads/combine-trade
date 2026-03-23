@@ -86,7 +86,7 @@ export function parseCoverageJson(raw: string): CoverageJson | null {
  * the core coverage figure.
  */
 export function buildCoverageReport(json: CoverageJson): CoverageReport {
-	const totalEntry = json["total"];
+	const totalEntry = json.total;
 	const overallPct = totalEntry?.lines?.pct ?? 0;
 
 	const coreFiles: CoverageFileInfo[] = [];
@@ -132,8 +132,7 @@ export function checkThresholds(report: CoverageReport): ThresholdResult {
 			.join("\n");
 
 		failures.push(
-			`packages/core coverage ${report.corePct.toFixed(2)}% is below the required ${CORE_COVERAGE_THRESHOLD}%` +
-				(fileList ? `\nFailing core files:\n${fileList}` : ""),
+			`packages/core coverage ${report.corePct.toFixed(2)}% is below the required ${CORE_COVERAGE_THRESHOLD}%${fileList ? `\nFailing core files:\n${fileList}` : ""}`,
 		);
 	}
 
@@ -168,12 +167,7 @@ function main(): void {
 	const report = buildCoverageReport(json);
 	const result = checkThresholds(report);
 
-	console.log("[check-coverage] Coverage summary:");
-	console.log(`  Overall : ${report.overallPct.toFixed(2)}%  (threshold: ${OVERALL_COVERAGE_THRESHOLD}%)`);
-	console.log(`  Core    : ${report.corePct.toFixed(2)}%  (threshold: ${CORE_COVERAGE_THRESHOLD}%)`);
-
 	if (result.passed) {
-		console.log("[check-coverage] All thresholds passed.");
 		process.exit(0);
 	} else {
 		console.error("[check-coverage] Coverage thresholds FAILED:");

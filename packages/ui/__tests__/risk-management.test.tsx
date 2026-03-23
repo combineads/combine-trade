@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
-import { LossLimitDisplay, type LossLimitData } from "../src/views/risk/loss-limit-display";
-import { AuditLog, type AuditEntry } from "../src/views/risk/audit-log";
 import { ConfirmationDialog } from "../src/components/confirmation-dialog";
+import { type AuditEntry, AuditLog } from "../src/views/risk/audit-log";
 import { KillSwitchControl } from "../src/views/risk/kill-switch-control";
+import { type LossLimitData, LossLimitDisplay } from "../src/views/risk/loss-limit-display";
 import { RiskManagementView, type RiskState } from "../src/views/risk/risk-management-view";
 
 describe("LossLimitDisplay", () => {
@@ -30,8 +30,20 @@ describe("LossLimitDisplay", () => {
 
 describe("AuditLog", () => {
 	const entries: AuditEntry[] = [
-		{ id: "1", action: "kill_switch_activated", reason: "Daily loss limit breached", actor: "system", timestamp: "2026-03-22T10:00:00Z" },
-		{ id: "2", action: "kill_switch_deactivated", reason: "Manual release", actor: "user", timestamp: "2026-03-22T11:00:00Z" },
+		{
+			id: "1",
+			action: "kill_switch_activated",
+			reason: "Daily loss limit breached",
+			actor: "system",
+			timestamp: "2026-03-22T10:00:00Z",
+		},
+		{
+			id: "2",
+			action: "kill_switch_deactivated",
+			reason: "Manual release",
+			actor: "user",
+			timestamp: "2026-03-22T11:00:00Z",
+		},
 	];
 
 	test("renders audit entries", () => {
@@ -108,17 +120,13 @@ describe("KillSwitchControl", () => {
 	});
 
 	test("renders inactive state", () => {
-		const html = renderToString(
-			<KillSwitchControl active={false} />,
-		);
+		const html = renderToString(<KillSwitchControl active={false} />);
 		expect(html).toContain("Trading Active");
 		expect(html).toContain("Activate Kill Switch");
 	});
 
 	test("shows keyboard shortcut hint", () => {
-		const html = renderToString(
-			<KillSwitchControl active={false} />,
-		);
+		const html = renderToString(<KillSwitchControl active={false} />);
 		expect(html).toContain("Ctrl+Shift+K");
 	});
 });
@@ -128,7 +136,13 @@ describe("RiskManagementView", () => {
 		killSwitchActive: false,
 		lossLimit: { dailyLimit: 5000, dailyUsed: 1200, currency: "USD" },
 		auditLog: [
-			{ id: "1", action: "kill_switch_tested", reason: "Manual test", actor: "user", timestamp: "2026-03-22T09:00:00Z" },
+			{
+				id: "1",
+				action: "kill_switch_tested",
+				reason: "Manual test",
+				actor: "user",
+				timestamp: "2026-03-22T09:00:00Z",
+			},
 		],
 	};
 

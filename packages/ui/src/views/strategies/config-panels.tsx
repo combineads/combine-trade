@@ -75,7 +75,14 @@ function Field({ label, value }: { label: string; value: string | number }) {
 	);
 }
 
-export function ConfigPanels({ name, direction, symbols, timeframes, config, mode }: ConfigPanelsProps) {
+export function ConfigPanels({
+	name,
+	direction,
+	symbols,
+	timeframes,
+	config,
+	mode,
+}: ConfigPanelsProps) {
 	return (
 		<div style={{ overflowY: "auto", height: "100%" }}>
 			{/* 1. Basic Info */}
@@ -107,7 +114,9 @@ export function ConfigPanels({ name, direction, symbols, timeframes, config, mod
 					<div style={labelStyle}>Timeframes</div>
 					<div style={{ display: "flex", gap: 4 }}>
 						{timeframes.map((t) => (
-							<span key={t} style={{ ...valueStyle, fontSize: 12 }}>{t}</span>
+							<span key={t} style={{ ...valueStyle, fontSize: 12 }}>
+								{t}
+							</span>
 						))}
 					</div>
 				</div>
@@ -117,8 +126,15 @@ export function ConfigPanels({ name, direction, symbols, timeframes, config, mod
 			<div style={sectionStyle}>
 				<div style={headingStyle}>Features</div>
 				{config.features.map((f) => (
-					<div key={f.name} style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-						<span style={{ fontSize: 12, fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>{f.name}</span>
+					<div
+						key={f.name}
+						style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}
+					>
+						<span
+							style={{ fontSize: 12, fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}
+						>
+							{f.name}
+						</span>
 						<span style={{ fontSize: 11, color: "var(--text-muted)" }}>{f.normalization}</span>
 					</div>
 				))}
@@ -150,11 +166,13 @@ export function ConfigPanels({ name, direction, symbols, timeframes, config, mod
 			{/* 6. Execution Mode */}
 			<div style={sectionStyle}>
 				<div style={headingStyle}>Execution Mode</div>
-				<div style={{
-					fontSize: 13,
-					fontWeight: 600,
-					color: mode === "auto-trade" ? "var(--color-secondary)" : "var(--color-primary)",
-				}}>
+				<div
+					style={{
+						fontSize: 13,
+						fontWeight: 600,
+						color: mode === "auto-trade" ? "var(--color-secondary)" : "var(--color-primary)",
+					}}
+				>
 					{mode}
 				</div>
 			</div>

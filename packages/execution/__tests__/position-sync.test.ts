@@ -1,10 +1,9 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import {
-	PositionSyncService,
-	type PositionSyncDeps,
 	type ExchangePosition,
 	type LocalPosition,
-	type SyncReport,
+	type PositionSyncDeps,
+	PositionSyncService,
 } from "../position-sync.js";
 
 function makeDeps(overrides: Partial<PositionSyncDeps> = {}): PositionSyncDeps {
@@ -25,7 +24,13 @@ describe("PositionSyncService", () => {
 			),
 			loadLocalPositions: mock(() =>
 				Promise.resolve([
-					{ symbol: "BTCUSDT", side: "long", quantity: "0.5", entryPrice: "50000", strategyId: "strat-1" },
+					{
+						symbol: "BTCUSDT",
+						side: "long",
+						quantity: "0.5",
+						entryPrice: "50000",
+						strategyId: "strat-1",
+					},
 				] as LocalPosition[]),
 			),
 		});
@@ -58,7 +63,13 @@ describe("PositionSyncService", () => {
 			fetchExchangePositions: mock(() => Promise.resolve([])),
 			loadLocalPositions: mock(() =>
 				Promise.resolve([
-					{ symbol: "ETHUSDT", side: "short", quantity: "2.0", entryPrice: "3000", strategyId: "strat-1" },
+					{
+						symbol: "ETHUSDT",
+						side: "short",
+						quantity: "2.0",
+						entryPrice: "3000",
+						strategyId: "strat-1",
+					},
 				] as LocalPosition[]),
 			),
 		});
@@ -79,7 +90,13 @@ describe("PositionSyncService", () => {
 			),
 			loadLocalPositions: mock(() =>
 				Promise.resolve([
-					{ symbol: "BTCUSDT", side: "long", quantity: "0.5", entryPrice: "50000", strategyId: "strat-1" },
+					{
+						symbol: "BTCUSDT",
+						side: "long",
+						quantity: "0.5",
+						entryPrice: "50000",
+						strategyId: "strat-1",
+					},
 				] as LocalPosition[]),
 			),
 		});
@@ -112,8 +129,20 @@ describe("PositionSyncService", () => {
 			),
 			loadLocalPositions: mock(() =>
 				Promise.resolve([
-					{ symbol: "BTCUSDT", side: "long", quantity: "1.0", entryPrice: "50000", strategyId: "strat-1" },
-					{ symbol: "ETHUSDT", side: "long", quantity: "5.0", entryPrice: "3000", strategyId: "strat-2" },
+					{
+						symbol: "BTCUSDT",
+						side: "long",
+						quantity: "1.0",
+						entryPrice: "50000",
+						strategyId: "strat-1",
+					},
+					{
+						symbol: "ETHUSDT",
+						side: "long",
+						quantity: "5.0",
+						entryPrice: "3000",
+						strategyId: "strat-2",
+					},
 				] as LocalPosition[]),
 			),
 		});

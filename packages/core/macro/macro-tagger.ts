@@ -46,10 +46,7 @@ function hasGeopoliticalKeyword(news: NewsItem): boolean {
 	return GEOPOLITICAL_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
-export function generateMacroTags(
-	context: MacroContext,
-	entryTime: Date,
-): string[] {
+export function generateMacroTags(context: MacroContext, entryTime: Date): string[] {
 	const tags = new Set<string>();
 	const allEvents = [...context.entryEvents, ...context.exitEvents];
 	const allNews = [...context.entryNews, ...context.exitNews];
@@ -67,11 +64,7 @@ export function generateMacroTags(
 			if (isPmiEvent(event)) tags.add("pmi_day");
 		}
 
-		if (
-			event.impact === "HIGH" &&
-			diff > 0 &&
-			diff <= TWENTY_FOUR_HOURS_MS
-		) {
+		if (event.impact === "HIGH" && diff > 0 && diff <= TWENTY_FOUR_HOURS_MS) {
 			tags.add("pre_high_impact_event");
 		}
 	}

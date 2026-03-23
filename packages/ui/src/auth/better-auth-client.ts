@@ -31,9 +31,7 @@ export interface BetterAuthClientInstance {
  * Call this once at app startup (e.g. apps/web/src/lib/auth-client.ts) and
  * pass the result to AuthProvider via the `authClient` prop.
  */
-export function createBetterAuthClient(
-	options: BetterAuthClientOptions,
-): BetterAuthClientInstance {
+export function createBetterAuthClient(options: BetterAuthClientOptions): BetterAuthClientInstance {
 	const client = _createAuthClient({ baseURL: options.baseURL });
 	return {
 		signIn: client.signIn,

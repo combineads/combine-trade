@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { formatAlertMessage } from "@combine/alert";
-import type { AlertContext, SlackMessage } from "@combine/alert";
+import type { AlertContext } from "@combine/alert";
 import type { DecisionResult } from "@combine/core/decision";
 import { ExecutionModeService, buildOrder, isActionable, requiresOrder } from "@combine/execution";
 import type { ExecutionMode, ExecutionModeDeps } from "@combine/execution";
@@ -38,7 +38,9 @@ function makeModeDeps(mode: ExecutionMode): ExecutionModeDeps {
 	const modes: Record<string, ExecutionMode> = { "strat-1": mode };
 	return {
 		loadMode: async (id) => modes[id] ?? "analysis",
-		saveMode: async (id, m) => { modes[id] = m; },
+		saveMode: async (id, m) => {
+			modes[id] = m;
+		},
 		getSafetyGateStatus: async () => ({
 			killSwitchEnabled: true,
 			dailyLossLimitConfigured: true,
@@ -81,16 +83,19 @@ describe("Alert-execution integration", () => {
 		expect(msg.blocks).toHaveLength(4);
 
 		// Order built
-		const order = buildOrder({
-			strategyId: "strat-1",
-			eventId: "evt-1",
-			symbol: "BTCUSDT",
-			direction: "LONG",
-			entryPrice: "50000",
-			tpPct: 2,
-			slPct: 1,
-			quantity: "0.01",
-		}, 1704067200000);
+		const order = buildOrder(
+			{
+				strategyId: "strat-1",
+				eventId: "evt-1",
+				symbol: "BTCUSDT",
+				direction: "LONG",
+				entryPrice: "50000",
+				tpPct: 2,
+				slPct: 1,
+				quantity: "0.01",
+			},
+			1704067200000,
+		);
 
 		expect(order.side).toBe("buy");
 		expect(order.tpPrice).toBe("51000");

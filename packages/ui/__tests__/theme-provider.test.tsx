@@ -1,6 +1,6 @@
-import { describe, expect, test, beforeEach } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
-import { ThemeProvider, ThemeContext, type Theme } from "../src/theme/theme-provider.js";
+import { type Theme, ThemeContext, ThemeProvider } from "../src/theme/theme-provider.js";
 
 // Since we can't use a full DOM testing library, we test the logic through SSR rendering
 // and direct context value inspection
@@ -101,27 +101,27 @@ describe("CSS globals", () => {
 		const css = fs.readFileSync(cssPath, "utf-8");
 
 		// Theme-invariant tokens
-		expect(css).toContain("--color-primary: #22C55E");
-		expect(css).toContain("--color-secondary: #EF4444");
-		expect(css).toContain("--color-warning: #F59E0B");
-		expect(css).toContain("--color-neutral: #64748B");
+		expect(css).toContain("--color-primary: #22c55e");
+		expect(css).toContain("--color-secondary: #ef4444");
+		expect(css).toContain("--color-warning: #f59e0b");
+		expect(css).toContain("--color-neutral: #64748b");
 		expect(css).toContain("--font-sans:");
 		expect(css).toContain("--font-mono:");
 
 		// Dark theme tokens
 		expect(css).toContain('[data-theme="dark"]');
-		expect(css).toContain("--bg-base: #0A0A0F");
-		expect(css).toContain("--bg-card: #12121A");
+		expect(css).toContain("--bg-base: #0a0a0f");
+		expect(css).toContain("--bg-card: #12121a");
 
 		// Light theme tokens
 		expect(css).toContain('[data-theme="light"]');
-		expect(css).toContain("--bg-base: #F8FAFC");
-		expect(css).toContain("--bg-card: #FFFFFF");
+		expect(css).toContain("--bg-base: #f8fafc");
+		expect(css).toContain("--bg-card: #ffffff");
 
 		// Trading decision tokens
-		expect(css).toContain("--color-long: #22C55E");
-		expect(css).toContain("--color-short: #EF4444");
-		expect(css).toContain("--color-pass: #64748B");
+		expect(css).toContain("--color-long: #22c55e");
+		expect(css).toContain("--color-short: #ef4444");
+		expect(css).toContain("--color-pass: #64748b");
 
 		// OS preference fallback
 		expect(css).toContain("prefers-color-scheme: dark");

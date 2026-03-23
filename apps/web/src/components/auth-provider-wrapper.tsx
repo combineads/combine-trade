@@ -1,7 +1,7 @@
 "use client";
 
-import { AuthProvider } from "@combine/ui";
 import { authClient } from "@/lib/auth-client";
+import { AuthProvider } from "@combine/ui";
 import type { ReactNode } from "react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3100";

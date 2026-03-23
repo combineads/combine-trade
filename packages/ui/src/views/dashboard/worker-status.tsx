@@ -38,10 +38,15 @@ export function WorkerStatus({ workers }: WorkerStatusProps) {
 							flexShrink: 0,
 						}}
 					/>
-					<span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-						{w.name}
-					</span>
-					<span style={{ marginLeft: "auto", fontSize: 12, color: STATUS_COLORS[w.status], textTransform: "capitalize" }}>
+					<span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{w.name}</span>
+					<span
+						style={{
+							marginLeft: "auto",
+							fontSize: 12,
+							color: STATUS_COLORS[w.status],
+							textTransform: "capitalize",
+						}}
+					>
 						{w.status}
 					</span>
 				</div>

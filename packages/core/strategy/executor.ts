@@ -56,7 +56,7 @@ export interface PreComputedIndicators {
  */
 function padArray(arr: number[], targetLength: number): number[] {
 	if (arr.length >= targetLength) return arr;
-	const padding = new Array(targetLength - arr.length).fill(NaN);
+	const padding = new Array(targetLength - arr.length).fill(Number.NaN);
 	return [...padding, ...arr];
 }
 
@@ -121,7 +121,7 @@ export class StrategyExecutor {
 		candles: CandleData,
 		config?: IndicatorConfig,
 	): Promise<PreComputedIndicators> {
-		const { close, open, high, low, volume } = candles;
+		const { close, open: _open, high, low, volume } = candles;
 
 		// Pre-compute standard periods
 		const [sma20, sma50, sma200] = await Promise.all([
@@ -158,9 +158,20 @@ export class StrategyExecutor {
 
 		const result: PreComputedIndicators = {
 			sma: { "20": padArray(sma20, len), "50": padArray(sma50, len), "200": padArray(sma200, len) },
-			ema: { "12": padArray(ema12, len), "20": padArray(ema20, len), "26": padArray(ema26, len), "50": padArray(ema50, len) },
+			ema: {
+				"12": padArray(ema12, len),
+				"20": padArray(ema20, len),
+				"26": padArray(ema26, len),
+				"50": padArray(ema50, len),
+			},
 			rsi: { "14": padArray(rsi14, len) },
-			macd: { default: { macd: padArray(macdDefault.macd, len), signal: padArray(macdDefault.signal, len), histogram: padArray(macdDefault.histogram, len) } },
+			macd: {
+				default: {
+					macd: padArray(macdDefault.macd, len),
+					signal: padArray(macdDefault.signal, len),
+					histogram: padArray(macdDefault.histogram, len),
+				},
+			},
 			bb: { "20": padBBResult(bb20, len) },
 			atr: { "14": padArray(atr14, len) },
 			stochastic: { "14": { k: padArray(stoch14.k, len), d: padArray(stoch14.d, len) } },

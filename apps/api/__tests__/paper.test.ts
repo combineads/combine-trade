@@ -1,26 +1,44 @@
 import { describe, expect, test } from "bun:test";
 import { Elysia } from "elysia";
 import { errorHandlerPlugin } from "../src/lib/errors.js";
-import { paperRoutes, type PaperRouteDeps } from "../src/routes/paper.js";
+import { type PaperRouteDeps, paperRoutes } from "../src/routes/paper.js";
 
 function createMockDeps(): PaperRouteDeps {
 	return {
 		getPaperStatus: async () => ({
 			balance: "10000",
-			positions: [{ symbol: "BTCUSDT", side: "LONG" as const, size: "0.1", entryPrice: "50000", unrealizedPnl: "500" }],
+			positions: [
+				{
+					symbol: "BTCUSDT",
+					side: "LONG" as const,
+					size: "0.1",
+					entryPrice: "50000",
+					unrealizedPnl: "500",
+				},
+			],
 			unrealizedPnl: "500",
 			totalPnl: "1200",
 		}),
-		listPaperOrders: async (query) => ({
-			data: [{ id: "po-1", symbol: "BTCUSDT", side: "BUY", size: "0.1", price: "50000", status: "filled", createdAt: "2026-01-01T00:00:00Z" }],
+		listPaperOrders: async (_query) => ({
+			data: [
+				{
+					id: "po-1",
+					symbol: "BTCUSDT",
+					side: "BUY",
+					size: "0.1",
+					price: "50000",
+					status: "filled",
+					createdAt: "2026-01-01T00:00:00Z",
+				},
+			],
 			total: 1,
 		}),
-		getPaperPerformance: async (period) => ({
+		getPaperPerformance: async (_period) => ({
 			summaries: [{ period: "day", pnl: "100", trades: 5, winrate: 0.6 }],
 		}),
 		getPaperComparison: async () => ({
 			backtest: { winrate: 0.65, expectancy: 1.2, trades: 100 },
-			paper: { winrate: 0.60, expectancy: 1.0, trades: 20 },
+			paper: { winrate: 0.6, expectancy: 1.0, trades: 20 },
 			delta: { winrateDiff: -0.05, expectancyDiff: -0.2 },
 		}),
 		resetPaper: async (balance) => ({ success: true as const, balance }),
@@ -63,7 +81,9 @@ describe("Paper trading routes", () => {
 
 	test("GET /paper/comparison returns backtest + paper + delta", async () => {
 		const app = createApp();
-		const res = await app.handle(new Request(`${BASE}/paper/comparison?strategyId=s1&symbol=BTCUSDT`));
+		const res = await app.handle(
+			new Request(`${BASE}/paper/comparison?strategyId=s1&symbol=BTCUSDT`),
+		);
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.data.backtest).toBeDefined();
@@ -73,11 +93,13 @@ describe("Paper trading routes", () => {
 
 	test("POST /paper/reset returns success with balance", async () => {
 		const app = createApp();
-		const res = await app.handle(new Request(`${BASE}/paper/reset`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ initialBalance: "5000" }),
-		}));
+		const res = await app.handle(
+			new Request(`${BASE}/paper/reset`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ initialBalance: "5000" }),
+			}),
+		);
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.data.success).toBe(true);

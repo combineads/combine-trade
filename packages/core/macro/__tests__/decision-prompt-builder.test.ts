@@ -1,12 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import {
-	type DecisionPromptInput,
-	buildDecisionPrompt,
-} from "../decision-prompt-builder.js";
+import { type DecisionPromptInput, buildDecisionPrompt } from "../decision-prompt-builder.js";
 
-function makeInput(
-	overrides: Partial<DecisionPromptInput> = {},
-): DecisionPromptInput {
+function makeInput(overrides: Partial<DecisionPromptInput> = {}): DecisionPromptInput {
 	return {
 		knnResult: {
 			direction: "LONG",
@@ -33,9 +28,7 @@ function makeInput(
 			},
 		],
 		macroContext: {
-			upcomingEvents: [
-				{ name: "FOMC Rate Decision", impact: "HIGH", hoursUntil: -1 },
-			],
+			upcomingEvents: [{ name: "FOMC Rate Decision", impact: "HIGH", hoursUntil: -1 }],
 			recentNews: [
 				{
 					headline: "Trump threatens Gulf energy sanctions",

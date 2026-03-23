@@ -1,4 +1,4 @@
-import { createApiServer, type ApiServerDeps, type AuthLike } from "./server.js";
+import { type ApiServerDeps, type AuthLike, createApiServer } from "./server.js";
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -36,19 +36,34 @@ const stubDeps: ApiServerDeps = {
 		findById: async () => null,
 		findByNameAndVersion: async () => null,
 		findActive: async () => [],
-		create: async () => { throw new Error("Not wired to DB"); },
-		update: async () => { throw new Error("Not wired to DB"); },
-		softDelete: async () => { throw new Error("Not wired to DB"); },
-		createNewVersion: async () => { throw new Error("Not wired to DB"); },
+		create: async () => {
+			throw new Error("Not wired to DB");
+		},
+		update: async () => {
+			throw new Error("Not wired to DB");
+		},
+		softDelete: async () => {
+			throw new Error("Not wired to DB");
+		},
+		createNewVersion: async () => {
+			throw new Error("Not wired to DB");
+		},
 	},
 	executionModeDeps: {
 		loadMode: async () => "analysis",
 		saveMode: async () => {},
-		getSafetyGateStatus: async () => ({ killSwitchEnabled: false, dailyLossLimitConfigured: false }),
+		getSafetyGateStatus: async () => ({
+			killSwitchEnabled: false,
+			dailyLossLimitConfigured: false,
+		}),
 	},
 	killSwitchDeps: {
-		activate: async () => { throw new Error("Not wired to DB"); },
-		deactivate: async () => { throw new Error("Not wired to DB"); },
+		activate: async () => {
+			throw new Error("Not wired to DB");
+		},
+		deactivate: async () => {
+			throw new Error("Not wired to DB");
+		},
 		getActiveStates: async () => [],
 		getAuditEvents: async () => ({ items: [], total: 0 }),
 	},
@@ -57,14 +72,28 @@ const stubDeps: ApiServerDeps = {
 		masterKey: process.env.MASTER_ENCRYPTION_KEY ?? "0".repeat(64),
 		findByUserId: async () => [],
 		findById: async () => null,
-		create: async () => { throw new Error("Not wired to DB"); },
-		update: async () => { throw new Error("Not wired to DB"); },
-		remove: async () => { throw new Error("Not wired to DB"); },
+		create: async () => {
+			throw new Error("Not wired to DB");
+		},
+		update: async () => {
+			throw new Error("Not wired to DB");
+		},
+		remove: async () => {
+			throw new Error("Not wired to DB");
+		},
 	},
 	eventDeps: {
 		findEventById: async () => null,
 		findEventsByStrategy: async () => ({ items: [], total: 0 }),
-		getStrategyStatistics: async () => ({ winRate: 0, expectancy: 0, avgPnl: 0, sampleCount: 0, totalEvents: 0, longCount: 0, shortCount: 0 }),
+		getStrategyStatistics: async () => ({
+			winRate: 0,
+			expectancy: 0,
+			avgPnl: 0,
+			sampleCount: 0,
+			totalEvents: 0,
+			longCount: 0,
+			shortCount: 0,
+		}),
 		strategyExists: async () => false,
 	},
 	orderDeps: {
@@ -77,7 +106,9 @@ const stubDeps: ApiServerDeps = {
 		findAlerts: async () => ({ items: [], total: 0 }),
 	},
 	backtestDeps: {
-		runBacktest: async () => { throw new Error("Not wired to backtest engine"); },
+		runBacktest: async () => {
+			throw new Error("Not wired to backtest engine");
+		},
 		strategyExists: async () => false,
 	},
 	journalDeps: {
@@ -87,7 +118,12 @@ const stubDeps: ApiServerDeps = {
 		getJournalAnalytics: async () => ({ tagStats: [], overallWinrate: 0, overallExpectancy: 0 }),
 	},
 	paperDeps: {
-		getPaperStatus: async () => ({ balance: "0", positions: [], unrealizedPnl: "0", totalPnl: "0" }),
+		getPaperStatus: async () => ({
+			balance: "0",
+			positions: [],
+			unrealizedPnl: "0",
+			totalPnl: "0",
+		}),
 		listPaperOrders: async () => ({ data: [], total: 0 }),
 		getPaperPerformance: async () => ({ summaries: [] }),
 		getPaperComparison: async () => ({ backtest: {}, paper: {}, delta: {} }),

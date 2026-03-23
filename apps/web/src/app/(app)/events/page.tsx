@@ -1,6 +1,6 @@
 "use client";
 
-import { EventsView, type EventRow } from "@combine/ui";
+import { type EventRow, EventsView } from "@combine/ui";
 import { useEffect, useState } from "react";
 
 export default function EventsPage() {

@@ -1,10 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import type { CandleData } from "../api.js";
-import {
-	type ExecutionInput,
-	type IndicatorConfig,
-	StrategyExecutor,
-} from "../executor.js";
+import { type ExecutionInput, type IndicatorConfig, StrategyExecutor } from "../executor.js";
 import { StrategySandbox } from "../sandbox.js";
 
 let sandbox: StrategySandbox;

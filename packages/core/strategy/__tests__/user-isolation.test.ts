@@ -20,7 +20,9 @@ function makeStrategy(overrides: Partial<Strategy> = {}): Strategy {
 		symbols: ["BTCUSDT"],
 		timeframe: "1h",
 		direction: "long",
-		featuresDefinition: [{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } }],
+		featuresDefinition: [
+			{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } },
+		],
 		normalizationConfig: {},
 		searchConfig: {},
 		resultConfig: {},
@@ -55,16 +57,27 @@ function createIsolatedMockRepository(): StrategyRepository {
 			if (!record || record.userId !== userId) return null;
 			return record;
 		},
-		async findByNameAndVersion(name: string, version: number, userId: string): Promise<Strategy | null> {
+		async findByNameAndVersion(
+			name: string,
+			version: number,
+			userId: string,
+		): Promise<Strategy | null> {
 			for (const record of store.values()) {
-				if (record.name === name && record.version === version && record.userId === userId && !record.deletedAt) {
+				if (
+					record.name === name &&
+					record.version === version &&
+					record.userId === userId &&
+					!record.deletedAt
+				) {
 					return record;
 				}
 			}
 			return null;
 		},
 		async findActive(userId: string): Promise<Strategy[]> {
-			return [...store.values()].filter((s) => s.userId === userId && s.status === "active" && !s.deletedAt);
+			return [...store.values()].filter(
+				(s) => s.userId === userId && s.status === "active" && !s.deletedAt,
+			);
 		},
 		async findAll(userId: string): Promise<Strategy[]> {
 			return [...store.values()].filter((s) => s.userId === userId && !s.deletedAt);
@@ -82,11 +95,21 @@ function createIsolatedMockRepository(): StrategyRepository {
 				store.set(id, { ...record, deletedAt: new Date() });
 			}
 		},
-		async createNewVersion(id: string, input: UpdateStrategyInput, userId: string): Promise<Strategy> {
+		async createNewVersion(
+			id: string,
+			input: UpdateStrategyInput,
+			userId: string,
+		): Promise<Strategy> {
 			const record = store.get(id);
 			if (!record || record.userId !== userId) throw new Error("Not found");
 			counter++;
-			const newVersion = { ...record, ...input, id: `uuid-${counter}`, version: record.version + 1, userId };
+			const newVersion = {
+				...record,
+				...input,
+				id: `uuid-${counter}`,
+				version: record.version + 1,
+				userId,
+			};
 			store.set(newVersion.id, newVersion);
 			return newVersion;
 		},
@@ -102,7 +125,9 @@ describe("StrategyRepository user isolation", () => {
 			symbols: ["BTCUSDT"],
 			timeframe: "1h",
 			direction: "long",
-			featuresDefinition: [{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } }],
+			featuresDefinition: [
+				{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } },
+			],
 			normalizationConfig: {},
 			searchConfig: {},
 			resultConfig: {},
@@ -127,7 +152,9 @@ describe("StrategyRepository user isolation", () => {
 			symbols: ["BTCUSDT"],
 			timeframe: "1h",
 			direction: "long",
-			featuresDefinition: [{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } }],
+			featuresDefinition: [
+				{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } },
+			],
 			normalizationConfig: {},
 			searchConfig: {},
 			resultConfig: {},
@@ -154,7 +181,9 @@ describe("StrategyRepository user isolation", () => {
 			symbols: ["BTCUSDT"],
 			timeframe: "1h",
 			direction: "long",
-			featuresDefinition: [{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } }],
+			featuresDefinition: [
+				{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } },
+			],
 			normalizationConfig: {},
 			searchConfig: {},
 			resultConfig: {},
@@ -178,7 +207,9 @@ describe("StrategyRepository user isolation", () => {
 			symbols: ["BTCUSDT"],
 			timeframe: "1h",
 			direction: "long",
-			featuresDefinition: [{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } }],
+			featuresDefinition: [
+				{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } },
+			],
 			normalizationConfig: {},
 			searchConfig: {},
 			resultConfig: {},
@@ -209,7 +240,9 @@ describe("StrategyRepository user isolation", () => {
 			symbols: ["BTCUSDT"],
 			timeframe: "1h",
 			direction: "long",
-			featuresDefinition: [{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } }],
+			featuresDefinition: [
+				{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } },
+			],
 			normalizationConfig: {},
 			searchConfig: {},
 			resultConfig: {},
@@ -234,7 +267,9 @@ describe("StrategyRepository user isolation", () => {
 			symbols: ["BTCUSDT"],
 			timeframe: "1h",
 			direction: "long",
-			featuresDefinition: [{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } }],
+			featuresDefinition: [
+				{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } },
+			],
 			normalizationConfig: {},
 			searchConfig: {},
 			resultConfig: {},
@@ -260,7 +295,9 @@ describe("StrategyRepository user isolation", () => {
 			symbols: ["BTCUSDT"],
 			timeframe: "1h",
 			direction: "long",
-			featuresDefinition: [{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } }],
+			featuresDefinition: [
+				{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } },
+			],
 			normalizationConfig: {},
 			searchConfig: {},
 			resultConfig: {},
@@ -280,7 +317,9 @@ describe("StrategyRepository user isolation", () => {
 			symbols: ["BTCUSDT"],
 			timeframe: "1h",
 			direction: "long",
-			featuresDefinition: [{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } }],
+			featuresDefinition: [
+				{ name: "rsi", expression: "RSI(close,14)", normalization: { method: "minmax" } },
+			],
 			normalizationConfig: {},
 			searchConfig: {},
 			resultConfig: {},

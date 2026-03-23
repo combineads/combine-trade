@@ -37,7 +37,14 @@ export function Sidebar() {
 				fontFamily: "var(--font-sans)",
 			}}
 		>
-			<div style={{ padding: "0 16px 24px", fontWeight: 700, fontSize: 18, color: "var(--color-primary)" }}>
+			<div
+				style={{
+					padding: "0 16px 24px",
+					fontWeight: 700,
+					fontSize: 18,
+					color: "var(--color-primary)",
+				}}
+			>
 				Combine Trade
 			</div>
 			<nav style={{ flex: 1 }}>
@@ -67,7 +74,9 @@ export function Sidebar() {
 										fontSize: 14,
 										color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
 										backgroundColor: isActive ? "rgba(34, 197, 94, 0.10)" : "transparent",
-										borderLeft: isActive ? "3px solid var(--color-primary)" : "3px solid transparent",
+										borderLeft: isActive
+											? "3px solid var(--color-primary)"
+											: "3px solid transparent",
 										textDecoration: "none",
 									}}
 								>

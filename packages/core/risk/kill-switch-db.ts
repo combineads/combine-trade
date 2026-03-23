@@ -1,5 +1,4 @@
-import type { KillSwitchDeps } from "./kill-switch.js";
-import type { KillSwitchState, KillSwitchScope, KillSwitchTrigger } from "./types.js";
+import type { KillSwitchScope, KillSwitchState, KillSwitchTrigger } from "./types.js";
 
 export interface KillSwitchRow {
 	id: string;

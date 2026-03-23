@@ -7,7 +7,12 @@ export interface SkeletonProps {
 	style?: CSSProperties;
 }
 
-export function Skeleton({ width, height, borderRadius = "var(--radius-sm)", style }: SkeletonProps) {
+export function Skeleton({
+	width,
+	height,
+	borderRadius = "var(--radius-sm)",
+	style,
+}: SkeletonProps) {
 	return (
 		<div
 			style={{

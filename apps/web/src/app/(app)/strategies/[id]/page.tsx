@@ -1,6 +1,6 @@
 "use client";
 
-import { StrategyEditorView, type StrategyDetail, type StrategyStatsData } from "@combine/ui";
+import { type StrategyDetail, StrategyEditorView, type StrategyStatsData } from "@combine/ui";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -31,7 +31,9 @@ export default function StrategyDetailPage() {
 	}, [params.id]);
 
 	if (!strategy) {
-		return <div style={{ padding: 48, textAlign: "center", color: "var(--text-muted)" }}>Loading...</div>;
+		return (
+			<div style={{ padding: 48, textAlign: "center", color: "var(--text-muted)" }}>Loading...</div>
+		);
 	}
 
 	return (

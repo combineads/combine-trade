@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
-	PositionMonitor,
 	type ExchangePosition,
 	type ExchangePositionProvider,
+	PositionMonitor,
 	type TrackedPosition,
 } from "../position-monitor.js";
 

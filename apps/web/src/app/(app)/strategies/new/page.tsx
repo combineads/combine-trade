@@ -5,9 +5,5 @@ import { useRouter } from "next/navigation";
 
 export default function NewStrategyPage() {
 	const router = useRouter();
-	return (
-		<StrategyCreateView
-			onCancel={() => router.push("/strategies")}
-		/>
-	);
+	return <StrategyCreateView onCancel={() => router.push("/strategies")} />;
 }

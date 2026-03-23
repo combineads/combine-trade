@@ -1,8 +1,8 @@
-import { describe, expect, test, mock, beforeEach } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 import {
+	type EventBus,
 	JournalEventHandler,
 	type JournalStorage,
-	type EventBus,
 	type LabelReadyEvent,
 } from "../src/journal-event-handler.js";
 
@@ -33,7 +33,7 @@ describe("JournalEventHandler", () => {
 			save: mock(() => Promise.resolve()),
 		};
 		eventBus = {
-			subscribe: mock((eventType: string, handler: (event: unknown) => Promise<void>) => ({
+			subscribe: mock((_eventType: string, _handler: (event: unknown) => Promise<void>) => ({
 				unsubscribe: mock(() => {}),
 			})),
 		};

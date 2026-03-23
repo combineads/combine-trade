@@ -1,9 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 import type { LlmDecision } from "../../../../packages/core/macro/decision-prompt-builder.js";
-import {
-	type LlmDecisionRepository,
-	LlmDecisionWorker,
-} from "../src/index.js";
+import { type LlmDecisionRepository, LlmDecisionWorker } from "../src/index.js";
 
 interface KnnDecisionRecord {
 	id: string;
@@ -16,9 +13,7 @@ interface KnnDecisionRecord {
 	features: Record<string, number>;
 }
 
-function makeKnnDecision(
-	overrides: Partial<KnnDecisionRecord> = {},
-): KnnDecisionRecord {
+function makeKnnDecision(overrides: Partial<KnnDecisionRecord> = {}): KnnDecisionRecord {
 	return {
 		id: "dec-1",
 		strategyId: "strat-1",
@@ -36,7 +31,12 @@ function createMockRepo(
 	knnDecision: KnnDecisionRecord | null = makeKnnDecision(),
 ): LlmDecisionRepository & {
 	updatedDecisions: { id: string; llmResult: LlmDecision; finalDirection: string }[];
-	publishedMessages: { channel: string; decisionId: string; direction: string; sizeModifier?: number }[];
+	publishedMessages: {
+		channel: string;
+		decisionId: string;
+		direction: string;
+		sizeModifier?: number;
+	}[];
 } {
 	const updatedDecisions: {
 		id: string;
@@ -59,20 +59,12 @@ function createMockRepo(
 			highImpactNext24h: 0,
 		})),
 		updateWithLlmResult: mock(
-			async (
-				id: string,
-				llmResult: LlmDecision,
-				finalDirection: string,
-			) => {
+			async (id: string, llmResult: LlmDecision, finalDirection: string) => {
 				updatedDecisions.push({ id, llmResult, finalDirection });
 			},
 		),
 		publishDecisionCompleted: mock(
-			async (
-				decisionId: string,
-				direction: string,
-				sizeModifier?: number,
-			) => {
+			async (decisionId: string, direction: string, sizeModifier?: number) => {
 				publishedMessages.push({
 					channel: "decision_completed",
 					decisionId,
@@ -174,9 +166,6 @@ describe("LlmDecisionWorker", () => {
 
 		expect(repo.updatedDecisions[0].llmResult.action).toBe("PASS");
 		expect(repo.updatedDecisions[0].llmResult.confidence).toBe(0.92);
-		expect(repo.updatedDecisions[0].llmResult.risk_factors).toEqual([
-			"geopolitical",
-			"fomc",
-		]);
+		expect(repo.updatedDecisions[0].llmResult.risk_factors).toEqual(["geopolitical", "fomc"]);
 	});
 });

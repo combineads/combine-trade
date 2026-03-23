@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-	createApiClient,
-	type ApiClientConfig,
-} from "../src/lib/api-client";
+import { type ApiClientConfig, createApiClient } from "../src/lib/api-client";
 
 describe("createApiClient", () => {
 	const config: ApiClientConfig = {
@@ -76,4 +73,4 @@ describe("API path builders", () => {
 });
 
 // Import after tests are defined to ensure the module loads
-import { buildQueryString, apiPaths } from "../src/lib/api-client";
+import { apiPaths, buildQueryString } from "../src/lib/api-client";

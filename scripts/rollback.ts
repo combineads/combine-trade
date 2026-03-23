@@ -19,19 +19,17 @@
  * The main() entry point is guarded by import.meta.main.
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 // Re-use types and utilities from deploy.ts where possible
 import {
-	HEALTH_URL,
 	DEPLOY_HISTORY_PATH,
 	DOCKER_COMPOSE_FILE,
+	type DeployRecord,
+	HEALTH_URL,
 	POST_DEPLOY_PIPELINE_P95_LIMIT_MS,
 	appendDeployEntry,
-	type DeployRecord,
-	type DeployStatus,
 } from "./deploy";
 
 // ---------------------------------------------------------------------------
@@ -299,7 +297,7 @@ function readDeployHistory(): DeployRecord[] {
 }
 
 function writeDeployHistory(history: unknown[]): void {
-	writeFileSync(DEPLOY_HISTORY_PATH, JSON.stringify(history, null, 2) + "\n", "utf-8");
+	writeFileSync(DEPLOY_HISTORY_PATH, `${JSON.stringify(history, null, 2)}\n`, "utf-8");
 }
 
 async function fetchHealth(url: string): Promise<HealthResponse> {
@@ -364,8 +362,7 @@ async function sendSlackAlert(webhookUrl: string, message: string): Promise<void
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-	const historyPath =
-		process.env["DEPLOY_HISTORY_PATH"] ?? DEPLOY_HISTORY_PATH;
+	const historyPath = process.env.DEPLOY_HISTORY_PATH ?? DEPLOY_HISTORY_PATH;
 
 	const args = parseRollbackArgs(process.argv.slice(2));
 
@@ -473,8 +470,10 @@ async function main(): Promise<void> {
 	// Step 4: Post-rollback health verification
 	// -------------------------------------------------------------------------
 
-	log(`\n[step 3/3] Post-rollback health verification...`);
-	log(`  Polling ${HEALTH_URL} every ${ROLLBACK_HEALTH_POLL_INTERVAL_MS / 1000}s for up to ${ROLLBACK_HEALTH_TIMEOUT_MS / 1000}s`);
+	log("\n[step 3/3] Post-rollback health verification...");
+	log(
+		`  Polling ${HEALTH_URL} every ${ROLLBACK_HEALTH_POLL_INTERVAL_MS / 1000}s for up to ${ROLLBACK_HEALTH_TIMEOUT_MS / 1000}s`,
+	);
 
 	const healthResponse = await pollHealthUntilReady(
 		HEALTH_URL,
@@ -485,7 +484,9 @@ async function main(): Promise<void> {
 	const healthResult = evaluatePostRollbackHealth(healthResponse);
 
 	if (!healthResult.ok) {
-		console.error(`[rollback] ${ROLLBACK_ERROR_CODES.ERR_ROLLBACK_HEALTH_FAILED}: ${healthResult.message}`);
+		console.error(
+			`[rollback] ${ROLLBACK_ERROR_CODES.ERR_ROLLBACK_HEALTH_FAILED}: ${healthResult.message}`,
+		);
 		console.error("[rollback] Manual intervention required — previous image may also be broken.");
 		process.exit(3);
 	}
@@ -510,7 +511,7 @@ async function main(): Promise<void> {
 	// Step 6: Optional Slack notification
 	// -------------------------------------------------------------------------
 
-	const slackWebhook = process.env["SLACK_WEBHOOK_URL"];
+	const slackWebhook = process.env.SLACK_WEBHOOK_URL;
 	if (slackWebhook) {
 		const message = `Rollback complete: ${currentTag ?? "(unknown)"} → ${previousTag} at ${new Date().toISOString()}`;
 		await sendSlackAlert(slackWebhook, message);
@@ -527,9 +528,7 @@ async function main(): Promise<void> {
 // Utility helpers
 // ---------------------------------------------------------------------------
 
-function log(msg: string): void {
-	console.log(`[rollback] ${msg}`);
-}
+function log(_msg: string): void {}
 
 // ---------------------------------------------------------------------------
 // Entry point guard

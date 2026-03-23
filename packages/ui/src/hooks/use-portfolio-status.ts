@@ -1,4 +1,4 @@
-import { useSSE, type UseSSEReturn } from "./use-sse";
+import { type UseSSEReturn, useSSE } from "./use-sse";
 
 export interface PortfolioPosition {
 	symbol: string;

@@ -1,4 +1,4 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import { OrderStatusTracker, type OrderTrackerDeps, type TrackedOrder } from "../order-tracker.js";
 
 function makeOrder(overrides: Partial<TrackedOrder> = {}): TrackedOrder {

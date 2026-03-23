@@ -10,12 +10,14 @@ export interface EquityCurveProps {
 export function EquityCurve({ points }: EquityCurveProps) {
 	if (points.length === 0) {
 		return (
-			<div style={{
-				padding: 32,
-				textAlign: "center",
-				color: "var(--text-muted)",
-				fontSize: 14,
-			}}>
+			<div
+				style={{
+					padding: 32,
+					textAlign: "center",
+					color: "var(--text-muted)",
+					fontSize: 14,
+				}}
+			>
 				No data
 			</div>
 		);
@@ -26,12 +28,16 @@ export function EquityCurve({ points }: EquityCurveProps) {
 	const range = maxEquity - minEquity || 1;
 
 	return (
-		<div style={{
-			backgroundColor: "var(--bg-elevated)",
-			borderRadius: "var(--radius-md)",
-			padding: 16,
-		}}>
-			<div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: "var(--text-primary)" }}>
+		<div
+			style={{
+				backgroundColor: "var(--bg-elevated)",
+				borderRadius: "var(--radius-md)",
+				padding: 16,
+			}}
+		>
+			<div
+				style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: "var(--text-primary)" }}
+			>
 				Equity Curve
 			</div>
 			<div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 120 }}>
@@ -52,14 +58,16 @@ export function EquityCurve({ points }: EquityCurveProps) {
 					);
 				})}
 			</div>
-			<div style={{
-				display: "flex",
-				justifyContent: "space-between",
-				marginTop: 8,
-				fontSize: 11,
-				fontFamily: "var(--font-mono)",
-				color: "var(--text-muted)",
-			}}>
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					marginTop: 8,
+					fontSize: 11,
+					fontFamily: "var(--font-mono)",
+					color: "var(--text-muted)",
+				}}
+			>
 				<span>{minEquity.toLocaleString()}</span>
 				<span>{maxEquity.toLocaleString()}</span>
 			</div>

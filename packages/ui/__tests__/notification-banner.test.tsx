@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
-import { NotificationBanner, KillSwitchBanner } from "../src/components/notification-banner";
+import { KillSwitchBanner, NotificationBanner } from "../src/components/notification-banner";
 
 describe("NotificationBanner", () => {
 	test("renders nothing when active is false", () => {
@@ -25,7 +25,13 @@ describe("NotificationBanner", () => {
 
 	test("renders action button when provided", () => {
 		const html = renderToString(
-			<NotificationBanner active message="Info" variant="info" actionLabel="Dismiss" onAction={() => {}} />,
+			<NotificationBanner
+				active
+				message="Info"
+				variant="info"
+				actionLabel="Dismiss"
+				onAction={() => {}}
+			/>,
 		);
 		expect(html).toContain("Dismiss");
 	});

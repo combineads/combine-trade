@@ -80,9 +80,7 @@ describe("evaluateWithLlm", () => {
 	});
 
 	test("returns CONFIRM when action field is missing", async () => {
-		const spawn = mockSpawn(
-			JSON.stringify({ reason: "test", confidence: 0.5 }),
-		);
+		const spawn = mockSpawn(JSON.stringify({ reason: "test", confidence: 0.5 }));
 
 		const result = await evaluateWithLlm("test prompt", spawn);
 
@@ -90,9 +88,7 @@ describe("evaluateWithLlm", () => {
 	});
 
 	test("returns CONFIRM when action is invalid value", async () => {
-		const spawn = mockSpawn(
-			JSON.stringify({ action: "BUY", reason: "test", confidence: 0.5 }),
-		);
+		const spawn = mockSpawn(JSON.stringify({ action: "BUY", reason: "test", confidence: 0.5 }));
 
 		const result = await evaluateWithLlm("test prompt", spawn);
 

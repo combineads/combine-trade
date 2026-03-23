@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
-	buildDoubleBBConfig,
 	DOUBLE_BB_FEATURES_DEFINITION,
 	DOUBLE_BB_INDICATOR_CONFIG,
 	DOUBLE_BB_TIMEFRAMES,
+	buildDoubleBBConfig,
 } from "../config.js";
 
 describe("Double-BB strategy configuration", () => {

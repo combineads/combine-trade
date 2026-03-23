@@ -1,12 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { DoubleBBResult } from "../detector.js";
-import type { EvidenceResult } from "../evidence.js";
-import {
-	type FeatureInput,
-	type TargetResult,
-	computeFeatures,
-	computeTargets,
-} from "../features.js";
+import { type FeatureInput, computeFeatures, computeTargets } from "../features.js";
 
 function makeFeatureInput(overrides: Partial<FeatureInput> = {}): FeatureInput {
 	return {
@@ -39,7 +32,7 @@ describe("computeFeatures", () => {
 	test("all features are in [0, 1] range", () => {
 		const input = makeFeatureInput();
 		const features = computeFeatures(input);
-		for (const [key, value] of Object.entries(features)) {
+		for (const [_key, value] of Object.entries(features)) {
 			expect(value).toBeGreaterThanOrEqual(0);
 			expect(value).toBeLessThanOrEqual(1);
 		}
@@ -47,15 +40,19 @@ describe("computeFeatures", () => {
 
 	test("double_bb_variant: trend=0.33, reversal=0.67, breakout=1.0", () => {
 		expect(
-			computeFeatures(makeFeatureInput({ pattern: { variant: "trend_continuation", side: "bullish" } })).double_bb_variant,
+			computeFeatures(
+				makeFeatureInput({ pattern: { variant: "trend_continuation", side: "bullish" } }),
+			).double_bb_variant,
 		).toBeCloseTo(0.33, 1);
 
 		expect(
-			computeFeatures(makeFeatureInput({ pattern: { variant: "reversal", side: "bullish" } })).double_bb_variant,
+			computeFeatures(makeFeatureInput({ pattern: { variant: "reversal", side: "bullish" } }))
+				.double_bb_variant,
 		).toBeCloseTo(0.67, 1);
 
 		expect(
-			computeFeatures(makeFeatureInput({ pattern: { variant: "breakout", side: "bullish" } })).double_bb_variant,
+			computeFeatures(makeFeatureInput({ pattern: { variant: "breakout", side: "bullish" } }))
+				.double_bb_variant,
 		).toBeCloseTo(1.0, 1);
 	});
 
@@ -124,11 +121,15 @@ describe("computeFeatures", () => {
 		expect(atLower.price_in_bb20).toBeCloseTo(0, 1);
 
 		// Close at BB20 upper → 1
-		const atUpper = computeFeatures(makeFeatureInput({ close: 105, bb20Upper: 105, bb20Lower: 95 }));
+		const atUpper = computeFeatures(
+			makeFeatureInput({ close: 105, bb20Upper: 105, bb20Lower: 95 }),
+		);
 		expect(atUpper.price_in_bb20).toBeCloseTo(1, 1);
 
 		// Close at BB20 middle → 0.5
-		const atMiddle = computeFeatures(makeFeatureInput({ close: 100, bb20Upper: 105, bb20Lower: 95 }));
+		const atMiddle = computeFeatures(
+			makeFeatureInput({ close: 100, bb20Upper: 105, bb20Lower: 95 }),
+		);
 		expect(atMiddle.price_in_bb20).toBeCloseTo(0.5, 1);
 	});
 

@@ -9,9 +9,7 @@ describe("BacktestPage", () => {
 	});
 
 	test("renders strategy selector", () => {
-		const html = renderToString(
-			<BacktestPage strategies={[{ id: "s1", name: "Momentum v3" }]} />,
-		);
+		const html = renderToString(<BacktestPage strategies={[{ id: "s1", name: "Momentum v3" }]} />);
 		expect(html).toContain("Momentum v3");
 	});
 
@@ -32,9 +30,7 @@ describe("BacktestPage", () => {
 	});
 
 	test("renders error message", () => {
-		const html = renderToString(
-			<BacktestPage strategies={[]} error="Connection failed" />,
-		);
+		const html = renderToString(<BacktestPage strategies={[]} error="Connection failed" />);
 		expect(html).toContain("Connection failed");
 	});
 

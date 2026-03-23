@@ -57,7 +57,17 @@ function clamp01(value: number): number {
 }
 
 export function computeFeatures(input: FeatureInput): FeatureVector {
-	const { pattern, evidence, close, bb20Upper, bb20Lower, volume, avgVolume20, candleRange, atr14 } = input;
+	const {
+		pattern,
+		evidence,
+		close,
+		bb20Upper,
+		bb20Lower,
+		volume,
+		avgVolume20,
+		candleRange,
+		atr14,
+	} = input;
 
 	// 1. double_bb_variant: minmax mapping
 	const double_bb_variant = VARIANT_MAP[pattern.variant] ?? 0;
@@ -66,8 +76,8 @@ export function computeFeatures(input: FeatureInput): FeatureVector {
 	const candle_pattern_score = evidence.candlePattern.hit ? 1 : 0;
 
 	// 3. ma_slope_score: sigmoid on slope direction strength
-	const slopeValue = evidence.maEvidence.slope === "bullish" ? 1 :
-		evidence.maEvidence.slope === "bearish" ? -1 : 0;
+	const slopeValue =
+		evidence.maEvidence.slope === "bullish" ? 1 : evidence.maEvidence.slope === "bearish" ? -1 : 0;
 	const ma_slope_score = clamp01(sigmoid(slopeValue, 0, 0.5));
 
 	// 4. ma_ordering_score: boolean

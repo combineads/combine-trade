@@ -2,9 +2,7 @@ import { describe, expect, mock, test } from "bun:test";
 import { SavetickerClient } from "../saveticker-client.js";
 
 function mockFetch(response: unknown, status = 200) {
-	return mock(() =>
-		Promise.resolve(new Response(JSON.stringify(response), { status })),
-	);
+	return mock(() => Promise.resolve(new Response(JSON.stringify(response), { status })));
 }
 
 function failFetch(error = new Error("Network error")) {
@@ -54,10 +52,7 @@ describe("SavetickerClient", () => {
 			const fetch = mockFetch([]);
 			const client = new SavetickerClient({ baseUrl: BASE_URL, fetch });
 
-			await client.fetchCalendarEvents(
-				new Date("2026-03-22"),
-				new Date("2026-03-28"),
-			);
+			await client.fetchCalendarEvents(new Date("2026-03-22"), new Date("2026-03-28"));
 
 			expect(fetch).toHaveBeenCalledTimes(1);
 			const url = (fetch.mock.calls[0] as [string])[0];
@@ -104,9 +99,7 @@ describe("SavetickerClient", () => {
 				}
 				return Promise.resolve(
 					new Response(
-						JSON.stringify([
-							{ id: "evt-1", title: "★★ CPI", date: "2026-03-22T12:00:00Z" },
-						]),
+						JSON.stringify([{ id: "evt-1", title: "★★ CPI", date: "2026-03-22T12:00:00Z" }]),
 					),
 				);
 			});

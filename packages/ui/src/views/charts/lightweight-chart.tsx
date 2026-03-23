@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 export interface OHLCVBar {
 	time: number;
@@ -59,6 +59,7 @@ export function LightweightChart({ data, height = 400, className }: LightweightC
 				});
 
 				if (data.length > 0) {
+					// biome-ignore lint/suspicious/noExplicitAny: TradingView Lightweight Charts API requires any
 					series.setData(data as any);
 				}
 
@@ -72,6 +73,7 @@ export function LightweightChart({ data, height = 400, className }: LightweightC
 				observer.observe(container);
 
 				// Store cleanup reference
+				// biome-ignore lint/suspicious/noExplicitAny: TradingView Lightweight Charts API requires any
 				(chartRef.current as any).observer = observer;
 			} catch {
 				// lightweight-charts not available in SSR/test
@@ -80,6 +82,7 @@ export function LightweightChart({ data, height = 400, className }: LightweightC
 
 		return () => {
 			disposed = true;
+			// biome-ignore lint/suspicious/noExplicitAny: TradingView Lightweight Charts API requires any
 			const ref = chartRef.current as any;
 			if (ref) {
 				ref.observer?.disconnect();

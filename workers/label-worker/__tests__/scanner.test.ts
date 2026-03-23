@@ -19,9 +19,7 @@ interface MockStrategy {
 	resultConfig: { tpPct: number; slPct: number; maxHoldBars: number };
 }
 
-function createMockDeps(
-	overrides: Partial<LabelScannerDeps> = {},
-): LabelScannerDeps & {
+function createMockDeps(overrides: Partial<LabelScannerDeps> = {}): LabelScannerDeps & {
 	savedLabels: Array<Record<string, unknown>>;
 	publishedMessages: Array<{ channel: string; payload: unknown }>;
 } {
@@ -59,8 +57,7 @@ function createMockDeps(
 		publishedMessages,
 		findUnlabeledEvents: overrides.findUnlabeledEvents ?? (async () => [mockEvent as never]),
 		loadStrategy: overrides.loadStrategy ?? (async () => mockStrategy as never),
-		loadForwardCandles:
-			overrides.loadForwardCandles ?? (async () => mockCandles as never),
+		loadForwardCandles: overrides.loadForwardCandles ?? (async () => mockCandles as never),
 		hasGap: overrides.hasGap ?? (async () => false),
 		isAlreadyLabeled: overrides.isAlreadyLabeled ?? (async () => false),
 		saveLabel:

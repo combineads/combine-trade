@@ -1,12 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import {
-	type RetrospectivePromptInput,
-	buildRetrospectivePrompt,
-} from "../prompt-builder.js";
+import { type RetrospectivePromptInput, buildRetrospectivePrompt } from "../prompt-builder.js";
 
-function makeInput(
-	overrides: Partial<RetrospectivePromptInput> = {},
-): RetrospectivePromptInput {
+function makeInput(overrides: Partial<RetrospectivePromptInput> = {}): RetrospectivePromptInput {
 	return {
 		strategyName: "BTC-RSI-Mean-Reversion",
 		symbol: "BTCUSDT",

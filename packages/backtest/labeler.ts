@@ -10,7 +10,11 @@ export interface ResultConfig {
 }
 
 /** Extract forward candles starting after fromIndex, capped at maxBars. */
-export function toForwardCandles(allCandles: Candle[], fromIndex: number, maxBars: number): CandleBar[] {
+export function toForwardCandles(
+	allCandles: Candle[],
+	fromIndex: number,
+	maxBars: number,
+): CandleBar[] {
 	const start = fromIndex + 1;
 	const end = Math.min(start + maxBars, allCandles.length);
 	const slice: CandleBar[] = [];

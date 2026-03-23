@@ -60,12 +60,7 @@ export const DOUBLE_BB_INDICATOR_CONFIG: IndicatorConfig = {
 		{ source: "close", period: 20, stddev: 2 },
 		{ source: "open", period: 4, stddev: 4 },
 	],
-	sma: [
-		{ period: 20 },
-		{ period: 50 },
-		{ period: 100 },
-		{ period: 200 },
-	],
+	sma: [{ period: 20 }, { period: 50 }, { period: 100 }, { period: 200 }],
 	atr: [{ period: 14 }],
 };
 

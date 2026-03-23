@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
+import { DirectionBadge, StatusBadge } from "../src/components/badge";
 import { Button } from "../src/components/button";
-import { StatusBadge, DirectionBadge } from "../src/components/badge";
 import { Card } from "../src/components/card";
-import { Skeleton } from "../src/components/skeleton";
 import { Pagination } from "../src/components/pagination";
+import { Skeleton } from "../src/components/skeleton";
 
 describe("Button", () => {
 	test("renders primary variant", () => {

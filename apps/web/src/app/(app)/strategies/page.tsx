@@ -1,6 +1,6 @@
 "use client";
 
-import { StrategyListView, type StrategyListItem } from "@combine/ui";
+import { type StrategyListItem, StrategyListView } from "@combine/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 

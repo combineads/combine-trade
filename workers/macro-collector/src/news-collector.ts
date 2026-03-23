@@ -13,10 +13,7 @@ export interface NewsEventRepository {
 }
 
 export interface NewsCollectorDeps {
-	fetchNews: (
-		pageSize: number,
-		afterTime?: Date,
-	) => Promise<CreateNewsItemInput[]>;
+	fetchNews: (pageSize: number, afterTime?: Date) => Promise<CreateNewsItemInput[]>;
 	repository: NewsEventRepository;
 }
 
@@ -45,19 +42,12 @@ export class NewsCollector {
 		try {
 			allNews = await this.fetchNews(50);
 		} catch (err) {
-			console.warn(
-				`News collection failed for event ${event.id}:`,
-				err,
-			);
+			console.warn(`News collection failed for event ${event.id}:`, err);
 			return;
 		}
 
-		const windowStart = new Date(
-			event.scheduledAt.getTime() - THIRTY_MINUTES_MS,
-		);
-		const windowEnd = new Date(
-			event.scheduledAt.getTime() + THIRTY_MINUTES_MS,
-		);
+		const windowStart = new Date(event.scheduledAt.getTime() - THIRTY_MINUTES_MS);
+		const windowEnd = new Date(event.scheduledAt.getTime() + THIRTY_MINUTES_MS);
 
 		const relevant = allNews.filter((n) => {
 			const t = n.publishedAt.getTime();

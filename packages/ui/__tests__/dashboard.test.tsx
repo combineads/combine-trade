@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
-import { KillSwitchCard } from "../src/views/dashboard/kill-switch-card";
-import { StrategySummary } from "../src/views/dashboard/strategy-summary";
-import { RecentEvents } from "../src/views/dashboard/recent-events";
-import { WorkerStatus } from "../src/views/dashboard/worker-status";
 import { DashboardView } from "../src/views/dashboard/dashboard-view";
+import { KillSwitchCard } from "../src/views/dashboard/kill-switch-card";
+import { RecentEvents } from "../src/views/dashboard/recent-events";
+import { StrategySummary } from "../src/views/dashboard/strategy-summary";
+import { WorkerStatus } from "../src/views/dashboard/worker-status";
 
 describe("KillSwitchCard", () => {
 	test("renders OFF state (normal)", () => {
@@ -20,7 +20,9 @@ describe("KillSwitchCard", () => {
 	});
 
 	test("shows activation reason when active", () => {
-		const html = renderToString(<KillSwitchCard active={true} reason="Daily loss limit breached" />);
+		const html = renderToString(
+			<KillSwitchCard active={true} reason="Daily loss limit breached" />,
+		);
 		expect(html).toContain("Daily loss limit breached");
 	});
 });
@@ -46,7 +48,13 @@ describe("StrategySummary", () => {
 describe("RecentEvents", () => {
 	test("renders event list", () => {
 		const events = [
-			{ id: "e1", symbol: "BTCUSDT", direction: "LONG" as const, strategyName: "Momentum", createdAt: "2026-03-22T10:00:00Z" },
+			{
+				id: "e1",
+				symbol: "BTCUSDT",
+				direction: "LONG" as const,
+				strategyName: "Momentum",
+				createdAt: "2026-03-22T10:00:00Z",
+			},
 		];
 		const html = renderToString(<RecentEvents events={events} />);
 		expect(html).toContain("BTCUSDT");
@@ -77,12 +85,7 @@ describe("WorkerStatus", () => {
 describe("DashboardView", () => {
 	test("renders all sections", () => {
 		const html = renderToString(
-			<DashboardView
-				killSwitchActive={false}
-				strategies={[]}
-				recentEvents={[]}
-				workers={[]}
-			/>,
+			<DashboardView killSwitchActive={false} strategies={[]} recentEvents={[]} workers={[]} />,
 		);
 		expect(html).toContain("Dashboard");
 		expect(html).toContain("KILL SWITCH");

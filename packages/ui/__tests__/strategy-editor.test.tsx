@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
-import { StrategyEditorView, type StrategyDetail } from "../src/views/strategies/strategy-editor-view";
 import { ConfigPanels, type StrategyConfig } from "../src/views/strategies/config-panels";
+import {
+	type StrategyDetail,
+	StrategyEditorView,
+} from "../src/views/strategies/strategy-editor-view";
 import { StrategyStats, type StrategyStatsData } from "../src/views/strategies/strategy-stats";
 
 const sampleStrategy: StrategyDetail = {

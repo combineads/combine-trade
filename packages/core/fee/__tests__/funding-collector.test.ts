@@ -1,7 +1,7 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import {
-	FundingRateCollector,
 	type FundingCollectorDeps,
+	FundingRateCollector,
 	type FundingRateRecord,
 } from "../funding-collector.js";
 
@@ -11,8 +11,16 @@ function makeDeps(overrides: Partial<FundingCollectorDeps> = {}): FundingCollect
 	return {
 		fetchFundingRates: mock(() =>
 			Promise.resolve([
-				{ symbol: "BTCUSDT", fundingRate: "0.0001", nextFundingTime: NOW.getTime() + 8 * 3600 * 1000 },
-				{ symbol: "ETHUSDT", fundingRate: "0.00005", nextFundingTime: NOW.getTime() + 8 * 3600 * 1000 },
+				{
+					symbol: "BTCUSDT",
+					fundingRate: "0.0001",
+					nextFundingTime: NOW.getTime() + 8 * 3600 * 1000,
+				},
+				{
+					symbol: "ETHUSDT",
+					fundingRate: "0.00005",
+					nextFundingTime: NOW.getTime() + 8 * 3600 * 1000,
+				},
 			]),
 		),
 		isAlreadyStored: mock(() => Promise.resolve(false)),

@@ -78,7 +78,6 @@ async function main(): Promise<void> {
 	// Write to file when not redirected (normal script invocation)
 	mkdirSync(OUT_DIR, { recursive: true });
 	writeFileSync(OUT_PATH, json, "utf-8");
-	console.log(json);
 }
 
 await main();

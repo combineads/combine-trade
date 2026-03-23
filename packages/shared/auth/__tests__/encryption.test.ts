@@ -1,10 +1,10 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import {
-	encrypt,
-	decrypt,
-	maskApiKey,
-	type CredentialServiceDeps,
 	CredentialService,
+	type CredentialServiceDeps,
+	decrypt,
+	encrypt,
+	maskApiKey,
 } from "../encryption.js";
 
 // 32-byte hex key (64 hex chars)
@@ -34,13 +34,13 @@ describe("encrypt / decrypt", () => {
 	test("tampered ciphertext fails decryption", () => {
 		const encrypted = encrypt("secret", TEST_KEY);
 		// Flip a character in the ciphertext
-		const tampered = encrypted.ciphertext.slice(0, -2) + "ff";
+		const tampered = `${encrypted.ciphertext.slice(0, -2)}ff`;
 		expect(() => decrypt(tampered, encrypted.iv, encrypted.tag, TEST_KEY)).toThrow();
 	});
 
 	test("tampered auth tag fails decryption", () => {
 		const encrypted = encrypt("secret", TEST_KEY);
-		const tampered = encrypted.tag.slice(0, -2) + "ff";
+		const tampered = `${encrypted.tag.slice(0, -2)}ff`;
 		expect(() => decrypt(encrypted.ciphertext, encrypted.iv, tampered, TEST_KEY)).toThrow();
 	});
 

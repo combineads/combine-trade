@@ -124,8 +124,8 @@ function evaluateMaEvidence(input: EvidenceInput): MaEvidenceResult {
 	}
 
 	// Hit: ordering matches side AND slope matches side
-	const slopeAligned = (side === "bullish" && slope === "bullish") ||
-		(side === "bearish" && slope === "bearish");
+	const slopeAligned =
+		(side === "bullish" && slope === "bullish") || (side === "bearish" && slope === "bearish");
 	const hit = ordering && slopeAligned;
 
 	return { hit, ordering, slope };
@@ -137,8 +137,7 @@ function evaluateSeparation(candle: CandleBar, ma20: number, side: DoubleBBSide)
 	const distance = (candle.close - ma20) / ma20;
 
 	// Hit: positive separation for bullish, negative for bearish
-	const hit = (side === "bullish" && distance > 0) ||
-		(side === "bearish" && distance < 0);
+	const hit = (side === "bullish" && distance > 0) || (side === "bearish" && distance < 0);
 
 	return { hit, distance };
 }

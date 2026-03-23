@@ -1,9 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-	usePortfolioStatus,
-	type PortfolioStatus,
-	type UsePortfolioStatusResult,
-} from "../src/hooks/use-portfolio-status.js";
+import { type PortfolioStatus, usePortfolioStatus } from "../src/hooks/use-portfolio-status.js";
 
 describe("usePortfolioStatus", () => {
 	test("returns correct initial shape", () => {

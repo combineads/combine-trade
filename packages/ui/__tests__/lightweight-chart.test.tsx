@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import React from "react";
 import { renderToString } from "react-dom/server";
-import { LightweightChart, type OHLCVBar, type LightweightChartProps } from "../src/views/charts/lightweight-chart";
+import {
+	LightweightChart,
+	type LightweightChartProps,
+	type OHLCVBar,
+} from "../src/views/charts/lightweight-chart";
 
 describe("LightweightChart", () => {
 	test("renders container div with data-testid", () => {
@@ -22,9 +25,7 @@ describe("LightweightChart", () => {
 	});
 
 	test("applies custom height and className", () => {
-		const html = renderToString(
-			<LightweightChart data={[]} height={600} className="my-chart" />,
-		);
+		const html = renderToString(<LightweightChart data={[]} height={600} className="my-chart" />);
 		expect(html).toContain("my-chart");
 		expect(html).toContain("600px");
 	});

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 export interface EquityCurvePoint {
 	time: number;
@@ -15,7 +15,12 @@ export interface EquityCurveChartProps {
 	initialEquity?: number;
 }
 
-export function EquityCurveChart({ data, height = 300, className, initialEquity }: EquityCurveChartProps) {
+export function EquityCurveChart({
+	data,
+	height = 300,
+	className,
+	_initialEquity,
+}: EquityCurveChartProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const chartRef = useRef<unknown>(null);
 
@@ -61,11 +66,15 @@ export function EquityCurveChart({ data, height = 300, className, initialEquity 
 				});
 
 				if (data.length > 0) {
+					// biome-ignore lint/suspicious/noExplicitAny: TradingView Lightweight Charts API requires any
 					equitySeries.setData(data.map((d) => ({ time: d.time as any, value: d.equity })));
-					drawdownSeries.setData(data.map((d) => ({
-						time: d.time as any,
-						value: Math.max(d.drawdown, -1),
-					})));
+					drawdownSeries.setData(
+						data.map((d) => ({
+							// biome-ignore lint/suspicious/noExplicitAny: TradingView Lightweight Charts API requires any
+							time: d.time as any,
+							value: Math.max(d.drawdown, -1),
+						})),
+					);
 				}
 
 				chartRef.current = { chart, equitySeries, drawdownSeries };
@@ -76,12 +85,16 @@ export function EquityCurveChart({ data, height = 300, className, initialEquity 
 					}
 				});
 				observer.observe(container);
+				// biome-ignore lint/suspicious/noExplicitAny: TradingView Lightweight Charts API requires any
 				(chartRef.current as any).observer = observer;
-			} catch { /* lightweight-charts not available in SSR/test */ }
+			} catch {
+				/* lightweight-charts not available in SSR/test */
+			}
 		})();
 
 		return () => {
 			disposed = true;
+			// biome-ignore lint/suspicious/noExplicitAny: TradingView Lightweight Charts API requires any
 			const ref = chartRef.current as any;
 			if (ref) {
 				ref.observer?.disconnect();

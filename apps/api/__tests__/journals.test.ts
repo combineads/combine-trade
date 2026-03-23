@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { Elysia } from "elysia";
 import { errorHandlerPlugin } from "../src/lib/errors.js";
-import { journalRoutes, type JournalRouteDeps } from "../src/routes/journals.js";
+import { type JournalRouteDeps, journalRoutes } from "../src/routes/journals.js";
 
 const sampleJournal = {
 	id: "j-1",
@@ -24,7 +24,7 @@ const sampleSnapshot = {
 
 function createMockDeps(): JournalRouteDeps {
 	return {
-		listJournals: async (query) => ({
+		listJournals: async (_query) => ({
 			data: [sampleJournal],
 			total: 1,
 		}),
@@ -37,9 +37,7 @@ function createMockDeps(): JournalRouteDeps {
 			total: filter.symbol === "ETHUSDT" ? 0 : 1,
 		}),
 		getJournalAnalytics: async () => ({
-			tagStats: [
-				{ tag: "breakout", count: 5, winrate: 0.7, expectancy: 1.2 },
-			],
+			tagStats: [{ tag: "breakout", count: 5, winrate: 0.7, expectancy: 1.2 }],
 			overallWinrate: 0.65,
 			overallExpectancy: 0.95,
 		}),

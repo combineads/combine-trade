@@ -32,9 +32,7 @@ const MAX_BUFFER = 100;
  * In the browser, manages EventSource lifecycle with reconnection.
  */
 export function useSSE<T = unknown>(options: SSEOptions): UseSSEReturn<T> {
-	const {
-		enabled = true,
-	} = options;
+	const { enabled = true } = options;
 
 	// SSR or disabled — return safe defaults
 	if (typeof globalThis.EventSource === "undefined" || !enabled) {
@@ -128,10 +126,18 @@ export function useSSE<T = unknown>(options: SSEOptions): UseSSEReturn<T> {
 	connect();
 
 	return {
-		get lastEvent() { return lastEvent; },
-		get events() { return events; },
-		get status() { return status; },
-		get reconnectCount() { return reconnectCount; },
+		get lastEvent() {
+			return lastEvent;
+		},
+		get events() {
+			return events;
+		},
+		get status() {
+			return status;
+		},
+		get reconnectCount() {
+			return reconnectCount;
+		},
 		close() {
 			closed = true;
 			status = "closed";

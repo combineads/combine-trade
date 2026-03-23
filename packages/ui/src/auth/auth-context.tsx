@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useEffect, useState, type ReactNode } from "react";
+import { type ReactNode, createContext, useCallback, useEffect, useState } from "react";
 import type { BetterAuthClientInstance } from "./better-auth-client";
 
 export interface AuthUser {
@@ -217,15 +217,7 @@ function LegacyAuthProvider({
 // ---------------------------------------------------------------------------
 export function AuthProvider({ children, apiBaseUrl, authClient }: AuthProviderProps) {
 	if (authClient) {
-		return (
-			<BetterAuthProvider authClient={authClient}>
-				{children}
-			</BetterAuthProvider>
-		);
+		return <BetterAuthProvider authClient={authClient}>{children}</BetterAuthProvider>;
 	}
-	return (
-		<LegacyAuthProvider apiBaseUrl={apiBaseUrl}>
-			{children}
-		</LegacyAuthProvider>
-	);
+	return <LegacyAuthProvider apiBaseUrl={apiBaseUrl}>{children}</LegacyAuthProvider>;
 }

@@ -10,8 +10,8 @@
 import { describe, expect, test } from "bun:test";
 import {
 	ROLLBACK_ERROR_CODES,
-	ROLLBACK_HEALTH_TIMEOUT_MS,
 	ROLLBACK_HEALTH_POLL_INTERVAL_MS,
+	ROLLBACK_HEALTH_TIMEOUT_MS,
 	buildRollbackPlan,
 	buildRollbackRecord,
 	evaluatePostRollbackHealth,
@@ -89,7 +89,13 @@ describe("getPreviousSuccessfulTag", () => {
 
 	test("returns null when all entries are failed", () => {
 		const history = [
-			{ sha: "a", tag: "v1.0.0", deployed_at: "2026-01-01T00:00:00Z", deployed_by: "ci", status: "failed" as const },
+			{
+				sha: "a",
+				tag: "v1.0.0",
+				deployed_at: "2026-01-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "failed" as const,
+			},
 		];
 		const result = getPreviousSuccessfulTag(history, undefined);
 		expect(result).toBeNull();
@@ -97,8 +103,20 @@ describe("getPreviousSuccessfulTag", () => {
 
 	test("returns the most recent success tag when no currentTag specified", () => {
 		const history = [
-			{ sha: "a", tag: "v0.9.0", deployed_at: "2026-01-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
-			{ sha: "b", tag: "v1.0.0", deployed_at: "2026-02-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
+			{
+				sha: "a",
+				tag: "v0.9.0",
+				deployed_at: "2026-01-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
+			{
+				sha: "b",
+				tag: "v1.0.0",
+				deployed_at: "2026-02-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
 		];
 		const result = getPreviousSuccessfulTag(history, undefined);
 		expect(result).toBe("v1.0.0");
@@ -106,8 +124,20 @@ describe("getPreviousSuccessfulTag", () => {
 
 	test("skips the current tag and returns the previous success tag", () => {
 		const history = [
-			{ sha: "a", tag: "v0.9.0", deployed_at: "2026-01-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
-			{ sha: "b", tag: "v1.0.0", deployed_at: "2026-02-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
+			{
+				sha: "a",
+				tag: "v0.9.0",
+				deployed_at: "2026-01-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
+			{
+				sha: "b",
+				tag: "v1.0.0",
+				deployed_at: "2026-02-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
 		];
 		const result = getPreviousSuccessfulTag(history, "v1.0.0");
 		expect(result).toBe("v0.9.0");
@@ -115,9 +145,27 @@ describe("getPreviousSuccessfulTag", () => {
 
 	test("skips failed entries between current and previous success", () => {
 		const history = [
-			{ sha: "a", tag: "v0.9.0", deployed_at: "2026-01-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
-			{ sha: "b", tag: "v1.0.0", deployed_at: "2026-02-01T00:00:00Z", deployed_by: "ci", status: "failed" as const },
-			{ sha: "c", tag: "v1.1.0", deployed_at: "2026-03-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
+			{
+				sha: "a",
+				tag: "v0.9.0",
+				deployed_at: "2026-01-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
+			{
+				sha: "b",
+				tag: "v1.0.0",
+				deployed_at: "2026-02-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "failed" as const,
+			},
+			{
+				sha: "c",
+				tag: "v1.1.0",
+				deployed_at: "2026-03-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
 		];
 		const result = getPreviousSuccessfulTag(history, "v1.1.0");
 		expect(result).toBe("v0.9.0");
@@ -125,9 +173,27 @@ describe("getPreviousSuccessfulTag", () => {
 
 	test("returns targetTag override directly when provided", () => {
 		const history = [
-			{ sha: "a", tag: "v0.8.0", deployed_at: "2026-01-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
-			{ sha: "b", tag: "v0.9.0", deployed_at: "2026-02-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
-			{ sha: "c", tag: "v1.0.0", deployed_at: "2026-03-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
+			{
+				sha: "a",
+				tag: "v0.8.0",
+				deployed_at: "2026-01-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
+			{
+				sha: "b",
+				tag: "v0.9.0",
+				deployed_at: "2026-02-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
+			{
+				sha: "c",
+				tag: "v1.0.0",
+				deployed_at: "2026-03-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
 		];
 		// When targetTag is explicitly provided, return it directly if it exists in history
 		const result = getPreviousSuccessfulTag(history, "v1.0.0", "v0.8.0");
@@ -136,9 +202,27 @@ describe("getPreviousSuccessfulTag", () => {
 
 	test("skips rolled_back entries and returns the previous success", () => {
 		const history = [
-			{ sha: "a", tag: "v0.9.0", deployed_at: "2026-01-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
-			{ sha: "b", tag: "v1.0.0", deployed_at: "2026-02-01T00:00:00Z", deployed_by: "ci", status: "rolled_back" as const },
-			{ sha: "c", tag: "v1.1.0", deployed_at: "2026-03-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
+			{
+				sha: "a",
+				tag: "v0.9.0",
+				deployed_at: "2026-01-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
+			{
+				sha: "b",
+				tag: "v1.0.0",
+				deployed_at: "2026-02-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "rolled_back" as const,
+			},
+			{
+				sha: "c",
+				tag: "v1.1.0",
+				deployed_at: "2026-03-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
 		];
 		const result = getPreviousSuccessfulTag(history, "v1.1.0");
 		expect(result).toBe("v0.9.0");
@@ -146,7 +230,13 @@ describe("getPreviousSuccessfulTag", () => {
 
 	test("returns null when current is the only success entry", () => {
 		const history = [
-			{ sha: "a", tag: "v1.0.0", deployed_at: "2026-01-01T00:00:00Z", deployed_by: "ci", status: "success" as const },
+			{
+				sha: "a",
+				tag: "v1.0.0",
+				deployed_at: "2026-01-01T00:00:00Z",
+				deployed_by: "ci",
+				status: "success" as const,
+			},
 		];
 		const result = getPreviousSuccessfulTag(history, "v1.0.0");
 		expect(result).toBeNull();
@@ -217,13 +307,21 @@ describe("evaluatePostRollbackHealth", () => {
 	});
 
 	test("returns error when pipelineP95Ms exceeds 2000", () => {
-		const result = evaluatePostRollbackHealth({ httpStatus: 200, candleGaps: 0, pipelineP95Ms: 2001 });
+		const result = evaluatePostRollbackHealth({
+			httpStatus: 200,
+			candleGaps: 0,
+			pipelineP95Ms: 2001,
+		});
 		expect(result.ok).toBe(false);
 		expect(result.errorCode).toBe(ROLLBACK_ERROR_CODES.ERR_ROLLBACK_HEALTH_FAILED);
 	});
 
 	test("passes when pipelineP95Ms is exactly 2000 (boundary)", () => {
-		const result = evaluatePostRollbackHealth({ httpStatus: 200, candleGaps: 0, pipelineP95Ms: 2000 });
+		const result = evaluatePostRollbackHealth({
+			httpStatus: 200,
+			candleGaps: 0,
+			pipelineP95Ms: 2000,
+		});
 		expect(result.ok).toBe(true);
 	});
 });

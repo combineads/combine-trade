@@ -84,7 +84,10 @@ export class PositionSyncService {
 
 		for (const local of localPositions) {
 			const key = positionKey(local.symbol, local.side);
-			if (!matchedKeys.has(key) && !externalPositions.some((e) => positionKey(e.symbol, e.side) === key)) {
+			if (
+				!matchedKeys.has(key) &&
+				!externalPositions.some((e) => positionKey(e.symbol, e.side) === key)
+			) {
 				discrepancies.push({
 					type: "missing_exchange",
 					symbol: local.symbol,

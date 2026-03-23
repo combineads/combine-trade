@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { createApiServer, type ApiServerDeps } from "../src/server";
-import type { Credential, CredentialRouteDeps } from "../src/routes/credentials";
+import type { Credential } from "../src/routes/credentials";
+import { type ApiServerDeps, createApiServer } from "../src/server";
 import { createMockAuth, makeAuthHeaders } from "./helpers/auth";
 
 function createTestCredential(overrides: Partial<Credential> = {}): Credential {
@@ -27,19 +27,34 @@ function createStubDeps(): ApiServerDeps {
 			findById: async () => null,
 			findByNameAndVersion: async () => null,
 			findActive: async () => [],
-			create: async () => { throw new Error("stub"); },
-			update: async () => { throw new Error("stub"); },
-			softDelete: async () => { throw new Error("stub"); },
-			createNewVersion: async () => { throw new Error("stub"); },
+			create: async () => {
+				throw new Error("stub");
+			},
+			update: async () => {
+				throw new Error("stub");
+			},
+			softDelete: async () => {
+				throw new Error("stub");
+			},
+			createNewVersion: async () => {
+				throw new Error("stub");
+			},
 		},
 		executionModeDeps: {
 			loadMode: async () => "analysis" as const,
 			saveMode: async () => {},
-			getSafetyGateStatus: async () => ({ killSwitchEnabled: false, dailyLossLimitConfigured: false }),
+			getSafetyGateStatus: async () => ({
+				killSwitchEnabled: false,
+				dailyLossLimitConfigured: false,
+			}),
 		},
 		killSwitchDeps: {
-			activate: async () => { throw new Error("stub"); },
-			deactivate: async () => { throw new Error("stub"); },
+			activate: async () => {
+				throw new Error("stub");
+			},
+			deactivate: async () => {
+				throw new Error("stub");
+			},
 			getActiveStates: async () => [],
 			getAuditEvents: async () => ({ items: [], total: 0 }),
 		},
@@ -67,13 +82,22 @@ function createStubDeps(): ApiServerDeps {
 		eventDeps: {
 			findEventById: async () => null,
 			findEventsByStrategy: async () => ({ items: [], total: 0 }),
-			getStrategyStatistics: async () => ({ winRate: 0, expectancy: 0, avgPnl: 0, sampleCount: 0, totalEvents: 0, longCount: 0, shortCount: 0 }),
+			getStrategyStatistics: async () => ({
+				winRate: 0,
+				expectancy: 0,
+				avgPnl: 0,
+				sampleCount: 0,
+				totalEvents: 0,
+				longCount: 0,
+				shortCount: 0,
+			}),
 			strategyExists: async () => true,
 		},
 		orderDeps: { findOrders: async () => ({ items: [], total: 0 }) },
 		candleDeps: { findCandles: async () => ({ items: [], total: 0 }) },
 		alertDeps: { findAlerts: async () => ({ items: [], total: 0 }) },
 		backtestDeps: {
+			// biome-ignore lint/suspicious/noExplicitAny: test mock requires flexible typing
 			runBacktest: async () => ({ trades: [], stats: {} as any }),
 			strategyExists: async () => true,
 		},
@@ -84,7 +108,12 @@ function createStubDeps(): ApiServerDeps {
 			getJournalAnalytics: async () => ({ tagStats: [], overallWinrate: 0, overallExpectancy: 0 }),
 		},
 		paperDeps: {
-			getPaperStatus: async () => ({ balance: "0", positions: [], unrealizedPnl: "0", totalPnl: "0" }),
+			getPaperStatus: async () => ({
+				balance: "0",
+				positions: [],
+				unrealizedPnl: "0",
+				totalPnl: "0",
+			}),
 			listPaperOrders: async () => ({ data: [], total: 0 }),
 			getPaperPerformance: async () => ({ summaries: [] }),
 			getPaperComparison: async () => ({ backtest: {}, paper: {}, delta: {} }),

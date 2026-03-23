@@ -56,7 +56,11 @@ function createMockRepository(): StrategyRepository & {
 		async findById(id: string, _userId: string): Promise<Strategy | null> {
 			return strategies.find((s) => s.id === id && !s.deletedAt) ?? null;
 		},
-		async findByNameAndVersion(name: string, version: number, _userId: string): Promise<Strategy | null> {
+		async findByNameAndVersion(
+			name: string,
+			version: number,
+			_userId: string,
+		): Promise<Strategy | null> {
 			return (
 				strategies.find((s) => s.name === name && s.version === version && !s.deletedAt) ?? null
 			);
@@ -77,7 +81,11 @@ function createMockRepository(): StrategyRepository & {
 			const strategy = strategies.find((s) => s.id === id);
 			if (strategy) strategy.deletedAt = new Date();
 		},
-		async createNewVersion(id: string, input: UpdateStrategyInput, _userId: string): Promise<Strategy> {
+		async createNewVersion(
+			id: string,
+			input: UpdateStrategyInput,
+			_userId: string,
+		): Promise<Strategy> {
 			const existing = strategies.find((s) => s.id === id);
 			if (!existing) throw new Error("Not found");
 			counter++;
@@ -126,9 +134,9 @@ describe("StrategyCrudService", () => {
 		const repo = createMockRepository();
 		const service = new StrategyCrudService(repo);
 
-		await expect(service.create({ ...validInput, featuresDefinition: [] }, USER_ID)).rejects.toThrow(
-			"At least one feature definition is required",
-		);
+		await expect(
+			service.create({ ...validInput, featuresDefinition: [] }, USER_ID),
+		).rejects.toThrow("At least one feature definition is required");
 	});
 
 	test("create with invalid feature (missing name) throws", async () => {
@@ -136,12 +144,15 @@ describe("StrategyCrudService", () => {
 		const service = new StrategyCrudService(repo);
 
 		await expect(
-			service.create({
-				...validInput,
-				featuresDefinition: [
-					{ name: "", expression: "close", normalization: { method: "minmax" } },
-				],
-			}, USER_ID),
+			service.create(
+				{
+					...validInput,
+					featuresDefinition: [
+						{ name: "", expression: "close", normalization: { method: "minmax" } },
+					],
+				},
+				USER_ID,
+			),
 		).rejects.toThrow("Feature must have name and expression");
 	});
 

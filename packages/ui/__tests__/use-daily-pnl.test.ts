@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { useDailyPnl, type UseDailyPnlResult } from "../src/hooks/use-daily-pnl.js";
+import { useDailyPnl } from "../src/hooks/use-daily-pnl.js";
 
 describe("useDailyPnl", () => {
 	test("returns correct initial shape", () => {

@@ -67,10 +67,7 @@ export class LabelScanner {
 				const created = await this.processEvent(event);
 				if (created) labeled++;
 			} catch (err) {
-				logger.warn(
-					{ eventId: event.id, error: (err as Error).message },
-					"Failed to label event",
-				);
+				logger.warn({ eventId: event.id, error: (err as Error).message }, "Failed to label event");
 			}
 		}
 

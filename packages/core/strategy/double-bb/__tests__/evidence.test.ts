@@ -1,11 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { CandleBar } from "../detector.js";
-import {
-	type EvidenceInput,
-	type EvidenceResult,
-	type MaBias,
-	evaluateEvidence,
-} from "../evidence.js";
+import { type EvidenceInput, type MaBias, evaluateEvidence } from "../evidence.js";
 
 function makeCandle(overrides: Partial<CandleBar> = {}): CandleBar {
 	return {

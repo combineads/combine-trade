@@ -57,7 +57,7 @@ describe("CorrelationContext", () => {
 		let ctx = createCorrelationContext();
 		ctx = startStage(ctx, "strategy");
 		// Force a known timing
-		const stage = ctx.stages.get("strategy")!;
+		const _stage = ctx.stages.get("strategy")!;
 		const manualCtx = {
 			...ctx,
 			stages: new Map(ctx.stages).set("strategy", { startMs: 100, endMs: 0 }),

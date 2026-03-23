@@ -1,4 +1,4 @@
-import { DataTable, type Column } from "../../components/data-table";
+import { type Column, DataTable } from "../../components/data-table";
 import { Pagination } from "../../components/pagination";
 
 export interface OrderRow {

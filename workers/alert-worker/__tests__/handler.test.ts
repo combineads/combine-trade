@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import type { SlackMessage } from "@combine/alert";
 import type { DecisionResult } from "@combine/core/decision";
-import type { AlertContext, SlackMessage } from "@combine/alert";
 import type { ExecutionMode } from "@combine/execution";
-import { AlertWorkerHandler, type AlertWorkerDeps } from "../src/handler.js";
+import { type AlertWorkerDeps, AlertWorkerHandler } from "../src/handler.js";
 
 function makeDecisionResult(overrides: Partial<DecisionResult> = {}): DecisionResult {
 	return {
@@ -35,8 +35,7 @@ function makeDeps(overrides: Partial<AlertWorkerDeps> = {}): MockDeps {
 	return {
 		sentWebhooks,
 		savedAlerts,
-		loadExecutionMode:
-			overrides.loadExecutionMode ?? (async () => "alert" as ExecutionMode),
+		loadExecutionMode: overrides.loadExecutionMode ?? (async () => "alert" as ExecutionMode),
 		isAlertSent: overrides.isAlertSent ?? (async () => false),
 		saveAlert:
 			overrides.saveAlert ??

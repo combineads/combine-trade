@@ -1,6 +1,6 @@
-import { describe, expect, test, mock, beforeEach, afterEach } from "bun:test";
-import type { SlackMessage } from "../types.js";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import { sendSlackWebhook } from "../slack.js";
+import type { SlackMessage } from "../types.js";
 
 const testMessage: SlackMessage = {
 	blocks: [
@@ -40,9 +40,9 @@ describe("sendSlackWebhook", () => {
 			return new Response("channel_not_found", { status: 404 });
 		}) as typeof fetch;
 
-		await expect(
-			sendSlackWebhook("https://hooks.slack.com/test", testMessage),
-		).rejects.toThrow("Slack webhook failed");
+		await expect(sendSlackWebhook("https://hooks.slack.com/test", testMessage)).rejects.toThrow(
+			"Slack webhook failed",
+		);
 	});
 
 	test("includes status code in error message", async () => {
@@ -63,9 +63,9 @@ describe("sendSlackWebhook", () => {
 			throw new Error("ECONNREFUSED");
 		}) as typeof fetch;
 
-		await expect(
-			sendSlackWebhook("https://hooks.slack.com/test", testMessage),
-		).rejects.toThrow("ECONNREFUSED");
+		await expect(sendSlackWebhook("https://hooks.slack.com/test", testMessage)).rejects.toThrow(
+			"ECONNREFUSED",
+		);
 	});
 
 	test("respects timeout via AbortController", async () => {

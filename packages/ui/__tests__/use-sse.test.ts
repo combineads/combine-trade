@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import type { SSEOptions, SSEEvent, UseSSEReturn, SSEStatus } from "../src/hooks/use-sse";
 
 describe("useSSE types and module", () => {
 	test("exports SSEStatus type values", async () => {

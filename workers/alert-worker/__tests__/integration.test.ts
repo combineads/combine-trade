@@ -1,5 +1,5 @@
-import { describe, expect, test, mock } from "bun:test";
-import { createAlertWorkerEntryDeps, type AlertWorkerEntryDeps } from "../src/entry.js";
+import { describe, expect, mock, test } from "bun:test";
+import type { AlertWorkerEntryDeps } from "../src/entry.js";
 
 function makeDeps(overrides: Partial<AlertWorkerEntryDeps> = {}): AlertWorkerEntryDeps {
 	return {
@@ -25,7 +25,13 @@ function makeDeps(overrides: Partial<AlertWorkerEntryDeps> = {}): AlertWorkerEnt
 			Promise.resolve({
 				decision: "LONG" as const,
 				reason: "criteria_met" as const,
-				statistics: { winrate: 0.6, avgWin: 0.02, avgLoss: 0.01, expectancy: 0.008, sampleCount: 50 },
+				statistics: {
+					winrate: 0.6,
+					avgWin: 0.02,
+					avgLoss: 0.01,
+					expectancy: 0.008,
+					sampleCount: 50,
+				},
 				ciLower: 0.45,
 				ciUpper: 0.75,
 				confidenceTier: "medium" as const,

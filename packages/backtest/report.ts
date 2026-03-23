@@ -77,10 +77,7 @@ export function computeMaxConsecutiveLoss(events: LabeledEvent[]): number {
 
 /** Compute monthly breakdown sorted by yearMonth ascending. */
 export function computeMonthlyBreakdown(events: LabeledEvent[]): MonthlyBreakdown[] {
-	const map = new Map<
-		string,
-		{ winCount: number; lossCount: number; pnlSum: Decimal }
-	>();
+	const map = new Map<string, { winCount: number; lossCount: number; pnlSum: Decimal }>();
 
 	for (const { event, label } of events) {
 		const ym = `${event.openTime.getUTCFullYear()}-${String(event.openTime.getUTCMonth() + 1).padStart(2, "0")}`;
@@ -204,8 +201,7 @@ export function computeReport(
 
 	// Cold start
 	const coldStartEvents = Math.min(total, 30);
-	const coldStartEndTime =
-		total >= 30 ? events[29]!.event.openTime : null;
+	const coldStartEndTime = total >= 30 ? events[29]!.event.openTime : null;
 
 	return {
 		totalEvents: total,

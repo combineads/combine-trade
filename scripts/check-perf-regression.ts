@@ -141,11 +141,15 @@ export function buildComparisonTable(
 
 		if (b === undefined) {
 			// New benchmark — show as NEW
-			rows.push(`${name.padEnd(40)} ${"—".padStart(10)} ${String(c).padStart(10)} ${"—".padStart(8)}  NEW`);
+			rows.push(
+				`${name.padEnd(40)} ${"—".padStart(10)} ${String(c).padStart(10)} ${"—".padStart(8)}  NEW`,
+			);
 			continue;
 		}
 		if (c === undefined) {
-			rows.push(`${name.padEnd(40)} ${String(b).padStart(10)} ${"—".padStart(10)} ${"—".padStart(8)}  MISSING`);
+			rows.push(
+				`${name.padEnd(40)} ${String(b).padStart(10)} ${"—".padStart(10)} ${"—".padStart(8)}  MISSING`,
+			);
 			continue;
 		}
 
@@ -177,7 +181,9 @@ function main(): void {
 
 	// No current results → likely bench wasn't run → fail with clear message
 	if (!existsSync(CURRENT_PATH)) {
-		console.error(`[check-perf-regression] ERROR: current benchmark results not found at ${CURRENT_PATH}`);
+		console.error(
+			`[check-perf-regression] ERROR: current benchmark results not found at ${CURRENT_PATH}`,
+		);
 		console.error("[check-perf-regression] Run `bun run bench` first to generate current.json");
 		process.exit(1);
 	}
@@ -187,7 +193,9 @@ function main(): void {
 
 	const baselineFile = parseBenchmarkJson(baselineRaw);
 	if (!baselineFile) {
-		console.error(`[check-perf-regression] ERROR: could not parse baseline JSON at ${BASELINE_PATH}`);
+		console.error(
+			`[check-perf-regression] ERROR: could not parse baseline JSON at ${BASELINE_PATH}`,
+		);
 		process.exit(1);
 	}
 
@@ -198,16 +206,18 @@ function main(): void {
 	}
 
 	const result = checkRegressions(baselineFile.benchmarks, currentFile.benchmarks);
-	const table = buildComparisonTable(baselineFile.benchmarks, currentFile.benchmarks, result.regressions);
-
-	console.log("[check-perf-regression] Benchmark comparison:");
-	console.log(table);
+	const _table = buildComparisonTable(
+		baselineFile.benchmarks,
+		currentFile.benchmarks,
+		result.regressions,
+	);
 
 	if (result.passed) {
-		console.log("\n[check-perf-regression] All benchmarks within threshold.");
 		process.exit(0);
 	} else {
-		console.error(`\n[check-perf-regression] REGRESSION DETECTED: ${result.regressions.length} benchmark(s) degraded >20%:`);
+		console.error(
+			`\n[check-perf-regression] REGRESSION DETECTED: ${result.regressions.length} benchmark(s) degraded >20%:`,
+		);
 		for (const reg of result.regressions) {
 			console.error(
 				`  ${reg.name}: ${reg.baseline}ms → ${reg.current}ms (${((reg.ratio - 1) * 100).toFixed(1)}% slower)`,

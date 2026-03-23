@@ -41,10 +41,7 @@ function isValidDecision(obj: unknown): obj is LlmDecision {
 	return VALID_ACTIONS.has(record.action);
 }
 
-export async function evaluateWithLlm(
-	prompt: string,
-	spawn: LlmSpawnRunner,
-): Promise<LlmDecision> {
+export async function evaluateWithLlm(prompt: string, spawn: LlmSpawnRunner): Promise<LlmDecision> {
 	let output: string;
 	try {
 		output = await spawn(prompt);
@@ -68,8 +65,6 @@ export async function evaluateWithLlm(
 		action: parsed.action,
 		reason: typeof parsed.reason === "string" ? parsed.reason : "",
 		confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0,
-		risk_factors: Array.isArray(parsed.risk_factors)
-			? parsed.risk_factors
-			: [],
+		risk_factors: Array.isArray(parsed.risk_factors) ? parsed.risk_factors : [],
 	};
 }

@@ -1,8 +1,5 @@
-import { describe, expect, test, mock } from "bun:test";
-import {
-	ApiQueryService,
-	type QueryServiceDeps,
-} from "../src/services/query-service.js";
+import { describe, expect, mock, test } from "bun:test";
+import { ApiQueryService, type QueryServiceDeps } from "../src/services/query-service.js";
 
 function makeDeps(overrides: Partial<QueryServiceDeps> = {}): QueryServiceDeps {
 	return {
@@ -34,6 +31,7 @@ describe("ApiQueryService", () => {
 		const deps = makeDeps({
 			findEventsByStrategy: mock(() =>
 				Promise.resolve({
+					// biome-ignore lint/suspicious/noExplicitAny: test mock requires flexible typing
 					items: [{ id: "e1" }] as any[],
 					total: 50,
 				}),
@@ -77,6 +75,7 @@ describe("ApiQueryService", () => {
 	});
 
 	test("findEventById delegates to deps", async () => {
+		// biome-ignore lint/suspicious/noExplicitAny: test mock requires flexible typing
 		const event = { id: "e1", strategyId: "s1" } as any;
 		const deps = makeDeps({
 			findEventById: mock(() => Promise.resolve(event)),
@@ -127,6 +126,7 @@ describe("ApiQueryService", () => {
 		const deps = makeDeps({
 			findCandles: mock(() =>
 				Promise.resolve({
+					// biome-ignore lint/suspicious/noExplicitAny: test mock requires flexible typing
 					items: [{ symbol: "BTCUSDT" }] as any[],
 					total: 100,
 				}),
@@ -167,6 +167,7 @@ describe("ApiQueryService", () => {
 		const deps = makeDeps({
 			findOrders: mock(() =>
 				Promise.resolve({
+					// biome-ignore lint/suspicious/noExplicitAny: test mock requires flexible typing
 					items: [{ id: "o1", status: "open" }] as any[],
 					total: 5,
 				}),
@@ -196,6 +197,7 @@ describe("ApiQueryService", () => {
 		const deps = makeDeps({
 			findAlerts: mock(() =>
 				Promise.resolve({
+					// biome-ignore lint/suspicious/noExplicitAny: test mock requires flexible typing
 					items: [{ id: "a1" }] as any[],
 					total: 3,
 				}),

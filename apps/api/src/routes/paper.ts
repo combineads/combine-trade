@@ -8,13 +8,25 @@ export type PaperPeriod = "day" | "week" | "month" | "all";
 export interface PaperRouteDeps {
 	getPaperStatus: () => Promise<{
 		balance: string;
-		positions: { symbol: string; side: "LONG" | "SHORT"; size: string; entryPrice: string; unrealizedPnl: string }[];
+		positions: {
+			symbol: string;
+			side: "LONG" | "SHORT";
+			size: string;
+			entryPrice: string;
+			unrealizedPnl: string;
+		}[];
 		unrealizedPnl: string;
 		totalPnl: string;
 	}>;
-	listPaperOrders: (query: { page: number; pageSize: number }) => Promise<{ data: unknown[]; total: number }>;
+	listPaperOrders: (query: { page: number; pageSize: number }) => Promise<{
+		data: unknown[];
+		total: number;
+	}>;
 	getPaperPerformance: (period: PaperPeriod) => Promise<{ summaries: unknown[] }>;
-	getPaperComparison: (strategyId: string, symbol: string) => Promise<{
+	getPaperComparison: (
+		strategyId: string,
+		symbol: string,
+	) => Promise<{
 		backtest: unknown;
 		paper: unknown;
 		delta: unknown;
@@ -24,13 +36,10 @@ export interface PaperRouteDeps {
 
 export function paperRoutes(deps: PaperRouteDeps) {
 	return new Elysia()
-		.get(
-			"/api/v1/paper/status",
-			async () => {
-				const status = await deps.getPaperStatus();
-				return ok(status);
-			},
-		)
+		.get("/api/v1/paper/status", async () => {
+			const status = await deps.getPaperStatus();
+			return ok(status);
+		})
 		.get(
 			"/api/v1/paper/orders",
 			async ({ query }) => {
@@ -55,12 +64,9 @@ export function paperRoutes(deps: PaperRouteDeps) {
 			},
 			{
 				query: t.Object({
-					period: t.Optional(t.Union([
-						t.Literal("day"),
-						t.Literal("week"),
-						t.Literal("month"),
-						t.Literal("all"),
-					])),
+					period: t.Optional(
+						t.Union([t.Literal("day"), t.Literal("week"), t.Literal("month"), t.Literal("all")]),
+					),
 				}),
 			},
 		)

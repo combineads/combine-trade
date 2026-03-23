@@ -1,5 +1,5 @@
+import { type BadgeStatus, StatusBadge } from "../../components/badge";
 import { Button } from "../../components/button";
-import { StatusBadge, type BadgeStatus } from "../../components/badge";
 import { ConfigPanels, type StrategyConfig } from "./config-panels";
 import { StrategyStats, type StrategyStatsData } from "./strategy-stats";
 
@@ -27,14 +27,16 @@ export function StrategyEditorView({ strategy, stats, onSave, onBack }: Strategy
 	return (
 		<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
 			{/* Header */}
-			<div style={{
-				display: "flex",
-				justifyContent: "space-between",
-				alignItems: "center",
-				padding: "12px 0",
-				borderBottom: "1px solid var(--border-subtle)",
-				marginBottom: 12,
-			}}>
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					padding: "12px 0",
+					borderBottom: "1px solid var(--border-subtle)",
+					marginBottom: 12,
+				}}
+			>
 				<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
 					{onBack && (
 						<button
@@ -69,69 +71,83 @@ export function StrategyEditorView({ strategy, stats, onSave, onBack }: Strategy
 			</div>
 
 			{/* Split pane: Editor (55%) + Config (45%) */}
-			<div style={{
-				display: "flex",
-				flex: 1,
-				gap: 1,
-				minHeight: 0,
-				border: "1px solid var(--border-subtle)",
-				borderRadius: "var(--radius-md)",
-				overflow: "hidden",
-			}}>
-				{/* Left: Code editor area */}
-				<div style={{
-					flex: "0 0 55%",
+			<div
+				style={{
 					display: "flex",
-					flexDirection: "column",
-					backgroundColor: "var(--bg-card)",
-				}}>
+					flex: 1,
+					gap: 1,
+					minHeight: 0,
+					border: "1px solid var(--border-subtle)",
+					borderRadius: "var(--radius-md)",
+					overflow: "hidden",
+				}}
+			>
+				{/* Left: Code editor area */}
+				<div
+					style={{
+						flex: "0 0 55%",
+						display: "flex",
+						flexDirection: "column",
+						backgroundColor: "var(--bg-card)",
+					}}
+				>
 					{/* Code content — SSR fallback (Monaco loads client-side) */}
-					<div style={{
-						flex: 1,
-						overflow: "auto",
-						padding: 16,
-					}}>
-						<pre style={{
-							margin: 0,
-							fontFamily: "var(--font-mono)",
-							fontSize: 13,
-							lineHeight: 1.5,
-							color: "var(--text-primary)",
-							whiteSpace: "pre-wrap",
-						}}>
+					<div
+						style={{
+							flex: 1,
+							overflow: "auto",
+							padding: 16,
+						}}
+					>
+						<pre
+							style={{
+								margin: 0,
+								fontFamily: "var(--font-mono)",
+								fontSize: 13,
+								lineHeight: 1.5,
+								color: "var(--text-primary)",
+								whiteSpace: "pre-wrap",
+							}}
+						>
 							{strategy.code}
 						</pre>
 					</div>
 
 					{/* Status bar */}
-					<div style={{
-						display: "flex",
-						gap: 16,
-						padding: "4px 12px",
-						fontSize: 11,
-						color: "var(--text-muted)",
-						borderTop: "1px solid var(--border-subtle)",
-						backgroundColor: "var(--bg-elevated)",
-					}}>
+					<div
+						style={{
+							display: "flex",
+							gap: 16,
+							padding: "4px 12px",
+							fontSize: 11,
+							color: "var(--text-muted)",
+							borderTop: "1px solid var(--border-subtle)",
+							backgroundColor: "var(--bg-elevated)",
+						}}
+					>
 						<span>TypeScript</span>
 						<span>UTF-8</span>
 					</div>
 				</div>
 
 				{/* Divider */}
-				<div style={{
-					width: 1,
-					backgroundColor: "var(--border-subtle)",
-					cursor: "col-resize",
-				}} />
+				<div
+					style={{
+						width: 1,
+						backgroundColor: "var(--border-subtle)",
+						cursor: "col-resize",
+					}}
+				/>
 
 				{/* Right: Config panels */}
-				<div style={{
-					flex: "0 0 calc(45% - 1px)",
-					padding: 12,
-					overflow: "auto",
-					backgroundColor: "var(--bg-card)",
-				}}>
+				<div
+					style={{
+						flex: "0 0 calc(45% - 1px)",
+						padding: 12,
+						overflow: "auto",
+						backgroundColor: "var(--bg-card)",
+					}}
+				>
 					<ConfigPanels
 						name={strategy.name}
 						direction={strategy.direction}

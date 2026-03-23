@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { runCatchUp, type CatchUpDeps, type CatchUpOptions } from "../catch-up.js";
+import { type CatchUpDeps, runCatchUp } from "../catch-up.js";
 
 interface MockEvent {
 	id: string;
@@ -15,8 +15,7 @@ function makeDeps(
 	return {
 		processed,
 		marked,
-		findUnprocessedEvents:
-			overrides.findUnprocessedEvents ?? (async () => [...events]),
+		findUnprocessedEvents: overrides.findUnprocessedEvents ?? (async () => [...events]),
 		processEvent:
 			overrides.processEvent ??
 			(async (evt) => {
@@ -59,10 +58,10 @@ describe("runCatchUp", () => {
 			{ id: "e2", payload: "b" },
 			{ id: "e3", payload: "c" },
 		];
-		let callCount = 0;
+		let _callCount = 0;
 		const deps = makeDeps(events, {
 			processEvent: async (evt) => {
-				callCount++;
+				_callCount++;
 				if (evt.id === "e2") throw new Error("fail");
 				deps.processed.push(evt.id);
 			},

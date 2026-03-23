@@ -1,14 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import {
-	evaluateFinancialTriggers,
-	evaluateInfrastructureTriggers,
-	evaluateSandboxTriggers,
-	evaluateDataIntegrityTriggers,
+	type DataIntegrityState,
 	type FinancialState,
 	type InfrastructureState,
 	type SandboxState,
-	type DataIntegrityState,
-	type TriggerResult,
+	evaluateDataIntegrityTriggers,
+	evaluateFinancialTriggers,
+	evaluateInfrastructureTriggers,
+	evaluateSandboxTriggers,
 } from "../kill-switch-triggers.js";
 
 describe("Financial triggers (instant, no grace)", () => {
@@ -31,7 +30,9 @@ describe("Financial triggers (instant, no grace)", () => {
 			consecutiveRejections: {},
 		};
 		const results = evaluateFinancialTriggers(state);
-		expect(results.some((r) => r.shouldActivate && r.reason.includes("balance deviation"))).toBe(true);
+		expect(results.some((r) => r.shouldActivate && r.reason.includes("balance deviation"))).toBe(
+			true,
+		);
 	});
 
 	test("untracked positions trigger global kill", () => {

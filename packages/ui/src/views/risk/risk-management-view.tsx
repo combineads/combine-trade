@@ -1,6 +1,6 @@
+import { type AuditEntry, AuditLog } from "./audit-log";
 import { KillSwitchControl } from "./kill-switch-control";
-import { LossLimitDisplay, type LossLimitData } from "./loss-limit-display";
-import { AuditLog, type AuditEntry } from "./audit-log";
+import { type LossLimitData, LossLimitDisplay } from "./loss-limit-display";
 
 export interface RiskState {
 	killSwitchActive: boolean;
@@ -15,7 +15,11 @@ export interface RiskManagementViewProps {
 	onDeactivateKillSwitch?: () => void;
 }
 
-export function RiskManagementView({ state, onActivateKillSwitch, onDeactivateKillSwitch }: RiskManagementViewProps) {
+export function RiskManagementView({
+	state,
+	onActivateKillSwitch,
+	onDeactivateKillSwitch,
+}: RiskManagementViewProps) {
 	return (
 		<div>
 			<h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)", marginBottom: 24 }}>

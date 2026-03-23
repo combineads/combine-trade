@@ -182,8 +182,12 @@ describe("OrderRouteDeps user isolation", () => {
 	test("findOrders with userId returns only that user's orders", async () => {
 		const deps = createIsolatedOrderDeps();
 
-		const resultA = await deps.findOrders({ page: 1, pageSize: 50, userId: USER_A } as Parameters<typeof deps.findOrders>[0]);
-		const resultB = await deps.findOrders({ page: 1, pageSize: 50, userId: USER_B } as Parameters<typeof deps.findOrders>[0]);
+		const resultA = await deps.findOrders({ page: 1, pageSize: 50, userId: USER_A } as Parameters<
+			typeof deps.findOrders
+		>[0]);
+		const resultB = await deps.findOrders({ page: 1, pageSize: 50, userId: USER_B } as Parameters<
+			typeof deps.findOrders
+		>[0]);
 
 		expect(resultA.items).toHaveLength(1);
 		expect(resultA.items[0].id).toBe("order-a-1");

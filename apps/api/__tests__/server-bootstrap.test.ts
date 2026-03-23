@@ -1,5 +1,5 @@
-import { describe, expect, test, mock } from "bun:test";
-import { createApiServer, type ApiServerDeps } from "../src/server.js";
+import { describe, expect, mock, test } from "bun:test";
+import { type ApiServerDeps, createApiServer } from "../src/server.js";
 import { createMockAuth, makeAuthHeaders } from "./helpers/auth.js";
 
 function makeDeps(overrides: Partial<ApiServerDeps> = {}): ApiServerDeps {
@@ -19,7 +19,9 @@ function makeDeps(overrides: Partial<ApiServerDeps> = {}): ApiServerDeps {
 		executionModeDeps: {
 			loadMode: mock(() => Promise.resolve("analysis" as const)),
 			saveMode: mock(() => Promise.resolve()),
-			getSafetyGateStatus: mock(() => Promise.resolve({ killSwitchEnabled: true, dailyLossLimitConfigured: true })),
+			getSafetyGateStatus: mock(() =>
+				Promise.resolve({ killSwitchEnabled: true, dailyLossLimitConfigured: true }),
+			),
 		},
 		killSwitchDeps: {
 			activate: mock(() => Promise.resolve({} as never)),
@@ -32,14 +34,26 @@ function makeDeps(overrides: Partial<ApiServerDeps> = {}): ApiServerDeps {
 			masterKey: "0".repeat(64),
 			findByUserId: async () => [],
 			findById: async () => null,
-			create: async () => { throw new Error("stub"); },
-			update: async () => { throw new Error("stub"); },
+			create: async () => {
+				throw new Error("stub");
+			},
+			update: async () => {
+				throw new Error("stub");
+			},
 			remove: async () => {},
 		},
 		eventDeps: {
 			findEventById: async () => null,
 			findEventsByStrategy: async () => ({ items: [], total: 0 }),
-			getStrategyStatistics: async () => ({ winRate: 0, expectancy: 0, avgPnl: 0, sampleCount: 0, totalEvents: 0, longCount: 0, shortCount: 0 }),
+			getStrategyStatistics: async () => ({
+				winRate: 0,
+				expectancy: 0,
+				avgPnl: 0,
+				sampleCount: 0,
+				totalEvents: 0,
+				longCount: 0,
+				shortCount: 0,
+			}),
 			strategyExists: async () => true,
 		},
 		orderDeps: { findOrders: async () => ({ items: [], total: 0 }) },
@@ -56,7 +70,12 @@ function makeDeps(overrides: Partial<ApiServerDeps> = {}): ApiServerDeps {
 			getJournalAnalytics: async () => ({ tagStats: [], overallWinrate: 0, overallExpectancy: 0 }),
 		},
 		paperDeps: {
-			getPaperStatus: async () => ({ balance: "0", positions: [], unrealizedPnl: "0", totalPnl: "0" }),
+			getPaperStatus: async () => ({
+				balance: "0",
+				positions: [],
+				unrealizedPnl: "0",
+				totalPnl: "0",
+			}),
 			listPaperOrders: async () => ({ data: [], total: 0 }),
 			getPaperPerformance: async () => ({ summaries: [] }),
 			getPaperComparison: async () => ({ backtest: {}, paper: {}, delta: {} }),
@@ -122,9 +141,7 @@ describe("createApiServer", () => {
 		const app = createApiServer(deps);
 		const headers = await makeAuthHeaders();
 
-		const res = await app.handle(
-			new Request("http://localhost/api/v1/stream", { headers }),
-		);
+		const res = await app.handle(new Request("http://localhost/api/v1/stream", { headers }));
 		expect(res.status).toBe(200);
 		expect(res.headers.get("content-type")).toContain("text/event-stream");
 	});

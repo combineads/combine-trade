@@ -65,83 +65,96 @@ Combine Trade is a strategy-defined vectorization trading system. Strategies are
 | Strategy execution | TypeScript sandbox (DB-stored, runtime-executed) |
 | Notification | Slack webhook |
 
-## Proposed repository layout
+## Repository layout
 ```text
 .
 ├── CLAUDE.md
+├── README.md
 ├── package.json
 ├── tsconfig.json
 ├── drizzle.config.ts
+├── biome.json
+├── docker-compose.yml
+├── Dockerfile.api / Dockerfile.workers / Dockerfile.web
 ├── apps/
 │   ├── api/                    # Elysia API server
 │   │   ├── src/
-│   │   │   ├── routes/         # API route handlers
+│   │   │   ├── routes/         # API route handlers (strategies, candles, events, backtest, orders,
+│   │   │   │                   #   alerts, credentials, kill-switch, paper, macro, sse, journals, health)
 │   │   │   ├── middleware/     # AOP middleware (tx, logging)
 │   │   │   └── container.ts   # IoC container setup
 │   │   └── index.ts
-│   ├── web/                    # Next.js web UI (SSR/SSG)
-│   │   ├── app/                # App Router pages (Server Components + Client)
-│   │   ├── lib/                # Web-specific utilities (prefetch, middleware)
-│   │   └── next.config.ts
-│   └── desktop/                # Tauri desktop app (Next.js static + Rust)
-│       ├── app/                # App Router pages (all 'use client', output: 'export')
-│       ├── src-tauri/
-│       │   ├── src/            # Rust commands (keychain, tray, auto-start)
-│       │   ├── tauri.conf.json # devUrl, frontendDist
-│       │   └── Cargo.toml
-│       ├── out/                # Static export output (git-ignored)
-│       └── next.config.ts      # output: 'export'
+│   └── web/                    # Next.js web UI (SSR/SSG)
+│       ├── app/                # App Router pages (Server Components + Client)
+│       ├── src/
+│       │   └── middleware.ts   # Auth routing middleware
+│       └── next.config.ts
+│   # Note: apps/desktop (Tauri) is architecturally designed but not yet scaffolded.
+│   # See "Tauri + Next.js integration architecture" section below for the design.
 ├── packages/
-│   ├── core/                   # Domain logic (strategy-agnostic)
-│   │   ├── strategy/           # Strategy sandbox, API, execution
-│   │   ├── vector/             # Vectorization, normalization, search
-│   │   ├── decision/           # Statistical decision engine
+│   ├── core/                   # Domain logic (no Elysia, CCXT, Drizzle, or Slack)
+│   │   ├── strategy/           # Strategy sandbox, API, execution (V8 isolates)
+│   │   │   └── double-bb/      # Reference strategy implementation
+│   │   ├── vector/             # Vectorization, normalization, pgvector search
+│   │   ├── decision/           # Statistical decision engine (LONG/SHORT/PASS)
 │   │   ├── label/              # Result labeling (WIN/LOSS/TIME_EXIT)
-│   │   ├── indicator/          # Technical indicator library
+│   │   ├── indicator/          # Technical indicator library (SMA/EMA/BB/RSI/MACD/ATR/...)
 │   │   ├── journal/            # Trade journal domain logic, tag management, pattern analysis
-│   │   └── risk/               # Kill switch, daily loss limit, position sizing rules
+│   │   ├── risk/               # Kill switch, daily loss limit, position sizing rules
+│   │   ├── fee/                # Fee calculation (maker/taker, funding)
+│   │   ├── macro/              # Macro-economic context (calendar events, news)
+│   │   └── supervisor/         # Worker supervisor utilities
 │   ├── exchange/               # Exchange adapter layer (CCXT)
 │   │   ├── binance/
-│   │   └── okx/
+│   │   └── testing/            # Exchange test helpers
 │   ├── candle/                 # Candle collection and storage
-│   ├── backtest/               # Backtesting engine
+│   ├── backtest/               # Backtesting engine (3-year replay)
 │   ├── alert/                  # Slack alert engine
-│   ├── execution/              # Order execution engine
+│   ├── execution/              # Order execution engine (real + paper)
 │   ├── ui/                     # Shared React component library
-│   │   ├── components/         # Common UI (Button, Card, Table, Chart, ...)
-│   │   ├── views/              # Page views (DashboardView, StrategyListView, ...)
-│   │   ├── hooks/              # Shared hooks (useSSE, useStrategy, ...)
-│   │   └── platform/           # Platform adapter (web/Tauri runtime branching)
-│   │       ├── types.ts        # PlatformAdapter interface
-│   │       ├── context.tsx     # PlatformProvider (React Context)
-│   │       ├── web.ts          # Web implementation
-│   │       └── tauri.ts        # Tauri implementation (dynamic import)
-│   └── shared/                 # Shared types, utilities, IoC
-│       ├── types/
+│   │   └── src/
+│   │       ├── components/     # Common UI (Button, Card, Table, Chart, ...)
+│   │       ├── views/          # Page views (Dashboard, Strategies, Charts, Backtest,
+│   │       │                   #   Events, Orders, Alerts, Risk, Journal, Settings, Auth)
+│   │       ├── hooks/          # Shared hooks (useSSE, candle data, ...)
+│   │       ├── stores/         # Zustand state stores
+│   │       ├── auth/           # Auth context + session management
+│   │       ├── lib/            # Web-specific utilities
+│   │       └── theme/          # Design tokens and theme config
+│   └── shared/                 # Shared infrastructure
+│       ├── types/              # Shared TypeScript types
 │       ├── di/                 # IoC container abstractions
-│       └── aop/                # AOP decorators (tx, logging)
+│       ├── aop/                # AOP decorators (@Transactional, @Log)
+│       ├── auth/               # better-auth integration
+│       ├── crypto/             # AES-256-GCM encryption
+│       ├── decimal/            # Decimal.js wrapper
+│       ├── logger/             # Structured logging (Pino)
+│       ├── event-bus/          # PostgreSQL LISTEN/NOTIFY event bus
+│       ├── pipeline/           # Pipeline utilities
+│       └── errors/             # Structured error types and taxonomy
 ├── workers/
-│   ├── candle-collector/       # Real-time candle ingestion
+│   ├── candle-collector/       # Real-time candle ingestion (WebSocket + gap repair)
 │   ├── strategy-worker/        # Strategy event evaluation
-│   ├── vector-worker/          # Vectorization + similarity search
+│   ├── vector-worker/          # Vectorization + similarity search + decision
 │   ├── label-worker/           # Delayed result labeling
 │   ├── alert-worker/           # Slack notification dispatch
 │   ├── execution-worker/       # Order execution
-│   ├── journal-worker/          # Trade journal entry creation
-│   ├── macro-collector/         # Economic calendar + event-triggered news collection
-│   ├── retrospective-worker/    # LLM retrospective report generation (claude -p)
-│   └── llm-decision-worker/     # LLM 2nd-stage decision filter (≥15m timeframes, opt-in)
+│   ├── journal-worker/         # Trade journal entry creation
+│   ├── macro-collector/        # Economic calendar + news collection
+│   ├── retrospective-worker/   # LLM retrospective report generation
+│   └── llm-decision-worker/    # LLM 2nd-stage decision filter (≥15m timeframes, opt-in)
 ├── db/
-│   ├── schema/                 # DrizzleORM schemas
+│   ├── schema/                 # DrizzleORM schemas (20+ tables incl. better-auth)
 │   ├── migrations/             # Generated migrations
-│   └── seed/                   # Seed data for development
+│   └── seed/                   # Seed scripts (admin.ts)
 ├── tests/
 │   ├── unit/
 │   ├── integration/
 │   └── e2e/
 ├── scripts/
-├── docs/
-└── .env.example
+│   ├── bench.ts                # Benchmarking
+│   └── supervisor.ts           # Worker process supervisor
+└── docs/
 ```
 
 ## Architectural boundaries
@@ -150,7 +163,7 @@ Combine Trade is a strategy-defined vectorization trading system. Strategies are
 ```
 apps/api         → packages (core/exchange/candle/...) → packages/shared
 apps/web         → packages/ui → packages/shared
-apps/desktop     → packages/ui → packages/shared
+apps/desktop     → packages/ui → packages/shared  (planned, not yet scaffolded)
 workers          → packages (core/exchange/candle/...) → packages/shared
 ```
 - `packages/ui/` is consumed by `apps/web/` and `apps/desktop/` only. Never by `apps/api/`, workers, or backend packages.
@@ -163,6 +176,9 @@ workers          → packages (core/exchange/candle/...) → packages/shared
 - packages/core/label → (no core dependencies: only candle data needed)
 - packages/core/vector → (no core dependencies: receives features from strategy-worker)
 - packages/core/indicator → (leaf module: no core dependencies)
+- packages/core/fee → (leaf module: no core dependencies)
+- packages/core/macro → (leaf module: no core dependencies)
+- packages/core/supervisor → (utility module: no core domain dependencies)
 - Circular dependencies within packages/core are prohibited.
 
 ### Worker → Package import rules

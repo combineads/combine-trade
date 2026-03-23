@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
 import { ChartContainer } from "../src/components/chart-container";
 import { ClientOnly } from "../src/components/client-only";
+import { CandlestickChartView } from "../src/views/charts/candlestick-chart-view";
 import { EventMarker, type MarkerType, TpSlOverlay } from "../src/views/charts/event-markers";
 import { TimeframeSelector } from "../src/views/charts/timeframe-selector";
-import { CandlestickChartView } from "../src/views/charts/candlestick-chart-view";
 
 describe("ClientOnly", () => {
 	test("renders fallback on server", () => {
@@ -19,9 +19,7 @@ describe("ClientOnly", () => {
 
 describe("ChartContainer", () => {
 	test("renders skeleton fallback in SSR", () => {
-		const html = renderToString(
-			<ChartContainer width="100%" height={400} />,
-		);
+		const html = renderToString(<ChartContainer width="100%" height={400} />);
 		// Should render a placeholder div with the specified height
 		expect(html).toContain("400px");
 	});
@@ -29,9 +27,7 @@ describe("ChartContainer", () => {
 
 describe("TimeframeSelector", () => {
 	test("renders all timeframes", () => {
-		const html = renderToString(
-			<TimeframeSelector current="1m" onSelect={() => {}} />,
-		);
+		const html = renderToString(<TimeframeSelector current="1m" onSelect={() => {}} />);
 		expect(html).toContain("1m");
 		expect(html).toContain("5m");
 		expect(html).toContain("15m");
@@ -39,9 +35,7 @@ describe("TimeframeSelector", () => {
 	});
 
 	test("highlights current timeframe", () => {
-		const html = renderToString(
-			<TimeframeSelector current="5m" onSelect={() => {}} />,
-		);
+		const html = renderToString(<TimeframeSelector current="5m" onSelect={() => {}} />);
 		// Active button should have primary color
 		expect(html).toContain("#22C55E");
 	});
@@ -49,24 +43,18 @@ describe("TimeframeSelector", () => {
 
 describe("CandlestickChartView", () => {
 	test("renders symbol", () => {
-		const html = renderToString(
-			<CandlestickChartView symbol="BTCUSDT" timeframe="1m" />,
-		);
+		const html = renderToString(<CandlestickChartView symbol="BTCUSDT" timeframe="1m" />);
 		expect(html).toContain("BTCUSDT");
 	});
 
 	test("renders timeframe selector", () => {
-		const html = renderToString(
-			<CandlestickChartView symbol="BTCUSDT" timeframe="5m" />,
-		);
+		const html = renderToString(<CandlestickChartView symbol="BTCUSDT" timeframe="5m" />);
 		expect(html).toContain("1m");
 		expect(html).toContain("5m");
 	});
 
 	test("renders chart area", () => {
-		const html = renderToString(
-			<CandlestickChartView symbol="BTCUSDT" timeframe="1m" />,
-		);
+		const html = renderToString(<CandlestickChartView symbol="BTCUSDT" timeframe="1m" />);
 		// Should have a chart container placeholder
 		expect(html).toContain("400px");
 	});

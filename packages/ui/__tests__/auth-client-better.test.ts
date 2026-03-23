@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { createBetterAuthClient, type BetterAuthClientInstance } from "../src/auth/better-auth-client.js";
+import {
+	type BetterAuthClientInstance,
+	createBetterAuthClient,
+} from "../src/auth/better-auth-client.js";
 
 describe("createBetterAuthClient", () => {
 	test("returns an object with the expected shape", () => {

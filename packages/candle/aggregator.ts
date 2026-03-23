@@ -1,5 +1,5 @@
-import Decimal from "decimal.js";
 import type { Timeframe } from "@combine/shared";
+import Decimal from "decimal.js";
 import type { Candle } from "./types.js";
 import { TIMEFRAME_MS } from "./types.js";
 
@@ -26,7 +26,7 @@ export function getAggregationBarOpenTime(candleOpenTime: Date, targetTf: Timefr
  * Check if a higher-timeframe bar is closed based on how many 1m candles have been received.
  */
 export function isTimeframeClosed(
-	barOpenTime: Date,
+	_barOpenTime: Date,
 	targetTf: Timeframe,
 	receivedCount: number,
 ): boolean {

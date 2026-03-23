@@ -6,9 +6,7 @@ export interface PaperTradingBannerProps {
 export function PaperTradingBanner({ active, strategyName }: PaperTradingBannerProps) {
 	if (!active) return null;
 
-	const message = strategyName
-		? `Paper Trading Active — ${strategyName}`
-		: "Paper Trading Active";
+	const message = strategyName ? `Paper Trading Active — ${strategyName}` : "Paper Trading Active";
 
 	return (
 		<div

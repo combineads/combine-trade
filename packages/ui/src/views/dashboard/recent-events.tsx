@@ -1,4 +1,4 @@
-import { DirectionBadge, type Direction } from "../../components/badge";
+import { type Direction, DirectionBadge } from "../../components/badge";
 
 export interface RecentEventItem {
 	id: string;
@@ -37,13 +37,20 @@ export function RecentEvents({ events }: RecentEventsProps) {
 					}}
 				>
 					<DirectionBadge direction={e.direction} />
-					<span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-primary)" }}>
+					<span
+						style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-primary)" }}
+					>
 						{e.symbol}
 					</span>
-					<span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-						{e.strategyName}
-					</span>
-					<span style={{ marginLeft: "auto", fontSize: 12, color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+					<span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{e.strategyName}</span>
+					<span
+						style={{
+							marginLeft: "auto",
+							fontSize: 12,
+							color: "var(--text-muted)",
+							fontFamily: "var(--font-mono)",
+						}}
+					>
 						{e.createdAt}
 					</span>
 				</div>

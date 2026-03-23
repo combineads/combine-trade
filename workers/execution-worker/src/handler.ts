@@ -1,8 +1,8 @@
 import type { DecisionResult } from "@combine/core/decision";
+import type { GateResult } from "@combine/core/risk";
+import type { ExchangeOrder } from "@combine/exchange";
 import type { ExecutionMode, OrderPayload } from "@combine/execution";
 import { requiresOrder } from "@combine/execution";
-import type { ExchangeOrder } from "@combine/exchange";
-import type { GateResult } from "@combine/core/risk";
 import { createLogger } from "@combine/shared";
 
 const logger = createLogger("execution-worker-handler");
@@ -11,9 +11,18 @@ export interface ExecutionWorkerDeps {
 	loadExecutionMode: (strategyId: string) => Promise<ExecutionMode>;
 	isOrderExists: (clientOrderId: string) => Promise<boolean>;
 	validateRiskGate: (strategyId: string) => Promise<GateResult>;
-	buildAndSaveOrder: (eventId: string, strategyId: string, decision: DecisionResult) => Promise<OrderPayload>;
+	buildAndSaveOrder: (
+		eventId: string,
+		strategyId: string,
+		decision: DecisionResult,
+	) => Promise<OrderPayload>;
 	submitOrder: (payload: OrderPayload) => Promise<ExchangeOrder>;
-	saveOrderResult: (clientOrderId: string, status: "submitted" | "rejected", exchangeOrder?: ExchangeOrder, error?: string) => Promise<void>;
+	saveOrderResult: (
+		clientOrderId: string,
+		status: "submitted" | "rejected",
+		exchangeOrder?: ExchangeOrder,
+		error?: string,
+	) => Promise<void>;
 }
 
 export class ExecutionWorkerHandler {
@@ -60,7 +69,12 @@ export class ExecutionWorkerHandler {
 			await this.deps.saveOrderResult(payload.clientOrderId, "submitted", exchangeOrder);
 			logger.info({ eventId, exchangeOrderId: exchangeOrder.id }, "Order submitted");
 		} catch (err) {
-			await this.deps.saveOrderResult(payload.clientOrderId, "rejected", undefined, (err as Error).message);
+			await this.deps.saveOrderResult(
+				payload.clientOrderId,
+				"rejected",
+				undefined,
+				(err as Error).message,
+			);
 			logger.error({ eventId, error: (err as Error).message }, "Order submission failed");
 		}
 	}

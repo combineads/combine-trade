@@ -1,13 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
+import { createAuthStore } from "../src/stores/auth-store";
 import { LoginView } from "../src/views/auth/login-view";
-import { createAuthStore, type AuthState } from "../src/stores/auth-store";
 
 describe("LoginView", () => {
 	test("renders login form", () => {
-		const html = renderToString(
-			<LoginView onSubmit={() => Promise.resolve()} />,
-		);
+		const html = renderToString(<LoginView onSubmit={() => Promise.resolve()} />);
 		expect(html).toContain("Combine Trade");
 		expect(html).toContain("username");
 		expect(html).toContain("password");
@@ -22,9 +20,7 @@ describe("LoginView", () => {
 	});
 
 	test("renders loading state", () => {
-		const html = renderToString(
-			<LoginView onSubmit={() => Promise.resolve()} loading={true} />,
-		);
+		const html = renderToString(<LoginView onSubmit={() => Promise.resolve()} loading={true} />);
 		expect(html).toContain("Signing in");
 	});
 });

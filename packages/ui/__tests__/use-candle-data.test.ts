@@ -1,5 +1,4 @@
-import { describe, expect, test, mock, beforeEach, afterEach } from "bun:test";
-import type { UseCandleDataResult } from "../src/hooks/use-candle-data";
+import { describe, expect, test } from "bun:test";
 
 // Since this is a React hook, we test the logic functions directly
 // rather than rendering with a test renderer
@@ -41,7 +40,14 @@ describe("useCandleData types and logic", () => {
 		const mod = await import("../src/hooks/use-candle-data");
 		const apiResponse = {
 			data: [
-				{ openTime: "2026-01-01T00:00:00Z", open: "100", high: "110", low: "90", close: "105", volume: "1000" },
+				{
+					openTime: "2026-01-01T00:00:00Z",
+					open: "100",
+					high: "110",
+					low: "90",
+					close: "105",
+					volume: "1000",
+				},
 			],
 			meta: { total: 1, page: 1, pageSize: 500, totalPages: 1 },
 		};

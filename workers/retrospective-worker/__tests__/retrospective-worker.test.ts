@@ -63,8 +63,10 @@ describe("RetrospectiveWorker", () => {
 		expect(repo.getJournalWithContext).toHaveBeenCalledTimes(1);
 		expect(spawn).toHaveBeenCalledTimes(1);
 		expect(repo.saveReport).toHaveBeenCalledTimes(1);
-		const [id, report] = (repo.saveReport as ReturnType<typeof mock>).mock
-			.calls[0] as [string, string];
+		const [id, report] = (repo.saveReport as ReturnType<typeof mock>).mock.calls[0] as [
+			string,
+			string,
+		];
 		expect(id).toBe("journal-1");
 		expect(report).toBe("LLM 회고 리포트 내용입니다.");
 	});

@@ -1,5 +1,5 @@
-import { StrategyCard } from "./strategy-card";
 import { Button } from "../../components/button";
+import { StrategyCard } from "./strategy-card";
 
 export interface StrategyListItem {
 	id: string;
@@ -20,13 +20,22 @@ export interface StrategyListViewProps {
 	onStrategyClick?: (id: string) => void;
 }
 
-export function StrategyListView({ strategies, onCreateClick, onStrategyClick }: StrategyListViewProps) {
+export function StrategyListView({
+	strategies,
+	onCreateClick,
+	onStrategyClick,
+}: StrategyListViewProps) {
 	return (
 		<div>
-			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-				<h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)" }}>
-					Strategies
-				</h1>
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					marginBottom: 24,
+				}}
+			>
+				<h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)" }}>Strategies</h1>
 				<Button variant="primary" onClick={onCreateClick}>
 					Create Strategy
 				</Button>

@@ -1,6 +1,6 @@
-import { readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import yaml from "js-yaml";
 
 const ROOT = join(import.meta.dir, "../..");
@@ -30,9 +30,7 @@ describe("docker-compose.prod.yml", () => {
 		const services = doc.services as Record<string, unknown>;
 		// At least one workers-type service exists (workers, candle-collector, or strategy-worker)
 		const hasWorkers =
-			"workers" in services ||
-			"candle-collector" in services ||
-			"strategy-worker" in services;
+			"workers" in services || "candle-collector" in services || "strategy-worker" in services;
 		expect(hasWorkers).toBe(true);
 	});
 
@@ -47,8 +45,7 @@ describe("docker-compose.prod.yml", () => {
 		const content = readFileSync(filePath, "utf-8");
 		const doc = yaml.load(content) as Record<string, unknown>;
 		const services = doc.services as Record<string, unknown>;
-		const hasPostgres =
-			"postgres" in services || "db" in services;
+		const hasPostgres = "postgres" in services || "db" in services;
 		expect(hasPostgres).toBe(true);
 	});
 
@@ -91,8 +88,7 @@ describe("docker-compose.prod.yml", () => {
 		const doc = yaml.load(content) as Record<string, unknown>;
 		const services = doc.services as Record<string, unknown>;
 		const postgresService =
-			(services.postgres as Record<string, unknown>) ||
-			(services.db as Record<string, unknown>);
+			(services.postgres as Record<string, unknown>) || (services.db as Record<string, unknown>);
 		expect(postgresService.image as string).toContain("pgvector/pgvector:pg16");
 	});
 
@@ -101,8 +97,7 @@ describe("docker-compose.prod.yml", () => {
 		const doc = yaml.load(content) as Record<string, unknown>;
 		const services = doc.services as Record<string, unknown>;
 		const postgresService =
-			(services.postgres as Record<string, unknown>) ||
-			(services.db as Record<string, unknown>);
+			(services.postgres as Record<string, unknown>) || (services.db as Record<string, unknown>);
 		expect(postgresService).toHaveProperty("healthcheck");
 	});
 

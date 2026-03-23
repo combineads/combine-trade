@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
-	FundingRateCollector,
 	type FundingRateAdapter,
+	FundingRateCollector,
 	type FundingRateRecord,
 } from "../funding-rate-collector.js";
 
@@ -15,7 +15,10 @@ function makeRecord(overrides: Partial<FundingRateRecord> = {}): FundingRateReco
 	};
 }
 
-function createMockAdapter(records: FundingRateRecord[] = [], currentRate = "0.0001"): FundingRateAdapter {
+function createMockAdapter(
+	records: FundingRateRecord[] = [],
+	currentRate = "0.0001",
+): FundingRateAdapter {
 	return {
 		getFundingHistory: async () => records,
 		getCurrentFundingRate: async (symbol) => ({
@@ -56,12 +59,7 @@ describe("FundingRateCollector", () => {
 
 	test("calculateAccumulatedFunding with no records returns totalFundingPaid 0", () => {
 		const collector = new FundingRateCollector(createMockAdapter());
-		const result = collector.calculateAccumulatedFunding(
-			"BTCUSDT",
-			"10000",
-			1700000000000,
-			[],
-		);
+		const result = collector.calculateAccumulatedFunding("BTCUSDT", "10000", 1700000000000, []);
 		expect(result.totalFundingPaid).toBe("0");
 	});
 
@@ -96,16 +94,9 @@ describe("FundingRateCollector", () => {
 	});
 
 	test("calculations use Decimal.js (no floating point error)", () => {
-		const records = [
-			makeRecord({ rate: "0.0001" }),
-		];
+		const records = [makeRecord({ rate: "0.0001" })];
 		const collector = new FundingRateCollector(createMockAdapter());
-		const result = collector.calculateAccumulatedFunding(
-			"BTCUSDT",
-			"1000",
-			0,
-			records,
-		);
+		const result = collector.calculateAccumulatedFunding("BTCUSDT", "1000", 0, records);
 		// 1000 * 0.0001 = 0.1 exactly
 		expect(result.totalFundingPaid).toBe("0.1");
 	});

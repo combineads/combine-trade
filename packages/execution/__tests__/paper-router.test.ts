@@ -1,11 +1,11 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import {
-	PaperRouter,
-	type PaperOrderMatcher,
-	type RealOrderExecutor,
 	type OrderRequest,
-	type PaperOrderResult,
 	type OrderResult,
+	type PaperOrderMatcher,
+	type PaperOrderResult,
+	PaperRouter,
+	type RealOrderExecutor,
 	formatAlertMessage,
 } from "../paper-router.js";
 

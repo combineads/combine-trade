@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import type { Candle } from "@combine/candle";
 import {
 	type BacktestCheckpoint,
 	type BacktestEngineDeps,
@@ -12,6 +11,7 @@ import {
 	runBacktest,
 	toForwardCandles,
 } from "@combine/backtest";
+import type { Candle } from "@combine/candle";
 
 const BASE_TIME = 1704067200000; // 2024-01-01T00:00:00Z
 const MINUTE = 60_000;
@@ -185,7 +185,11 @@ describe("Backtest pipeline integration", () => {
 		const result = await runBacktest(candles, deps);
 
 		for (const event of result.events) {
-			const forwardCandles = toForwardCandles(candles, event.candleIndex, RESULT_CONFIG.maxHoldBars);
+			const forwardCandles = toForwardCandles(
+				candles,
+				event.candleIndex,
+				RESULT_CONFIG.maxHoldBars,
+			);
 			if (forwardCandles.length > 0) {
 				// Forward candle's open must NOT match the event candle's open
 				const eventCandle = candles[event.candleIndex]!;

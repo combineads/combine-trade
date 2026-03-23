@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
-import { ThemeProvider } from "@combine/ui";
 import { AuthProviderWrapper } from "@/components/auth-provider-wrapper";
+import { ThemeProvider } from "@combine/ui";
+import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,9 +24,7 @@ export default function RootLayout({
 				}}
 			>
 				<ThemeProvider defaultTheme="dark">
-					<AuthProviderWrapper>
-						{children}
-					</AuthProviderWrapper>
+					<AuthProviderWrapper>{children}</AuthProviderWrapper>
 				</ThemeProvider>
 			</body>
 		</html>

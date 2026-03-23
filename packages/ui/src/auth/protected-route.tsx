@@ -13,11 +13,17 @@ export function shouldRedirect(state: { isAuthenticated: boolean; isLoading: boo
 	return !state.isAuthenticated && !state.isLoading;
 }
 
-export function shouldRenderNothing(state: { isAuthenticated: boolean; isLoading: boolean }): boolean {
+export function shouldRenderNothing(state: {
+	isAuthenticated: boolean;
+	isLoading: boolean;
+}): boolean {
 	return state.isLoading;
 }
 
-export function shouldRenderChildren(state: { isAuthenticated: boolean; isLoading: boolean }): boolean {
+export function shouldRenderChildren(state: {
+	isAuthenticated: boolean;
+	isLoading: boolean;
+}): boolean {
 	return state.isAuthenticated && !state.isLoading;
 }
 

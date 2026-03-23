@@ -1,4 +1,4 @@
-import { ModeTransitionError, type ExecutionMode, type ExecutionModeDeps } from "./types.js";
+import { type ExecutionMode, type ExecutionModeDeps, ModeTransitionError } from "./types.js";
 
 /** Determines whether a mode should trigger alerts. */
 export function isActionable(mode: ExecutionMode): boolean {

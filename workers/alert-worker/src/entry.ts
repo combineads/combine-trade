@@ -1,9 +1,9 @@
-import type { DecisionResult } from "@combine/core/decision";
 import type { AlertContext, SlackMessage } from "@combine/alert";
+import type { DecisionResult } from "@combine/core/decision";
 import type { ExecutionMode } from "@combine/execution";
 import type { Subscription } from "@combine/shared";
-import { AlertWorkerHandler } from "./handler.js";
 import { createLogger } from "@combine/shared";
+import { AlertWorkerHandler } from "./handler.js";
 
 const logger = createLogger("alert-worker-entry");
 

@@ -1,10 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import React from "react";
 import { renderToString } from "react-dom/server";
 import {
 	EquityCurveChart,
-	type EquityCurvePoint,
 	type EquityCurveChartProps,
+	type EquityCurvePoint,
 } from "../src/views/charts/equity-curve-chart";
 
 describe("EquityCurveChart", () => {
@@ -18,16 +17,12 @@ describe("EquityCurveChart", () => {
 	});
 
 	test("handles single data point without error", () => {
-		const data: EquityCurvePoint[] = [
-			{ time: 1700000000, equity: 10000, drawdown: 0 },
-		];
+		const data: EquityCurvePoint[] = [{ time: 1700000000, equity: 10000, drawdown: 0 }];
 		expect(() => renderToString(<EquityCurveChart data={data} />)).not.toThrow();
 	});
 
 	test("applies custom height and className", () => {
-		const html = renderToString(
-			<EquityCurveChart data={[]} height={500} className="eq-chart" />,
-		);
+		const html = renderToString(<EquityCurveChart data={[]} height={500} className="eq-chart" />);
 		expect(html).toContain("eq-chart");
 		expect(html).toContain("500px");
 	});

@@ -32,6 +32,14 @@
 		"lineWidth": 100
 	},
 	"files": {
-		"ignore": ["node_modules", "dist", "db/migrations", ".harness", "*.md"]
+		"ignore": [
+			"node_modules",
+			"dist",
+			"db/migrations",
+			".harness",
+			"*.md",
+			"**/.next/**",
+			"**/out/**"
+		]
 	}
 }

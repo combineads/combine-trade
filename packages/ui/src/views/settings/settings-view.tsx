@@ -5,12 +5,21 @@ export interface SettingsViewProps {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
-		<div style={{
-			backgroundColor: "var(--bg-elevated)",
-			borderRadius: "var(--radius-md)",
-			padding: 20,
-		}}>
-			<h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 16px 0" }}>
+		<div
+			style={{
+				backgroundColor: "var(--bg-elevated)",
+				borderRadius: "var(--radius-md)",
+				padding: 20,
+			}}
+		>
+			<h2
+				style={{
+					fontSize: 15,
+					fontWeight: 600,
+					color: "var(--text-primary)",
+					margin: "0 0 16px 0",
+				}}
+			>
 				{title}
 			</h2>
 			{children}

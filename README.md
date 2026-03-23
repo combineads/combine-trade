@@ -59,35 +59,38 @@
 ```
 combine-trade/
 ├── apps/
-│   ├── api/              # Elysia REST API 서버 (포트 3000)
-│   ├── web/              # Next.js 웹 UI (SSR/SSG)
-│   └── desktop/          # Tauri 데스크탑 앱 (Next.js static + Rust)
+│   ├── api/                    # Elysia REST API 서버 (포트 3000)
+│   └── web/                    # Next.js 웹 UI (SSR/SSG)
 ├── packages/
 │   ├── core/
-│   │   ├── strategy/     # 전략 샌드박스 (V8 isolates)
-│   │   ├── vector/       # 벡터화 + pgvector 검색
-│   │   ├── decision/     # 통계 기반 의사결정 엔진
-│   │   ├── label/        # 결과 레이블링 (WIN/LOSS/TIME_EXIT)
-│   │   ├── indicator/    # 기술지표 라이브러리
-│   │   ├── journal/      # 트레이드 저널
-│   │   └── risk/         # 킬스위치 + 손실 한도 + 포지션 사이징
-│   ├── exchange/         # CCXT 거래소 어댑터 (Binance, OKX)
-│   ├── candle/           # 캔들 수집 + 연속성 검증
-│   ├── backtest/         # 백테스트 엔진
-│   ├── alert/            # Slack 알람
-│   ├── execution/        # 주문 실행 (real + paper)
-│   ├── ui/               # 공통 React 컴포넌트
-│   └── shared/           # 공통 타입, IoC, AOP
+│   │   ├── strategy/           # 전략 샌드박스 (V8 isolates)
+│   │   ├── vector/             # 벡터화 + pgvector 검색
+│   │   ├── decision/           # 통계 기반 의사결정 엔진
+│   │   ├── label/              # 결과 레이블링 (WIN/LOSS/TIME_EXIT)
+│   │   ├── indicator/          # 기술지표 라이브러리
+│   │   ├── journal/            # 트레이드 저널
+│   │   ├── risk/               # 킬스위치 + 손실 한도 + 포지션 사이징
+│   │   ├── fee/                # 수수료 계산
+│   │   ├── macro/              # 거시경제 컨텍스트
+│   │   └── supervisor/         # 워커 수퍼바이저 유틸리티
+│   ├── exchange/               # CCXT 거래소 어댑터 (Binance, OKX)
+│   ├── candle/                 # 캔들 수집 + 연속성 검증
+│   ├── backtest/               # 백테스트 엔진
+│   ├── alert/                  # Slack 알람
+│   ├── execution/              # 주문 실행 (real + paper)
+│   ├── ui/                     # 공통 React 컴포넌트
+│   └── shared/                 # 공통 타입, IoC, AOP, 암호화, 이벤트 버스
 ├── workers/
-│   ├── candle-collector/ # 실시간 캔들 수집 (거래소 WebSocket)
-│   ├── strategy-worker/  # 전략 이벤트 평가
-│   ├── vector-worker/    # 벡터화 + 유사 검색 + 의사결정
-│   ├── label-worker/     # 지연 결과 레이블링
-│   ├── alert-worker/     # Slack 알람 발송
-│   ├── execution-worker/ # 주문 실행
-│   ├── journal-worker/   # 트레이드 저널 생성
-│   ├── macro-collector/  # 거시경제 이벤트 수집
-│   └── label-worker/     # 결과 레이블링
+│   ├── candle-collector/       # 실시간 캔들 수집 (거래소 WebSocket)
+│   ├── strategy-worker/        # 전략 이벤트 평가
+│   ├── vector-worker/          # 벡터화 + 유사 검색 + 의사결정
+│   ├── label-worker/           # 지연 결과 레이블링
+│   ├── alert-worker/           # Slack 알람 발송
+│   ├── execution-worker/       # 주문 실행
+│   ├── journal-worker/         # 트레이드 저널 생성
+│   ├── macro-collector/        # 거시경제 이벤트 수집
+│   ├── retrospective-worker/   # LLM 회고 리포트 생성
+│   └── llm-decision-worker/    # LLM 2단계 의사결정 필터
 ├── db/
 │   ├── schema/           # DrizzleORM 스키마
 │   ├── migrations/       # 마이그레이션 파일
@@ -158,7 +161,9 @@ JWT_SECRET=change-me-in-production
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 
-# Exchange API Keys (AES-256-GCM 암호화 저장)
+# 거래소 API 키 암호화용 마스터 키 (AES-256-GCM)
+# 거래소 API 키(Binance 등)는 .env에 넣지 않습니다.
+# 유저가 API를 통해 등록하면 이 키로 암호화하여 exchange_credentials 테이블에 유저별로 저장됩니다.
 MASTER_ENCRYPTION_KEY=change-me-in-production-64-hex-chars
 
 # Logging
@@ -169,6 +174,14 @@ LOG_LEVEL=info
 > `MASTER_ENCRYPTION_KEY`는 64자리 hex 문자열 (256-bit)이어야 합니다.
 >
 > 생성 예: `openssl rand -hex 32`
+>
+> **거래소 API 키 등록**: 서버 실행 후 아래 API로 유저별로 등록합니다.
+> ```bash
+> curl -X POST http://localhost:3000/api/v1/credentials \
+>   -H "Authorization: Bearer <token>" \
+>   -H "Content-Type: application/json" \
+>   -d '{"exchange": "binance", "apiKey": "...", "secret": "..."}'
+> ```
 
 ---
 

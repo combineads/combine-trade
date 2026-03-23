@@ -1,9 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-	ExecutionModeService,
-	isActionable,
-	requiresOrder,
-} from "../mode.js";
+import { ExecutionModeService, isActionable, requiresOrder } from "../mode.js";
 import type { ExecutionMode, ExecutionModeDeps, SafetyGateStatus } from "../types.js";
 import { ModeTransitionError } from "../types.js";
 

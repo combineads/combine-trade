@@ -1,6 +1,6 @@
 "use client";
 
-import { OrdersView, type OrderRow } from "@combine/ui";
+import { type OrderRow, OrdersView } from "@combine/ui";
 import { useEffect, useState } from "react";
 
 export default function OrdersPage() {

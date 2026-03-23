@@ -71,9 +71,7 @@ export function DataTable<T>({ columns, data, rowKey, emptyMessage }: DataTableP
 										borderBottom: "1px solid var(--border-subtle)",
 									}}
 								>
-									{col.render
-										? col.render(row[col.key], row)
-										: String(row[col.key] ?? "")}
+									{col.render ? col.render(row[col.key], row) : String(row[col.key] ?? "")}
 								</td>
 							))}
 						</tr>

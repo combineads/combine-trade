@@ -1,10 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import type { CandleBar, BollingerBands } from "../detector.js";
+import type { BollingerBands, CandleBar } from "../detector.js";
+import { type DoubleBBEvaluationInput, evaluateDoubleBB } from "../evaluate.js";
 import type { MaBias } from "../evidence.js";
-import {
-	type DoubleBBEvaluationInput,
-	evaluateDoubleBB,
-} from "../evaluate.js";
 
 function makeCandle(overrides: Partial<CandleBar> = {}): CandleBar {
 	return {

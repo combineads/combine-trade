@@ -15,12 +15,14 @@ export default function RiskPage() {
 	useEffect(() => {
 		fetch("/api/v1/risk/status")
 			.then((r) => r.json())
-			.then((data) => setState({
-				killSwitchActive: data.killSwitchActive ?? false,
-				killSwitchReason: data.killSwitchReason,
-				lossLimit: data.lossLimit ?? defaultState.lossLimit,
-				auditLog: data.auditLog ?? [],
-			}))
+			.then((data) =>
+				setState({
+					killSwitchActive: data.killSwitchActive ?? false,
+					killSwitchReason: data.killSwitchReason,
+					lossLimit: data.lossLimit ?? defaultState.lossLimit,
+					auditLog: data.auditLog ?? [],
+				}),
+			)
 			.catch(() => {});
 	}, []);
 
@@ -28,12 +30,20 @@ export default function RiskPage() {
 		<RiskManagementView
 			state={state}
 			onActivateKillSwitch={() => {
-				fetch("/api/v1/risk/kill-switch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active: true }) })
+				fetch("/api/v1/risk/kill-switch", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ active: true }),
+				})
 					.then(() => setState((s) => ({ ...s, killSwitchActive: true })))
 					.catch(() => {});
 			}}
 			onDeactivateKillSwitch={() => {
-				fetch("/api/v1/risk/kill-switch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active: false }) })
+				fetch("/api/v1/risk/kill-switch", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ active: false }),
+				})
 					.then(() => setState((s) => ({ ...s, killSwitchActive: false })))
 					.catch(() => {});
 			}}

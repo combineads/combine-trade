@@ -19,9 +19,9 @@
  * The main() entry point is guarded by import.meta.main.
  */
 
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { spawnSync } from "node:child_process";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -145,7 +145,7 @@ export function parseDeployArgs(args: string[]): DeployArgs {
  * Acceptable value: "success".
  */
 export function checkCiPassed(env: Record<string, string | undefined>): CheckResult {
-	const status = env["CI_STATUS"];
+	const status = env.CI_STATUS;
 	if (status === "success") {
 		return { ok: true };
 	}
@@ -207,8 +207,7 @@ export function checkKillSwitch(opts: {
 	return {
 		ok: false,
 		errorCode: DEPLOY_ERROR_CODES.ERR_PREFLIGHT_KILL_SWITCH_ACTIVE,
-		message:
-			"Global kill switch is active. Deploy aborted. Pass --force-kill-switch to override.",
+		message: "Global kill switch is active. Deploy aborted. Pass --force-kill-switch to override.",
 	};
 }
 
@@ -317,10 +316,7 @@ export function buildDeployRecord(opts: {
  * Return a new array with the new entry appended.
  * Does not mutate the input array (immutable append).
  */
-export function appendDeployEntry(
-	existing: unknown[],
-	entry: DeployRecord,
-): unknown[] {
+export function appendDeployEntry(existing: unknown[], entry: DeployRecord): unknown[] {
 	return [...existing, entry];
 }
 
@@ -421,7 +417,7 @@ function readDeployHistory(): DeployRecord[] {
 }
 
 function writeDeployHistory(history: unknown[]): void {
-	writeFileSync(DEPLOY_HISTORY_PATH, JSON.stringify(history, null, 2) + "\n", "utf-8");
+	writeFileSync(DEPLOY_HISTORY_PATH, `${JSON.stringify(history, null, 2)}\n`, "utf-8");
 }
 
 async function fetchHealth(url: string): Promise<HealthResponse> {
@@ -467,7 +463,7 @@ function findSupervisorPid(): number | null {
 		const result = spawnSync("pgrep", ["-f", "scripts/supervisor.ts"], {
 			encoding: "utf-8",
 		});
-		const pid = parseInt((result.stdout as string).trim(), 10);
+		const pid = Number.parseInt((result.stdout as string).trim(), 10);
 		return Number.isNaN(pid) ? null : pid;
 	} catch {
 		return null;
@@ -513,7 +509,9 @@ async function main(): Promise<void> {
 
 	if (args.error) {
 		console.error(`[deploy] ERROR: ${args.error}`);
-		console.error("[deploy] Usage: bun run scripts/deploy.ts --tag <tag> [--dry-run] [--force-kill-switch]");
+		console.error(
+			"[deploy] Usage: bun run scripts/deploy.ts --tag <tag> [--dry-run] [--force-kill-switch]",
+		);
 		process.exit(1);
 	}
 
@@ -521,7 +519,8 @@ async function main(): Promise<void> {
 	const tag = args.tag as string;
 
 	log(`Starting deploy for tag: ${tag}`);
-	if (args.dryRun) log("DRY-RUN mode — no Docker commands will execute, history will not be written");
+	if (args.dryRun)
+		log("DRY-RUN mode — no Docker commands will execute, history will not be written");
 	if (args.forceKillSwitch) log("--force-kill-switch is set");
 
 	// -------------------------------------------------------------------------
@@ -540,7 +539,7 @@ async function main(): Promise<void> {
 	}
 
 	const sha = getCurrentSha();
-	const deployedBy = process.env["DEPLOY_USER"] ?? process.env["USER"] ?? "unknown";
+	const deployedBy = process.env.DEPLOY_USER ?? process.env.USER ?? "unknown";
 	const history = readDeployHistory();
 
 	// -------------------------------------------------------------------------
@@ -568,7 +567,7 @@ async function main(): Promise<void> {
 	// Note: In production this would query the DB via repository layer.
 	// The kill switch state is read from the KILL_SWITCH_ACTIVE env var set by
 	// the operator wrapper or a DB query wrapper. This avoids AOP/IoC in the script.
-	const globalHalt = process.env["KILL_SWITCH_ACTIVE"] === "true";
+	const globalHalt = process.env.KILL_SWITCH_ACTIVE === "true";
 	const killResult = checkKillSwitch({ globalHalt, forceKillSwitch: args.forceKillSwitch });
 	if (killResult.warning) log(`  WARNING: ${killResult.warning}`);
 	if (!killResult.ok) {
@@ -580,8 +579,10 @@ async function main(): Promise<void> {
 	// Note: In production this is set by the operator wrapper that queries
 	// the orders table via the repository layer (Drizzle ORM) and exports
 	// OPEN_LIVE_ORDER_COUNT before invoking this script.
-	const openOrderCount = parseInt(process.env["OPEN_LIVE_ORDER_COUNT"] ?? "0", 10);
-	const ordersResult = checkNoOpenOrders({ openOrderCount: Number.isNaN(openOrderCount) ? 0 : openOrderCount });
+	const openOrderCount = Number.parseInt(process.env.OPEN_LIVE_ORDER_COUNT ?? "0", 10);
+	const ordersResult = checkNoOpenOrders({
+		openOrderCount: Number.isNaN(openOrderCount) ? 0 : openOrderCount,
+	});
 	if (!ordersResult.ok) {
 		abortDeploy(ordersResult.errorCode!, ordersResult.message, history, sha, tag, deployedBy);
 	}
@@ -606,12 +607,11 @@ async function main(): Promise<void> {
 
 		if (!stopped) {
 			const code = DEPLOY_ERROR_CODES.ERR_FATAL_DEPLOY_SHUTDOWN_TIMEOUT;
-			console.error(`[deploy] ${code}: Worker drain timed out after ${GRACEFUL_SHUTDOWN_TIMEOUT_MS / 1000}s. Deploy aborted. Old version still running.`);
+			console.error(
+				`[deploy] ${code}: Worker drain timed out after ${GRACEFUL_SHUTDOWN_TIMEOUT_MS / 1000}s. Deploy aborted. Old version still running.`,
+			);
 			writeDeployHistory(
-				appendDeployEntry(
-					history,
-					buildDeployRecord({ sha, tag, deployedBy, status: "failed" }),
-				),
+				appendDeployEntry(history, buildDeployRecord({ sha, tag, deployedBy, status: "failed" })),
 			);
 			process.exit(2);
 		}
@@ -630,10 +630,7 @@ async function main(): Promise<void> {
 	if (!runDocker(["pull"], tag)) {
 		console.error("[deploy] ERROR: docker compose pull failed. Deploy aborted.");
 		writeDeployHistory(
-			appendDeployEntry(
-				history,
-				buildDeployRecord({ sha, tag, deployedBy, status: "failed" }),
-			),
+			appendDeployEntry(history, buildDeployRecord({ sha, tag, deployedBy, status: "failed" })),
 		);
 		process.exit(1);
 	}
@@ -644,10 +641,7 @@ async function main(): Promise<void> {
 	if (!runDocker(["up", "-d"], tag)) {
 		console.error("[deploy] ERROR: docker compose up -d failed. Deploy aborted.");
 		writeDeployHistory(
-			appendDeployEntry(
-				history,
-				buildDeployRecord({ sha, tag, deployedBy, status: "failed" }),
-			),
+			appendDeployEntry(history, buildDeployRecord({ sha, tag, deployedBy, status: "failed" })),
 		);
 		process.exit(1);
 	}
@@ -659,7 +653,9 @@ async function main(): Promise<void> {
 	// -------------------------------------------------------------------------
 
 	log("\n[step 4/4] Post-deploy health verification...");
-	log(`  Polling ${HEALTH_URL} every ${HEALTH_POLL_INTERVAL_MS / 1000}s for up to ${POST_DEPLOY_HEALTH_TIMEOUT_MS / 1000}s`);
+	log(
+		`  Polling ${HEALTH_URL} every ${HEALTH_POLL_INTERVAL_MS / 1000}s for up to ${POST_DEPLOY_HEALTH_TIMEOUT_MS / 1000}s`,
+	);
 
 	const postHealthResponse = await pollHealthUntilReady(
 		HEALTH_URL,
@@ -712,9 +708,7 @@ async function main(): Promise<void> {
 // Utility helpers
 // ---------------------------------------------------------------------------
 
-function log(msg: string): void {
-	console.log(`[deploy] ${msg}`);
-}
+function log(_msg: string): void {}
 
 function abortDeploy(
 	code: DeployErrorCode,
@@ -726,10 +720,7 @@ function abortDeploy(
 ): never {
 	console.error(`[deploy] ${code}: ${message ?? code}`);
 	writeDeployHistory(
-		appendDeployEntry(
-			history,
-			buildDeployRecord({ sha, tag, deployedBy, status: "failed" }),
-		),
+		appendDeployEntry(history, buildDeployRecord({ sha, tag, deployedBy, status: "failed" })),
 	);
 	process.exit(1);
 }

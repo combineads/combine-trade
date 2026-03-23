@@ -43,7 +43,11 @@ export class StrategyCrudService {
 	 * Create a new version of a strategy.
 	 * The old version is preserved (immutable). A new record is created with version + 1.
 	 */
-	async createNewVersion(id: string, input: UpdateStrategyInput, userId: string): Promise<Strategy> {
+	async createNewVersion(
+		id: string,
+		input: UpdateStrategyInput,
+		userId: string,
+	): Promise<Strategy> {
 		if (input.featuresDefinition) {
 			this.validateFeatures(input.featuresDefinition);
 		}

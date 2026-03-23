@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
-import { TradeStats, type TradeStatsData } from "../src/views/backtest/trade-stats";
-import { EquityCurve, type EquityPoint } from "../src/views/backtest/equity-curve";
-import { PnlDistribution, type PnlBucket } from "../src/views/backtest/pnl-distribution";
 import { BacktestView } from "../src/views/backtest/backtest-view";
+import { EquityCurve, type EquityPoint } from "../src/views/backtest/equity-curve";
+import { type PnlBucket, PnlDistribution } from "../src/views/backtest/pnl-distribution";
+import { TradeStats, type TradeStatsData } from "../src/views/backtest/trade-stats";
 
 describe("TradeStats", () => {
 	const stats: TradeStatsData = {
@@ -83,9 +83,7 @@ describe("BacktestView", () => {
 	});
 
 	test("renders strategy selector", () => {
-		const html = renderToString(
-			<BacktestView strategies={[{ id: "s1", name: "Momentum v3" }]} />,
-		);
+		const html = renderToString(<BacktestView strategies={[{ id: "s1", name: "Momentum v3" }]} />);
 		expect(html).toContain("Momentum v3");
 	});
 

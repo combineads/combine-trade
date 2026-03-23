@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { OHLCVBar } from "../views/charts/lightweight-chart";
 
 export interface UseCandleDataOptions {
@@ -102,12 +102,16 @@ export function useCandleData(options: UseCandleDataOptions): UseCandleDataResul
 							};
 							setBars((prev) => mergeBars(prev, [bar]));
 						}
-					} catch { /* ignore malformed SSE */ }
+					} catch {
+						/* ignore malformed SSE */
+					}
 				});
 				eventSource.onerror = () => {
 					// SSE errors are non-fatal — data still available from initial fetch
 				};
-			} catch { /* EventSource not available */ }
+			} catch {
+				/* EventSource not available */
+			}
 		}
 
 		return () => {

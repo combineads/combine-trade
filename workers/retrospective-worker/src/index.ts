@@ -6,9 +6,7 @@ import {
 export type SpawnRunner = (prompt: string) => Promise<string>;
 
 export interface RetrospectiveRepository {
-	getJournalWithContext(
-		journalId: string,
-	): Promise<RetrospectivePromptInput | null>;
+	getJournalWithContext(journalId: string): Promise<RetrospectivePromptInput | null>;
 	saveReport(journalId: string, report: string): Promise<void>;
 }
 

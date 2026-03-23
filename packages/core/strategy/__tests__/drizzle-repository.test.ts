@@ -1,10 +1,10 @@
-import { describe, expect, test, mock, beforeEach } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import {
 	DrizzleStrategyRepository,
 	type StrategyDbDeps,
 	type StrategyRow,
 } from "../drizzle-repository.js";
-import type { Strategy, CreateStrategyInput } from "../types.js";
+import type { CreateStrategyInput } from "../types.js";
 
 const NOW = new Date("2026-03-22T12:00:00Z");
 const USER_ID = "user-test-uuid";
@@ -19,7 +19,9 @@ function makeRow(overrides: Partial<StrategyRow> = {}): StrategyRow {
 		symbols: ["BTCUSDT"],
 		timeframe: "1h",
 		direction: "both",
-		featuresDefinition: [{ name: "bb_pos", expression: "bb(close,20,2)", normalization: { method: "minmax" } }],
+		featuresDefinition: [
+			{ name: "bb_pos", expression: "bb(close,20,2)", normalization: { method: "minmax" } },
+		],
 		normalizationConfig: {},
 		searchConfig: {},
 		resultConfig: {},
@@ -121,9 +123,7 @@ describe("DrizzleStrategyRepository", () => {
 
 		const deps = makeDeps({
 			create: mock(() =>
-				Promise.resolve(
-					makeRow({ id: "strat-new", name: "New Strategy", symbols: ["ETHUSDT"] }),
-				),
+				Promise.resolve(makeRow({ id: "strat-new", name: "New Strategy", symbols: ["ETHUSDT"] })),
 			),
 		});
 		const repo = new DrizzleStrategyRepository(deps);
@@ -154,9 +154,7 @@ describe("DrizzleStrategyRepository", () => {
 	test("createNewVersion increments version and creates", async () => {
 		const deps = makeDeps({
 			findById: mock(() => Promise.resolve(makeRow({ version: 2 }))),
-			create: mock(() =>
-				Promise.resolve(makeRow({ id: "strat-v3", version: 3 })),
-			),
+			create: mock(() => Promise.resolve(makeRow({ id: "strat-v3", version: 3 }))),
 		});
 		const repo = new DrizzleStrategyRepository(deps);
 
@@ -184,7 +182,11 @@ describe("DrizzleStrategyRepository", () => {
 	test("maps row fields correctly to Strategy domain type", async () => {
 		const row = makeRow({
 			featuresDefinition: [
-				{ name: "f1", expression: "rsi(close,14)", normalization: { method: "zscore", lookback: 100 } },
+				{
+					name: "f1",
+					expression: "rsi(close,14)",
+					normalization: { method: "zscore", lookback: 100 },
+				},
 			],
 			executionMode: "paper",
 			status: "active",

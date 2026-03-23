@@ -1,6 +1,6 @@
-import { describe, expect, test, mock } from "bun:test";
-import { type ExecutionWorkerEntryDeps, startExecutionWorker } from "../src/entry.js";
+import { describe, expect, mock, test } from "bun:test";
 import type { ExecutionMode } from "@combine/execution";
+import { type ExecutionWorkerEntryDeps, startExecutionWorker } from "../src/entry.js";
 
 function makeDeps(overrides: Partial<ExecutionWorkerEntryDeps> = {}): ExecutionWorkerEntryDeps {
 	return {
@@ -40,7 +40,13 @@ function makeDeps(overrides: Partial<ExecutionWorkerEntryDeps> = {}): ExecutionW
 			Promise.resolve({
 				decision: "LONG" as const,
 				reason: "criteria_met" as const,
-				statistics: { winrate: 0.6, avgWin: 0.02, avgLoss: 0.01, expectancy: 0.008, sampleCount: 50 },
+				statistics: {
+					winrate: 0.6,
+					avgWin: 0.02,
+					avgLoss: 0.01,
+					expectancy: 0.008,
+					sampleCount: 50,
+				},
 				ciLower: 0.45,
 				ciUpper: 0.75,
 				confidenceTier: "medium" as const,

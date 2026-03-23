@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-	type BollingerBands,
-	type CandleBar,
-	type DoubleBBResult,
-	detectDoubleBB,
-} from "../detector.js";
+import { type BollingerBands, type CandleBar, detectDoubleBB } from "../detector.js";
 
 function makeCandle(overrides: Partial<CandleBar> = {}): CandleBar {
 	return {

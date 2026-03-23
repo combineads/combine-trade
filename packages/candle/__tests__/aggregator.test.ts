@@ -1,15 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import Decimal from "decimal.js";
+import { aggregateCandles, getAggregationBarOpenTime, isTimeframeClosed } from "../aggregator.js";
 import type { Candle } from "../types.js";
-import {
-	aggregateCandles,
-	getAggregationBarOpenTime,
-	isTimeframeClosed,
-} from "../aggregator.js";
 
 function makeCandle1m(
 	minuteOffset: number,
-	overrides: Partial<{ open: string; high: string; low: string; close: string; volume: string }> = {},
+	overrides: Partial<{
+		open: string;
+		high: string;
+		low: string;
+		close: string;
+		volume: string;
+	}> = {},
 ): Candle {
 	const baseTime = new Date("2026-01-01T00:00:00Z");
 	const openTime = new Date(baseTime.getTime() + minuteOffset * 60_000);
@@ -40,10 +41,10 @@ describe("aggregateCandles", () => {
 		expect(result).toHaveLength(1);
 		const bar = result[0]!;
 		expect(bar.timeframe).toBe("3m");
-		expect(bar.open).toBe("100");   // first candle's open
-		expect(bar.high).toBe("107");   // max of all highs
-		expect(bar.low).toBe("98");     // min of all lows
-		expect(bar.close).toBe("102");  // last candle's close
+		expect(bar.open).toBe("100"); // first candle's open
+		expect(bar.high).toBe("107"); // max of all highs
+		expect(bar.low).toBe("98"); // min of all lows
+		expect(bar.close).toBe("102"); // last candle's close
 		expect(bar.volume).toBe("3700"); // sum: 1000+1500+1200
 		expect(bar.isClosed).toBe(true);
 	});
@@ -89,7 +90,7 @@ describe("aggregateCandles", () => {
 		const bar = result[0]!;
 		expect(bar.open).toBe("100"); // first open
 		expect(bar.high).toBe("117"); // 103+14
-		expect(bar.low).toBe("99");   // first low
+		expect(bar.low).toBe("99"); // first low
 		expect(bar.close).toBe("115"); // 101+14
 		expect(bar.volume).toBe("1500"); // 15 × 100
 	});

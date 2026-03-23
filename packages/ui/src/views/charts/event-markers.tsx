@@ -5,10 +5,10 @@ export interface EventMarkerProps {
 }
 
 const MARKER_CONFIG: Record<MarkerType, { symbol: string; color: string }> = {
-	LONG: { symbol: "\u2191", color: "#22C55E" },     // ↑
-	SHORT: { symbol: "\u2193", color: "#EF4444" },    // ↓
-	WIN: { symbol: "\u2713", color: "#22C55E" },      // ✓
-	LOSS: { symbol: "\u2717", color: "#EF4444" },     // ✗
+	LONG: { symbol: "\u2191", color: "#22C55E" }, // ↑
+	SHORT: { symbol: "\u2193", color: "#EF4444" }, // ↓
+	WIN: { symbol: "\u2713", color: "#22C55E" }, // ✓
+	LOSS: { symbol: "\u2717", color: "#EF4444" }, // ✗
 	TIME_EXIT: { symbol: "\u23F1", color: "#64748B" }, // ⏱
 };
 
@@ -43,13 +43,15 @@ export interface TpSlOverlayProps {
 
 export function TpSlOverlay({ entryPrice, takeProfit, stopLoss }: TpSlOverlayProps) {
 	return (
-		<div style={{
-			display: "flex",
-			flexDirection: "column",
-			gap: 4,
-			fontSize: 12,
-			fontFamily: "var(--font-mono)",
-		}}>
+		<div
+			style={{
+				display: "flex",
+				flexDirection: "column",
+				gap: 4,
+				fontSize: 12,
+				fontFamily: "var(--font-mono)",
+			}}
+		>
 			<div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
 				<span style={{ color: "var(--text-muted)" }}>TP</span>
 				<span style={{ color: "#22C55E" }}>{takeProfit.toLocaleString()}</span>

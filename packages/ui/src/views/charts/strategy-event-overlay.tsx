@@ -52,9 +52,11 @@ function buildMarkers(events: ChartStrategyEvent[]): SeriesMarker[] {
 		// Exit marker
 		if (e.exitTime && e.exitReason) {
 			const exitColor =
-				e.exitReason === "WIN" ? successColor :
-				e.exitReason === "LOSS" ? dangerColor :
-				neutralColor;
+				e.exitReason === "WIN"
+					? successColor
+					: e.exitReason === "LOSS"
+						? dangerColor
+						: neutralColor;
 			markers.push({
 				time: e.exitTime,
 				position: e.direction === "LONG" ? "aboveBar" : "belowBar",
@@ -76,22 +78,28 @@ export function StrategyEventOverlay({
 	const priceLinesRef = useRef<unknown[]>([]);
 
 	useEffect(() => {
+		// biome-ignore lint/suspicious/noExplicitAny: TradingView Lightweight Charts API requires any
 		const series = seriesRef.current as any;
 		if (!series || typeof series.setMarkers !== "function") return;
 
 		const markers = buildMarkers(events);
 		try {
 			series.setMarkers(markers);
-		} catch { /* series may not be ready */ }
+		} catch {
+			/* series may not be ready */
+		}
 
 		return () => {
 			try {
 				series.setMarkers([]);
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 		};
 	}, [seriesRef, events]);
 
 	useEffect(() => {
+		// biome-ignore lint/suspicious/noExplicitAny: TradingView Lightweight Charts API requires any
 		const series = seriesRef.current as any;
 		if (!series || typeof series.createPriceLine !== "function") return;
 
@@ -99,7 +107,9 @@ export function StrategyEventOverlay({
 		for (const line of priceLinesRef.current) {
 			try {
 				series.removePriceLine(line);
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 		}
 		priceLinesRef.current = [];
 
@@ -122,7 +132,9 @@ export function StrategyEventOverlay({
 					title: "TP",
 				});
 				priceLinesRef.current.push(tpLine);
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 		}
 
 		if (event.slPrice != null) {
@@ -136,14 +148,18 @@ export function StrategyEventOverlay({
 					title: "SL",
 				});
 				priceLinesRef.current.push(slLine);
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 		}
 
 		return () => {
 			for (const line of priceLinesRef.current) {
 				try {
 					series.removePriceLine(line);
-				} catch { /* ignore */ }
+				} catch {
+					/* ignore */
+				}
 			}
 			priceLinesRef.current = [];
 		};

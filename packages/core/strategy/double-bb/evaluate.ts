@@ -76,11 +76,7 @@ export function evaluateDoubleBB(input: DoubleBBEvaluationInput): DoubleBBEvalua
 	});
 
 	// Step 5: Compute targets
-	const targets = computeTargets(
-		confirmedPattern.side,
-		input.candle.close,
-		input.atr14,
-	);
+	const targets = computeTargets(confirmedPattern.side, input.candle.close, input.atr14);
 
 	return { pattern: confirmedPattern, features, targets };
 }

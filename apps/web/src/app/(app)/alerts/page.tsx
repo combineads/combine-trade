@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertsView, type AlertRow } from "@combine/ui";
+import { type AlertRow, AlertsView } from "@combine/ui";
 import { useEffect, useState } from "react";
 
 export default function AlertsPage() {

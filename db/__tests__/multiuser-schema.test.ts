@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import {
-	strategies,
-	orders,
-	killSwitchState,
-	killSwitchEvents,
 	dailyLossLimits,
 	dailyPnlTracking,
+	killSwitchEvents,
+	killSwitchState,
+	orders,
+	strategies,
 } from "../schema/index.js";
 
 /**
@@ -27,9 +27,13 @@ import {
 // ---------------------------------------------------------------------------
 
 /** Get the PgInlineForeignKeys array from a Drizzle table. */
-function getInlineForeignKeys(
-	table: object,
-): Array<{ reference: () => { columns: Array<{ name: string }>; foreignColumns: Array<{ name: string }>; foreignTable: object } }> {
+function getInlineForeignKeys(table: object): Array<{
+	reference: () => {
+		columns: Array<{ name: string }>;
+		foreignColumns: Array<{ name: string }>;
+		foreignTable: object;
+	};
+}> {
 	const sym = Object.getOwnPropertySymbols(table).find((s) =>
 		s.toString().includes("PgInlineForeignKeys"),
 	);

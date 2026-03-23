@@ -1,9 +1,5 @@
-import { describe, expect, test, mock } from "bun:test";
-import {
-	hashLockKey,
-	withAdvisoryLock,
-	type AdvisoryLockDeps,
-} from "../advisory-lock.js";
+import { describe, expect, mock, test } from "bun:test";
+import { type AdvisoryLockDeps, hashLockKey, withAdvisoryLock } from "../advisory-lock.js";
 
 function makeDeps(overrides: Partial<AdvisoryLockDeps> = {}): AdvisoryLockDeps {
 	return {
@@ -78,9 +74,9 @@ describe("withAdvisoryLock", () => {
 			acquireLock: mock(() => Promise.resolve(false)),
 		});
 
-		await expect(
-			withAdvisoryLock(deps, 123n, async () => "should not run"),
-		).rejects.toThrow("lock");
+		await expect(withAdvisoryLock(deps, 123n, async () => "should not run")).rejects.toThrow(
+			"lock",
+		);
 
 		expect(deps.releaseLock).not.toHaveBeenCalled();
 	});

@@ -1,5 +1,5 @@
 import { ChartContainer } from "../../components/chart-container";
-import { TimeframeSelector, type Timeframe } from "./timeframe-selector";
+import { type Timeframe, TimeframeSelector } from "./timeframe-selector";
 
 export interface CandlestickChartViewProps {
 	symbol: string;
@@ -8,16 +8,23 @@ export interface CandlestickChartViewProps {
 	onSymbolChange?: (symbol: string) => void;
 }
 
-export function CandlestickChartView({ symbol, timeframe, onTimeframeChange, onSymbolChange }: CandlestickChartViewProps) {
+export function CandlestickChartView({
+	symbol,
+	timeframe,
+	onTimeframeChange,
+	onSymbolChange,
+}: CandlestickChartViewProps) {
 	return (
 		<div>
 			{/* Chart header */}
-			<div style={{
-				display: "flex",
-				alignItems: "center",
-				gap: 16,
-				marginBottom: 8,
-			}}>
+			<div
+				style={{
+					display: "flex",
+					alignItems: "center",
+					gap: 16,
+					marginBottom: 8,
+				}}
+			>
 				<button
 					type="button"
 					onClick={() => onSymbolChange?.(symbol)}
@@ -34,10 +41,7 @@ export function CandlestickChartView({ symbol, timeframe, onTimeframeChange, onS
 				>
 					{symbol}
 				</button>
-				<TimeframeSelector
-					current={timeframe}
-					onSelect={(tf) => onTimeframeChange?.(tf)}
-				/>
+				<TimeframeSelector current={timeframe} onSelect={(tf) => onTimeframeChange?.(tf)} />
 			</div>
 
 			{/* Chart area — lightweight-charts will be mounted here client-side */}

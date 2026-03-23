@@ -16,9 +16,7 @@ export function TopBar({ killSwitchActive }: TopBarProps) {
 				fontFamily: "var(--font-sans)",
 			}}
 		>
-			<div style={{ fontSize: 14, color: "var(--text-secondary)" }}>
-				Combine Trade
-			</div>
+			<div style={{ fontSize: 14, color: "var(--text-secondary)" }}>Combine Trade</div>
 			<div style={{ display: "flex", alignItems: "center", gap: 16 }}>
 				{killSwitchActive && (
 					<span

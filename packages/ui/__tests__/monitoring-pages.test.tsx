@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
-import { DataTable, type Column } from "../src/components/data-table";
+import { type Column, DataTable } from "../src/components/data-table";
 import { FilterBar, type FilterOption } from "../src/components/filter-bar";
-import { EventsView, type EventRow } from "../src/views/events/events-view";
-import { OrdersView, type OrderRow } from "../src/views/orders/orders-view";
-import { AlertsView, type AlertRow } from "../src/views/alerts/alerts-view";
+import { type AlertRow, AlertsView } from "../src/views/alerts/alerts-view";
+import { type EventRow, EventsView } from "../src/views/events/events-view";
+import { type OrderRow, OrdersView } from "../src/views/orders/orders-view";
 
 describe("DataTable", () => {
 	const columns: Column<{ id: string; name: string; value: number }>[] = [
@@ -29,7 +29,9 @@ describe("DataTable", () => {
 	});
 
 	test("renders empty state", () => {
-		const html = renderToString(<DataTable columns={columns} data={[]} rowKey="id" emptyMessage="No data" />);
+		const html = renderToString(
+			<DataTable columns={columns} data={[]} rowKey="id" emptyMessage="No data" />,
+		);
 		expect(html).toContain("No data");
 	});
 });

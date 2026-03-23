@@ -1,4 +1,4 @@
-import { StatusBadge, type BadgeStatus } from "../../components/badge";
+import { type BadgeStatus, StatusBadge } from "../../components/badge";
 
 export interface StrategySummaryItem {
 	id: string;
@@ -15,9 +15,7 @@ export interface StrategySummaryProps {
 export function StrategySummary({ strategies }: StrategySummaryProps) {
 	if (strategies.length === 0) {
 		return (
-			<div style={{ color: "var(--text-muted)", fontSize: 14, padding: 16 }}>
-				No strategies yet
-			</div>
+			<div style={{ color: "var(--text-muted)", fontSize: 14, padding: 16 }}>No strategies yet</div>
 		);
 	}
 
@@ -46,9 +44,7 @@ export function StrategySummary({ strategies }: StrategySummaryProps) {
 						<div style={{ color: s.winrate > 0.5 ? "var(--color-win)" : "var(--text-secondary)" }}>
 							{(s.winrate * 100).toFixed(1)}%
 						</div>
-						<div style={{ color: "var(--text-muted)", fontSize: 12 }}>
-							{s.eventCount} events
-						</div>
+						<div style={{ color: "var(--text-muted)", fontSize: 12 }}>{s.eventCount} events</div>
 					</div>
 				</div>
 			))}

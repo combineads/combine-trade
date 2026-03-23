@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildOrder, generateClientOrderId, type OrderInput } from "../order-builder.js";
+import { type OrderInput, buildOrder, generateClientOrderId } from "../order-builder.js";
 
 function makeInput(overrides: Partial<OrderInput> = {}): OrderInput {
 	return {

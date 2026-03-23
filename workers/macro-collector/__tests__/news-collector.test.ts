@@ -1,8 +1,8 @@
 import { describe, expect, mock, test } from "bun:test";
 import type { CreateNewsItemInput } from "../../../../packages/core/macro/types.js";
 import {
-	type NewsEventRepository,
 	NewsCollector,
+	type NewsEventRepository,
 	type PendingEvent,
 } from "../src/news-collector.js";
 
@@ -15,9 +15,7 @@ function makePendingEvent(overrides: Partial<PendingEvent> = {}): PendingEvent {
 	};
 }
 
-function makeNewsItem(
-	overrides: Partial<CreateNewsItemInput> = {},
-): CreateNewsItemInput {
+function makeNewsItem(overrides: Partial<CreateNewsItemInput> = {}): CreateNewsItemInput {
 	return {
 		externalId: "news-1",
 		headline: "Fed holds rates steady",
@@ -31,9 +29,7 @@ function makeNewsItem(
 function createMockRepo(pendingEvents: PendingEvent[] = []): NewsEventRepository {
 	const collectedIds = new Set<string>();
 	return {
-		findPendingEvents: mock(async () =>
-			pendingEvents.filter((e) => !collectedIds.has(e.id)),
-		),
+		findPendingEvents: mock(async () => pendingEvents.filter((e) => !collectedIds.has(e.id))),
 		upsertNews: mock(async (_input: CreateNewsItemInput) => {}),
 		markCollected: mock(async (eventId: string) => {
 			collectedIds.add(eventId);
@@ -54,9 +50,7 @@ describe("NewsCollector", () => {
 			externalId: "n2",
 			publishedAt: new Date("2026-03-22T20:00:00Z"),
 		});
-		const fetchNews = mock(() =>
-			Promise.resolve([newsInWindow, newsOutsideWindow]),
-		);
+		const fetchNews = mock(() => Promise.resolve([newsInWindow, newsOutsideWindow]));
 		const repo = createMockRepo([event]);
 
 		const collector = new NewsCollector({ fetchNews, repository: repo });

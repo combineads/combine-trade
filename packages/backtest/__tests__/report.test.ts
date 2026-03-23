@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import type { LabelResult } from "@combine/core/label";
 import {
+	type LabeledEvent,
 	computeMaxConsecutiveLoss,
 	computeMaxDrawdown,
 	computeMonthlyBreakdown,
 	computeReport,
-	type LabeledEvent,
 } from "../report.js";
 import type { BacktestEvent } from "../types.js";
 
@@ -153,9 +153,7 @@ describe("computeReport", () => {
 
 		const report = computeReport(events);
 		expect(report.coldStartEvents).toBe(30);
-		expect(report.coldStartEndTime).toEqual(
-			new Date("2024-01-15T10:29:00Z"),
-		);
+		expect(report.coldStartEndTime).toEqual(new Date("2024-01-15T10:29:00Z"));
 	});
 
 	test("fewer than 30 events → coldStartEndTime is null", () => {
@@ -183,14 +181,9 @@ describe("computeReport", () => {
 
 	test("slippage stats: LONG entry 100, next open 100.5 → 0.5%", () => {
 		const events: LabeledEvent[] = [
-			makeLabeledEvent(
-				{ entryPrice: "100", direction: "long" },
-				{ resultType: "WIN", pnlPct: 2 },
-			),
+			makeLabeledEvent({ entryPrice: "100", direction: "long" }, { resultType: "WIN", pnlPct: 2 }),
 		];
-		const nextOpenPrices = new Map([
-			[events[0]!.event.eventId, "100.5"],
-		]);
+		const nextOpenPrices = new Map([[events[0]!.event.eventId, "100.5"]]);
 
 		const report = computeReport(events, nextOpenPrices);
 		expect(report.slippageStats).not.toBeNull();
@@ -198,9 +191,7 @@ describe("computeReport", () => {
 	});
 
 	test("no nextOpenPrices → slippageStats is null", () => {
-		const events: LabeledEvent[] = [
-			makeLabeledEvent({}, { resultType: "WIN", pnlPct: 2 }),
-		];
+		const events: LabeledEvent[] = [makeLabeledEvent({}, { resultType: "WIN", pnlPct: 2 })];
 
 		const report = computeReport(events);
 		expect(report.slippageStats).toBeNull();

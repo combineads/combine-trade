@@ -1,8 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import {
-	type MacroContextRepository,
-	enrichWithMacroContext,
-} from "../context-enricher.js";
+import { type MacroContextRepository, enrichWithMacroContext } from "../context-enricher.js";
 import type { EconomicEvent, NewsItem } from "../types.js";
 
 function makeEvent(overrides: Partial<EconomicEvent> = {}): EconomicEvent {
@@ -41,16 +38,12 @@ function createMockRepo(
 	return {
 		findEventsInRange: mock(async (from: Date, to: Date) =>
 			events.filter(
-				(e) =>
-					e.scheduledAt.getTime() >= from.getTime() &&
-					e.scheduledAt.getTime() <= to.getTime(),
+				(e) => e.scheduledAt.getTime() >= from.getTime() && e.scheduledAt.getTime() <= to.getTime(),
 			),
 		),
 		findNewsInRange: mock(async (from: Date, to: Date) =>
 			news.filter(
-				(n) =>
-					n.publishedAt.getTime() >= from.getTime() &&
-					n.publishedAt.getTime() <= to.getTime(),
+				(n) => n.publishedAt.getTime() >= from.getTime() && n.publishedAt.getTime() <= to.getTime(),
 			),
 		),
 	};

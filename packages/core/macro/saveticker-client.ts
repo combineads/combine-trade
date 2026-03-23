@@ -37,10 +37,7 @@ export class SavetickerClient {
 		this.retryDelayMs = config.retryDelayMs ?? 1000;
 	}
 
-	async fetchCalendarEvents(
-		startDate: Date,
-		endDate: Date,
-	): Promise<CreateEconomicEventInput[]> {
+	async fetchCalendarEvents(startDate: Date, endDate: Date): Promise<CreateEconomicEventInput[]> {
 		const url = `${this.baseUrl}/api/calendar?start=${formatDate(startDate)}&end=${formatDate(endDate)}`;
 		const data = await this.fetchWithRetry<RawCalendarEvent[]>(url);
 		if (!data) return [];
@@ -54,10 +51,7 @@ export class SavetickerClient {
 		}));
 	}
 
-	async fetchRecentNews(
-		pageSize: number,
-		afterTime?: Date,
-	): Promise<CreateNewsItemInput[]> {
+	async fetchRecentNews(pageSize: number, afterTime?: Date): Promise<CreateNewsItemInput[]> {
 		let url = `${this.baseUrl}/api/news?page_size=${pageSize}`;
 		if (afterTime) {
 			url += `&after=${formatDate(afterTime)}`;
@@ -79,17 +73,12 @@ export class SavetickerClient {
 			try {
 				const res = await this.fetchFn(url);
 				if (!res.ok) {
-					console.warn(
-						`saveticker API returned ${res.status} for ${url}`,
-					);
+					console.warn(`saveticker API returned ${res.status} for ${url}`);
 					return null;
 				}
 				return (await res.json()) as T;
 			} catch (err) {
-				console.warn(
-					`saveticker fetch attempt ${attempt}/${this.maxRetries} failed:`,
-					err,
-				);
+				console.warn(`saveticker fetch attempt ${attempt}/${this.maxRetries} failed:`, err);
 				if (attempt < this.maxRetries) {
 					await this.delay(this.retryDelayMs * 2 ** (attempt - 1));
 				}

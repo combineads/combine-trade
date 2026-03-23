@@ -4,7 +4,7 @@
  *
  * Usage: bun run scripts/supervisor.ts
  */
-import { WorkerSupervisor, type WorkerConfig } from "../packages/core/supervisor/supervisor.js";
+import { type WorkerConfig, WorkerSupervisor } from "../packages/core/supervisor/supervisor.js";
 
 const WORKER_CONFIGS: WorkerConfig[] = [
 	{ name: "candle-collector", command: "bun run workers/candle-collector/src/index.ts" },
@@ -31,8 +31,6 @@ let shuttingDown = false;
 function startWorker(name: string): void {
 	const state = supervisor.getWorkerState(name);
 	if (!state) return;
-
-	console.log(`[supervisor] Starting ${name}: ${state.command}`);
 	const parts = state.command.split(" ");
 	const proc = Bun.spawn(parts, {
 		stdout: "inherit",
@@ -53,7 +51,6 @@ function startWorker(name: string): void {
 				supervisor.recordCrash(name);
 				if (supervisor.canRestart(name)) {
 					const backoff = supervisor.getBackoffMs(name);
-					console.log(`[supervisor] Restarting ${name} in ${backoff}ms (attempt ${supervisor.getWorkerState(name)?.restartCount}/${5})`);
 					setTimeout(() => startWorker(name), backoff);
 				} else {
 					console.error(`[supervisor] ${name} exceeded max restarts, giving up`);
@@ -80,7 +77,6 @@ function startWorker(name: string): void {
 function shutdown(exitCode = 0): void {
 	if (shuttingDown) return;
 	shuttingDown = true;
-	console.log("[supervisor] Shutting down...");
 
 	// Clear all stable timers
 	for (const timer of stableTimers.values()) {
@@ -88,15 +84,13 @@ function shutdown(exitCode = 0): void {
 	}
 
 	// Send SIGTERM to all workers
-	for (const [name, proc] of processes) {
-		console.log(`[supervisor] Sending SIGTERM to ${name}`);
+	for (const [_name, proc] of processes) {
 		proc.kill("SIGTERM");
 	}
 
 	// Force kill after timeout
 	setTimeout(() => {
-		for (const [name, proc] of processes) {
-			console.log(`[supervisor] Force killing ${name}`);
+		for (const [_name, proc] of processes) {
 			proc.kill("SIGKILL");
 		}
 		process.exit(exitCode);
@@ -107,7 +101,6 @@ function shutdown(exitCode = 0): void {
 		const running = [...processes.values()].some((p) => !p.killed);
 		if (!running) {
 			clearInterval(check);
-			console.log("[supervisor] All workers stopped. Exiting.");
 			process.exit(exitCode);
 		}
 	}, 500);
@@ -116,9 +109,6 @@ function shutdown(exitCode = 0): void {
 // Handle signals
 process.on("SIGTERM", () => shutdown(0));
 process.on("SIGINT", () => shutdown(0));
-
-// Start all workers
-console.log(`[supervisor] Starting ${WORKER_CONFIGS.length} workers...`);
 for (const config of WORKER_CONFIGS) {
 	startWorker(config.name);
 }

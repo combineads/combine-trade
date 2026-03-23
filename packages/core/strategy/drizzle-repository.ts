@@ -1,9 +1,9 @@
 import type { StrategyRepository } from "./repository.js";
 import type {
-	Strategy,
 	CreateStrategyInput,
-	UpdateStrategyInput,
 	FeatureDefinition,
+	Strategy,
+	UpdateStrategyInput,
 } from "./types.js";
 
 /**
@@ -40,7 +40,11 @@ export interface StrategyRow {
 export interface StrategyDbDeps {
 	findAll: (userId: string) => Promise<StrategyRow[]>;
 	findById: (id: string, userId: string) => Promise<StrategyRow | null>;
-	findByNameAndVersion: (name: string, version: number, userId: string) => Promise<StrategyRow | null>;
+	findByNameAndVersion: (
+		name: string,
+		version: number,
+		userId: string,
+	) => Promise<StrategyRow | null>;
 	findActive: (userId: string) => Promise<StrategyRow[]>;
 	create: (input: CreateStrategyInput, userId: string) => Promise<StrategyRow>;
 	update: (id: string, input: UpdateStrategyInput, userId: string) => Promise<StrategyRow>;
@@ -84,7 +88,11 @@ export class DrizzleStrategyRepository implements StrategyRepository {
 		return row ? mapRowToStrategy(row) : null;
 	}
 
-	async findByNameAndVersion(name: string, version: number, userId: string): Promise<Strategy | null> {
+	async findByNameAndVersion(
+		name: string,
+		version: number,
+		userId: string,
+	): Promise<Strategy | null> {
 		const row = await this.deps.findByNameAndVersion(name, version, userId);
 		return row ? mapRowToStrategy(row) : null;
 	}
@@ -108,7 +116,11 @@ export class DrizzleStrategyRepository implements StrategyRepository {
 		await this.deps.softDelete(id, userId);
 	}
 
-	async createNewVersion(id: string, input: UpdateStrategyInput, userId: string): Promise<Strategy> {
+	async createNewVersion(
+		id: string,
+		input: UpdateStrategyInput,
+		userId: string,
+	): Promise<Strategy> {
 		const existing = await this.deps.findById(id, userId);
 		if (!existing) {
 			throw new Error(`Strategy ${id} not found`);
@@ -123,12 +135,15 @@ export class DrizzleStrategyRepository implements StrategyRepository {
 			direction: (input.direction ?? existing.direction) as CreateStrategyInput["direction"],
 			featuresDefinition: (input.featuresDefinition ??
 				existing.featuresDefinition) as CreateStrategyInput["featuresDefinition"],
-			normalizationConfig: (input.normalizationConfig ??
-				existing.normalizationConfig) as Record<string, unknown>,
+			normalizationConfig: (input.normalizationConfig ?? existing.normalizationConfig) as Record<
+				string,
+				unknown
+			>,
 			searchConfig: (input.searchConfig ?? existing.searchConfig) as Record<string, unknown>,
 			resultConfig: (input.resultConfig ?? existing.resultConfig) as Record<string, unknown>,
 			decisionConfig: (input.decisionConfig ?? existing.decisionConfig) as Record<string, unknown>,
-			executionMode: (input.executionMode ?? existing.executionMode) as CreateStrategyInput["executionMode"],
+			executionMode: (input.executionMode ??
+				existing.executionMode) as CreateStrategyInput["executionMode"],
 			apiVersion: input.apiVersion ?? existing.apiVersion ?? undefined,
 		};
 

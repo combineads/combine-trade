@@ -1,8 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
-import { StrategyListView, type StrategyListItem } from "../src/views/strategies/strategy-list-view";
+import { type ExecutionMode, ModeSelector } from "../src/views/strategies/mode-selector";
 import { StrategyCard } from "../src/views/strategies/strategy-card";
-import { ModeSelector, type ExecutionMode } from "../src/views/strategies/mode-selector";
+import {
+	type StrategyListItem,
+	StrategyListView,
+} from "../src/views/strategies/strategy-list-view";
 
 describe("StrategyCard", () => {
 	const strategy: StrategyListItem = {
@@ -50,18 +53,14 @@ describe("ModeSelector", () => {
 	const modes: ExecutionMode[] = ["analysis", "alert", "paper-trade", "auto-trade"];
 
 	test("renders all mode options", () => {
-		const html = renderToString(
-			<ModeSelector currentMode="analysis" onModeChange={() => {}} />,
-		);
+		const html = renderToString(<ModeSelector currentMode="analysis" onModeChange={() => {}} />);
 		for (const mode of modes) {
 			expect(html).toContain(mode);
 		}
 	});
 
 	test("highlights current mode", () => {
-		const html = renderToString(
-			<ModeSelector currentMode="alert" onModeChange={() => {}} />,
-		);
+		const html = renderToString(<ModeSelector currentMode="alert" onModeChange={() => {}} />);
 		// The active mode should have primary color
 		expect(html).toContain("#22C55E");
 	});

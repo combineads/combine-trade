@@ -1,4 +1,4 @@
-import type { SlackMessage, AlertContext } from "@combine/alert";
+import type { AlertContext, SlackMessage } from "@combine/alert";
 import { formatAlertMessage } from "@combine/alert";
 import type { DecisionResult } from "@combine/core/decision";
 import type { ExecutionMode } from "@combine/execution";
@@ -56,10 +56,7 @@ export class AlertWorkerHandler {
 				await this.deps.sendSlackWebhook(message);
 				return true;
 			} catch (err) {
-				logger.warn(
-					{ attempt, error: (err as Error).message },
-					"Slack webhook failed",
-				);
+				logger.warn({ attempt, error: (err as Error).message }, "Slack webhook failed");
 				if (attempt < MAX_RETRIES) {
 					await sleep(BACKOFF_BASE_MS * 2 ** (attempt - 1));
 				}

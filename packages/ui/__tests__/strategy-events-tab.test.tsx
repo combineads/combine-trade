@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { renderToString } from "react-dom/server";
-import { StrategyEventsTab, type StrategyEvent } from "../src/views/strategies/strategy-events-tab";
+import { type StrategyEvent, StrategyEventsTab } from "../src/views/strategies/strategy-events-tab";
 
 describe("StrategyEventsTab", () => {
 	const events: StrategyEvent[] = [

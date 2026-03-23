@@ -142,18 +142,14 @@ describe("generateMacroTags", () => {
 
 	test("no major_news_at_entry for only 1 news item", () => {
 		const ctx = emptyContext();
-		ctx.entryNews = [
-			makeNews({ publishedAt: new Date("2026-03-22T17:30:00Z") }),
-		];
+		ctx.entryNews = [makeNews({ publishedAt: new Date("2026-03-22T17:30:00Z") })];
 		const tags = generateMacroTags(ctx, entryTime);
 		expect(tags).not.toContain("major_news_at_entry");
 	});
 
 	test("generates geopolitical_risk from headline keywords", () => {
 		const ctx = emptyContext();
-		ctx.entryNews = [
-			makeNews({ headline: "US imposes new sanctions on Iran" }),
-		];
+		ctx.entryNews = [makeNews({ headline: "US imposes new sanctions on Iran" })];
 		const tags = generateMacroTags(ctx, entryTime);
 		expect(tags).toContain("geopolitical_risk");
 	});

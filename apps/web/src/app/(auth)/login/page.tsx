@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { LoginView } from "@combine/ui/src/views/auth/login-view";
 import { authClient } from "@/lib/auth-client";
+import { LoginView } from "@combine/ui/src/views/auth/login-view";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function LoginPage() {
 	const router = useRouter();

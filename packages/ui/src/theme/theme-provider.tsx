@@ -1,13 +1,6 @@
 "use client";
 
-import {
-	createContext,
-	useCallback,
-	useContext,
-	useEffect,
-	useState,
-	type ReactNode,
-} from "react";
+import { type ReactNode, createContext, useCallback, useEffect, useState } from "react";
 
 export type Theme = "dark" | "light";
 
@@ -41,9 +34,7 @@ export interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children, defaultTheme }: ThemeProviderProps) {
-	const [theme, setThemeState] = useState<Theme>(
-		defaultTheme ?? getInitialTheme,
-	);
+	const [theme, setThemeState] = useState<Theme>(defaultTheme ?? getInitialTheme);
 
 	const applyTheme = useCallback((newTheme: Theme) => {
 		if (typeof document !== "undefined") {

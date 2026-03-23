@@ -38,10 +38,7 @@ const OUTCOME_COLORS: Record<EventOutcome, string> = {
 	OPEN: "#64748B",
 };
 
-export function StrategyEventsTab({
-	events,
-	loading = false,
-}: StrategyEventsTabProps) {
+export function StrategyEventsTab({ events, loading = false }: StrategyEventsTabProps) {
 	if (loading) {
 		return (
 			<div style={{ padding: 32, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
@@ -91,37 +88,52 @@ export function StrategyEventsTab({
 							}}
 						>
 							<td style={{ padding: "8px 12px" }}>
-								<span style={{
-									fontSize: 11,
-									fontWeight: 600,
-									color: event.direction === "LONG" ? "#22C55E" : "#EF4444",
-								}}>
+								<span
+									style={{
+										fontSize: 11,
+										fontWeight: 600,
+										color: event.direction === "LONG" ? "#22C55E" : "#EF4444",
+									}}
+								>
 									{event.direction}
 								</span>
 							</td>
 							<td style={{ padding: "8px 12px", fontFamily: "var(--font-mono)" }}>
 								{event.symbol}
 							</td>
-							<td style={{ padding: "8px 12px", fontFamily: "var(--font-mono)", textAlign: "right" }}>
+							<td
+								style={{ padding: "8px 12px", fontFamily: "var(--font-mono)", textAlign: "right" }}
+							>
 								{event.entryPrice.toLocaleString()}
 							</td>
-							<td style={{ padding: "8px 12px", fontFamily: "var(--font-mono)", textAlign: "right" }}>
+							<td
+								style={{ padding: "8px 12px", fontFamily: "var(--font-mono)", textAlign: "right" }}
+							>
 								{event.exitPrice != null ? event.exitPrice.toLocaleString() : "—"}
 							</td>
-							<td style={{
-								padding: "8px 12px",
-								fontFamily: "var(--font-mono)",
-								textAlign: "right",
-								color: event.pnl != null ? (event.pnl > 0 ? "#22C55E" : "#EF4444") : "var(--text-muted)",
-							}}>
+							<td
+								style={{
+									padding: "8px 12px",
+									fontFamily: "var(--font-mono)",
+									textAlign: "right",
+									color:
+										event.pnl != null
+											? event.pnl > 0
+												? "#22C55E"
+												: "#EF4444"
+											: "var(--text-muted)",
+								}}
+							>
 								{event.pnl != null ? event.pnl.toLocaleString() : "—"}
 							</td>
 							<td style={{ padding: "8px 12px" }}>
-								<span style={{
-									fontSize: 11,
-									fontWeight: 600,
-									color: OUTCOME_COLORS[event.outcome],
-								}}>
+								<span
+									style={{
+										fontSize: 11,
+										fontWeight: 600,
+										color: OUTCOME_COLORS[event.outcome],
+									}}
+								>
 									{event.outcome}
 								</span>
 							</td>

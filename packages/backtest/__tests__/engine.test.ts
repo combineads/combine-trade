@@ -3,7 +3,7 @@ import type { Candle } from "@combine/candle";
 import { resumeFromCheckpoint, runBacktest } from "../engine.js";
 import type { BacktestCheckpoint, BacktestEngineDeps, StrategyOutput } from "../types.js";
 
-function makeCandle(index: number, openTimeMs: number): Candle {
+function makeCandle(_index: number, openTimeMs: number): Candle {
 	return {
 		exchange: "binance",
 		symbol: "BTCUSDT",
@@ -195,9 +195,7 @@ describe("resumeFromCheckpoint", () => {
 		let callIdx = 0;
 		const deps = makeDeps({
 			executeStrategy: async (candle) => {
-				const idx = candles.findIndex(
-					(c) => c.openTime.getTime() === candle.openTime.getTime(),
-				);
+				const idx = candles.findIndex((c) => c.openTime.getTime() === candle.openTime.getTime());
 				processedIndices.push(idx);
 				callIdx++;
 				// Emit on first new candle

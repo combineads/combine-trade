@@ -1,6 +1,6 @@
-import { KillSwitchCard, type KillSwitchCardProps } from "./kill-switch-card";
+import { KillSwitchCard } from "./kill-switch-card";
+import { type RecentEventItem, RecentEvents } from "./recent-events";
 import { StrategySummary, type StrategySummaryItem } from "./strategy-summary";
-import { RecentEvents, type RecentEventItem } from "./recent-events";
 import { WorkerStatus, type WorkerStatusItem } from "./worker-status";
 
 export interface DashboardViewProps {
@@ -54,7 +54,14 @@ export function DashboardView({
 						padding: 20,
 					}}
 				>
-					<h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
+					<h2
+						style={{
+							fontSize: 16,
+							fontWeight: 600,
+							color: "var(--text-primary)",
+							marginBottom: 16,
+						}}
+					>
 						Workers
 					</h2>
 					<WorkerStatus workers={workers} />
@@ -69,7 +76,14 @@ export function DashboardView({
 						padding: 20,
 					}}
 				>
-					<h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
+					<h2
+						style={{
+							fontSize: 16,
+							fontWeight: 600,
+							color: "var(--text-primary)",
+							marginBottom: 16,
+						}}
+					>
 						Strategies
 					</h2>
 					<StrategySummary strategies={strategies} />
@@ -84,7 +98,14 @@ export function DashboardView({
 						padding: 20,
 					}}
 				>
-					<h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
+					<h2
+						style={{
+							fontSize: 16,
+							fontWeight: 600,
+							color: "var(--text-primary)",
+							marginBottom: 16,
+						}}
+					>
 						Recent Events
 					</h2>
 					<RecentEvents events={recentEvents} />

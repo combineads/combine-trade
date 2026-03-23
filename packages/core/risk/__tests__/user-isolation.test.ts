@@ -15,7 +15,9 @@ const NOW = new Date("2026-03-22T12:00:00Z");
 // KillSwitchDbDeps isolation
 // ---------------------------------------------------------------------------
 
-function makeKsRow(overrides: Partial<KillSwitchRow & { userId: string }> = {}): KillSwitchRow & { userId: string } {
+function _makeKsRow(
+	overrides: Partial<KillSwitchRow & { userId: string }> = {},
+): KillSwitchRow & { userId: string } {
 	return {
 		id: "ks-1",
 		strategyId: null,
@@ -115,9 +117,7 @@ function createIsolatedLossTrackerDeps(): LossTrackerDbDeps {
 	return {
 		findByDateRange(dateFrom: string, dateTo: string, userId: string): Promise<PnlRow[]> {
 			return Promise.resolve(
-				store.filter(
-					(r) => r.userId === userId && r.date >= dateFrom && r.date <= dateTo,
-				),
+				store.filter((r) => r.userId === userId && r.date >= dateFrom && r.date <= dateTo),
 			);
 		},
 		insertRecord(row: PnlRow & { userId: string }): Promise<void> {

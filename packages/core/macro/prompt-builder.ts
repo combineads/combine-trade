@@ -20,9 +20,7 @@ export interface RetrospectivePromptInput {
 	macroContext: MacroContext;
 }
 
-export function buildRetrospectivePrompt(
-	input: RetrospectivePromptInput,
-): string {
+export function buildRetrospectivePrompt(input: RetrospectivePromptInput): string {
 	const sections: string[] = [];
 
 	sections.push(buildStrategySection(input));
@@ -83,8 +81,7 @@ function buildMacroEventsSection(ctx: MacroContext): string {
 		return "[경제 이벤트]\n경제 이벤트 없음";
 	}
 	const lines = allEvents.map(
-		(e) =>
-			`- ${e.eventName} (${e.impact}) @ ${e.scheduledAt.toISOString()}`,
+		(e) => `- ${e.eventName} (${e.impact}) @ ${e.scheduledAt.toISOString()}`,
 	);
 	return `[경제 이벤트]\n${lines.join("\n")}`;
 }
@@ -95,8 +92,7 @@ function buildNewsSection(ctx: MacroContext): string {
 		return "[주요 뉴스]\n관련 뉴스 없음";
 	}
 	const lines = allNews.map(
-		(n) =>
-			`- "${n.headline}" (${n.source}) @ ${n.publishedAt.toISOString()}`,
+		(n) => `- "${n.headline}" (${n.source}) @ ${n.publishedAt.toISOString()}`,
 	);
 	return `[주요 뉴스]\n${lines.join("\n")}`;
 }

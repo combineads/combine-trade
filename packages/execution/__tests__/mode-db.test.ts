@@ -1,8 +1,5 @@
-import { describe, expect, test, mock } from "bun:test";
-import {
-	ExecutionModeDbService,
-	type ExecutionModeDbDeps,
-} from "../mode-db.js";
+import { describe, expect, mock, test } from "bun:test";
+import { type ExecutionModeDbDeps, ExecutionModeDbService } from "../mode-db.js";
 
 function makeDeps(overrides: Partial<ExecutionModeDbDeps> = {}): ExecutionModeDbDeps {
 	return {

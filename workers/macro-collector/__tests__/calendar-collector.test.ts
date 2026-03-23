@@ -1,13 +1,8 @@
 import { describe, expect, mock, test } from "bun:test";
 import type { CreateEconomicEventInput } from "../../../../packages/core/macro/types.js";
-import {
-	type CalendarEventRepository,
-	CalendarCollector,
-} from "../src/calendar-collector.js";
+import { CalendarCollector, type CalendarEventRepository } from "../src/calendar-collector.js";
 
-function makeEvent(
-	overrides: Partial<CreateEconomicEventInput> = {},
-): CreateEconomicEventInput {
+function makeEvent(overrides: Partial<CreateEconomicEventInput> = {}): CreateEconomicEventInput {
 	return {
 		externalId: "evt-1",
 		title: "★★★ FOMC Rate Decision",
@@ -63,14 +58,10 @@ describe("CalendarCollector", () => {
 
 		expect(fetchEvents).toHaveBeenCalledTimes(1);
 		const [start, end] = fetchEvents.mock.calls[0] as [Date, Date];
-		expect(start.toISOString().slice(0, 10)).toBe(
-			now.toISOString().slice(0, 10),
-		);
+		expect(start.toISOString().slice(0, 10)).toBe(now.toISOString().slice(0, 10));
 		const expectedEnd = new Date(now);
 		expectedEnd.setDate(expectedEnd.getDate() + 7);
-		expect(end.toISOString().slice(0, 10)).toBe(
-			expectedEnd.toISOString().slice(0, 10),
-		);
+		expect(end.toISOString().slice(0, 10)).toBe(expectedEnd.toISOString().slice(0, 10));
 	});
 
 	test("upserts are idempotent by external_id", async () => {
@@ -99,9 +90,7 @@ describe("CalendarCollector", () => {
 	});
 
 	test("handles fetch failure gracefully", async () => {
-		const fetchEvents = mock(() =>
-			Promise.reject(new Error("Client failure")),
-		);
+		const fetchEvents = mock(() => Promise.reject(new Error("Client failure")));
 		const repo = createMockRepo();
 		const collector = new CalendarCollector({ fetchEvents, repository: repo });
 

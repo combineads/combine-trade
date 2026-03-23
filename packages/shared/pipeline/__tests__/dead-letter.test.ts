@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { handleFailure, shouldRetry, type DeadLetterDeps } from "../dead-letter.js";
+import { type DeadLetterDeps, handleFailure, shouldRetry } from "../dead-letter.js";
 
 function makeDeps(retryCount = 0): DeadLetterDeps & { saved: Array<Record<string, unknown>> } {
 	const saved: Array<Record<string, unknown>> = [];

@@ -1,8 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
-	useStrategyPerformance,
-	type UseStrategyPerformanceResult,
 	type StrategyPerformanceStats,
+	useStrategyPerformance,
 } from "../src/hooks/use-strategy-performance.js";
 
 describe("useStrategyPerformance", () => {

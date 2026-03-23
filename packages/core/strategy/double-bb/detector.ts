@@ -73,7 +73,7 @@ function isBB4MovingDown(bb4: BollingerBands, prevBb4: BollingerBands): boolean 
 function detectBreakout(
 	candle: CandleBar,
 	bb20: BollingerBands,
-	bb4: BollingerBands,
+	_bb4: BollingerBands,
 	prevBb20?: BollingerBands,
 ): DoubleBBResult | null {
 	const range = candleRange(candle);
@@ -100,10 +100,7 @@ function detectBreakout(
 	return null;
 }
 
-function detectReversal(
-	candle: CandleBar,
-	bb20: BollingerBands,
-): DoubleBBResult | null {
+function detectReversal(candle: CandleBar, bb20: BollingerBands): DoubleBBResult | null {
 	if (isNearBB20Lower(candle, bb20) && hasReversalWick(candle, "bullish")) {
 		return { variant: "reversal", side: "bullish" };
 	}

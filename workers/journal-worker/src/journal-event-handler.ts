@@ -25,10 +25,7 @@ export interface EventBusSubscription {
 }
 
 export interface EventBus {
-	subscribe(
-		eventType: string,
-		handler: (event: unknown) => Promise<void>,
-	): EventBusSubscription;
+	subscribe(eventType: string, handler: (event: unknown) => Promise<void>): EventBusSubscription;
 }
 
 export class JournalEventHandler {
@@ -38,9 +35,8 @@ export class JournalEventHandler {
 	) {}
 
 	start(): EventBusSubscription {
-		return this.eventBus.subscribe(
-			"label_ready",
-			(event) => this.handleLabelReady(event as LabelReadyEvent),
+		return this.eventBus.subscribe("label_ready", (event) =>
+			this.handleLabelReady(event as LabelReadyEvent),
 		);
 	}
 

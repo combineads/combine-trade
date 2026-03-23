@@ -7,9 +7,7 @@ import {
 } from "../../../packages/core/macro/decision-prompt-builder.js";
 
 export interface LlmDecisionRepository {
-	getKnnDecision(
-		decisionId: string,
-	): Promise<{
+	getKnnDecision(decisionId: string): Promise<{
 		id: string;
 		strategyId: string;
 		direction: string;
@@ -94,10 +92,6 @@ export class LlmDecisionWorker {
 		}
 
 		await this.repo.updateWithLlmResult(decisionId, llmResult, finalDirection);
-		await this.repo.publishDecisionCompleted(
-			decisionId,
-			finalDirection,
-			sizeModifier,
-		);
+		await this.repo.publishDecisionCompleted(decisionId, finalDirection, sizeModifier);
 	}
 }

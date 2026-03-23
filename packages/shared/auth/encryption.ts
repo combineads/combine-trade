@@ -93,12 +93,7 @@ export interface CredentialServiceDeps {
 export class CredentialService {
 	constructor(private readonly deps: CredentialServiceDeps) {}
 
-	async save(
-		exchangeId: string,
-		apiKey: string,
-		apiSecret: string,
-		label: string,
-	): Promise<void> {
+	async save(exchangeId: string, apiKey: string, apiSecret: string, label: string): Promise<void> {
 		const encKey = encrypt(apiKey, this.deps.masterKey);
 		const encSecret = encrypt(apiSecret, this.deps.masterKey);
 
@@ -115,7 +110,9 @@ export class CredentialService {
 		});
 	}
 
-	async get(id: string): Promise<{ apiKey: string; apiSecret: string; exchangeId: string; label: string } | null> {
+	async get(
+		id: string,
+	): Promise<{ apiKey: string; apiSecret: string; exchangeId: string; label: string } | null> {
 		const cred = await this.deps.getCredential(id);
 		if (!cred) return null;
 

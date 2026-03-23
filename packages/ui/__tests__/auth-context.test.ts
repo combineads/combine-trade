@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-	type AuthState,
-	type AuthContextValue,
-	type AuthUser,
-	initialAuthState,
-} from "../src/auth/auth-context.js";
+import { type AuthState, type AuthUser, initialAuthState } from "../src/auth/auth-context.js";
 
 describe("AuthContext", () => {
 	test("initialAuthState has correct shape", () => {

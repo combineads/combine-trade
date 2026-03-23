@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { calculateNetPnl, type NetPnlResult } from "../net-pnl-calculator.js";
+import { calculateNetPnl } from "../net-pnl-calculator.js";
 
 describe("calculateNetPnl", () => {
 	test("correct net PnL = grossPnl - totalFee - fundingCost", () => {

@@ -11,26 +11,32 @@ export interface BacktestViewProps {
 export function BacktestView({ strategies, onRun }: BacktestViewProps) {
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-			<div style={{
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "space-between",
-			}}>
-				<h1 style={{
-					fontSize: 20,
-					fontWeight: 700,
-					color: "var(--text-primary)",
-					margin: 0,
-				}}>
+			<div
+				style={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+				}}
+			>
+				<h1
+					style={{
+						fontSize: 20,
+						fontWeight: 700,
+						color: "var(--text-primary)",
+						margin: 0,
+					}}
+				>
 					Backtest
 				</h1>
 			</div>
 
-			<div style={{
-				display: "flex",
-				alignItems: "center",
-				gap: 12,
-			}}>
+			<div
+				style={{
+					display: "flex",
+					alignItems: "center",
+					gap: 12,
+				}}
+			>
 				<select
 					style={{
 						padding: "8px 12px",
@@ -43,9 +49,7 @@ export function BacktestView({ strategies, onRun }: BacktestViewProps) {
 						cursor: "pointer",
 					}}
 				>
-					{strategies.length === 0 && (
-						<option>No strategies</option>
-					)}
+					{strategies.length === 0 && <option>No strategies</option>}
 					{strategies.map((s) => (
 						<option key={s.id} value={s.id}>
 							{s.name}

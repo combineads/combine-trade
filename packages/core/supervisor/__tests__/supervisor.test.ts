@@ -1,10 +1,10 @@
-import { describe, expect, test, mock, beforeEach } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
-	calculateBackoff,
-	shouldRestart,
+	type SupervisorConfig,
 	type WorkerState,
 	WorkerSupervisor,
-	type SupervisorConfig,
+	calculateBackoff,
+	shouldRestart,
 } from "../supervisor.js";
 
 describe("calculateBackoff", () => {

@@ -1,5 +1,7 @@
 "use client";
 
+import { AuthProviderWrapper } from "@/components/auth-provider-wrapper";
+import { PlatformProvider, ThemeProvider } from "@combine/ui";
 import "./globals.css";
 
 export default function RootLayout({
@@ -17,7 +19,11 @@ export default function RootLayout({
 					fontFamily: "var(--font-sans)",
 				}}
 			>
-				{children}
+				<ThemeProvider defaultTheme="dark">
+					<AuthProviderWrapper>
+						<PlatformProvider>{children}</PlatformProvider>
+					</AuthProviderWrapper>
+				</ThemeProvider>
 			</body>
 		</html>
 	);

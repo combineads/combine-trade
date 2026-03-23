@@ -19,7 +19,7 @@ export function EquityCurveChart({
 	data,
 	height = 300,
 	className,
-	_initialEquity,
+	initialEquity: _initialEquity,
 }: EquityCurveChartProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const chartRef = useRef<unknown>(null);
@@ -51,13 +51,15 @@ export function EquityCurveChart({
 					leftPriceScale: { visible: true },
 				});
 
-				const equitySeries = chart.addLineSeries({
+				const { LineSeries, AreaSeries } = await import("lightweight-charts");
+
+				const equitySeries = chart.addSeries(LineSeries, {
 					color: successColor,
 					lineWidth: 2,
 					priceScaleId: "left",
 				});
 
-				const drawdownSeries = chart.addAreaSeries({
+				const drawdownSeries = chart.addSeries(AreaSeries, {
 					topColor: "transparent",
 					bottomColor: `${dangerColor}4d`,
 					lineColor: dangerColor,

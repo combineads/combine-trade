@@ -29,7 +29,7 @@ export function LightweightChart({ data, height = 400, className }: LightweightC
 
 		(async () => {
 			try {
-				const { createChart } = await import("lightweight-charts");
+				const { createChart, CandlestickSeries } = await import("lightweight-charts");
 				if (disposed) return;
 
 				const style = getComputedStyle(container);
@@ -49,7 +49,7 @@ export function LightweightChart({ data, height = 400, className }: LightweightC
 					},
 				});
 
-				const series = chart.addCandlestickSeries({
+				const series = chart.addSeries(CandlestickSeries, {
 					upColor: up,
 					downColor: down,
 					borderUpColor: up,

@@ -23,8 +23,7 @@ export function PlatformProvider({ children }: PlatformProviderProps) {
 		// SSR-safe Tauri detection: __TAURI_INTERNALS__ is injected by the Tauri WebView at runtime.
 		// Dynamic import avoids bundling @tauri-apps/* into the web build.
 		if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
-			// @ts-expect-error — tauri adapter created in EP20 (desktop app epic)
-			import(/* webpackIgnore: true */ "../platform/tauri.js")
+			import("./tauri")
 				.then((mod) => {
 					setAdapter(mod.tauriAdapter);
 				})

@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { createApiServer, type ApiServerDeps } from "../src/server";
-import { makeAuthHeaders, TEST_SECRET } from "./helpers/auth";
+import { createMockAuth, makeAuthHeaders } from "./helpers/auth";
 
 function createStubDeps(): ApiServerDeps {
 	return {
-		jwtSecret: TEST_SECRET,
+		auth: createMockAuth(),
 		masterEncryptionKey: "0".repeat(64),
 		strategyRepository: {
 			findAll: async () => [],
@@ -27,7 +27,6 @@ function createStubDeps(): ApiServerDeps {
 			getActiveStates: async () => [],
 			getAuditEvents: async () => ({ items: [], total: 0 }),
 		},
-		findUserByUsername: async () => null,
 		sseSubscribe: () => () => {},
 		credentialDeps: {
 			masterKey: "0".repeat(64),

@@ -1,0 +1,30 @@
+name: PR Lint
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited, reopened]
+
+jobs:
+  pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            chore
+            docs
+            refactor
+            test
+            perf
+            security
+            ci
+          requireScope: false
+          subjectPattern: ^.{1,100}$
+          subjectPatternError: |
+            PR title subject must be 1-100 characters.
+            Format: <type>: <description>
+            Example: feat: add kill switch API endpoint

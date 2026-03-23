@@ -66,8 +66,9 @@ test-results/
 playwright-report/
 playwright/.cache/
 
-# Harness
-.harness/
+# Harness — ignore runtime state and CI artifacts; track baseline
+.harness/state/
+.harness/benchmarks/current.json
 
 # Temp
 tmp/

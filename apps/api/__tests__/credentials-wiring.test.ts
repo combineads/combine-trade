@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createApiServer, type ApiServerDeps } from "../src/server";
 import type { Credential, CredentialRouteDeps } from "../src/routes/credentials";
-import { makeAuthHeaders, TEST_SECRET } from "./helpers/auth";
+import { createMockAuth, makeAuthHeaders } from "./helpers/auth";
 
 function createTestCredential(overrides: Partial<Credential> = {}): Credential {
 	return {
@@ -20,7 +20,7 @@ function createStubDeps(): ApiServerDeps {
 	const credentials: Credential[] = [createTestCredential()];
 
 	return {
-		jwtSecret: TEST_SECRET,
+		auth: createMockAuth(),
 		masterEncryptionKey: "a".repeat(64),
 		strategyRepository: {
 			findAll: async () => [],
@@ -43,7 +43,6 @@ function createStubDeps(): ApiServerDeps {
 			getActiveStates: async () => [],
 			getAuditEvents: async () => ({ items: [], total: 0 }),
 		},
-		findUserByUsername: async () => null,
 		sseSubscribe: () => () => {},
 		credentialDeps: {
 			masterKey: "a".repeat(64),

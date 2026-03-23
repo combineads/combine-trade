@@ -6,6 +6,8 @@
 		"dev": "bun run --cwd apps/api dev",
 		"build": "bun run typecheck",
 		"test": "bun test --recursive",
+		"test:unit": "bun test --recursive",
+		"bench": "bun run scripts/bench.ts",
 		"lint": "bunx @biomejs/biome check .",
 		"typecheck": "tsc --noEmit",
 		"db:generate": "drizzle-kit generate",

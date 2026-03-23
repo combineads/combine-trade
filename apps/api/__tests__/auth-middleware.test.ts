@@ -1,12 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { signAccessToken } from "../../../packages/shared/auth/jwt.js";
 import { createApiServer, type ApiServerDeps } from "../src/server.js";
-
-const TEST_SECRET = "test-jwt-secret-for-auth-middleware";
+import { createMockAuth } from "./helpers/auth.js";
 
 function createStubDeps(): ApiServerDeps {
 	return {
-		jwtSecret: TEST_SECRET,
+		auth: createMockAuth(),
 		masterEncryptionKey: "0".repeat(64),
 		strategyRepository: {
 			findAll: async () => [],
@@ -29,7 +27,6 @@ function createStubDeps(): ApiServerDeps {
 			getActiveStates: async () => [],
 			getAuditEvents: async () => ({ items: [], total: 0 }),
 		},
-		findUserByUsername: async () => null,
 		sseSubscribe: () => () => {},
 		credentialDeps: {
 			masterKey: "0".repeat(64),
@@ -74,10 +71,6 @@ function createStubDeps(): ApiServerDeps {
 	};
 }
 
-async function makeValidToken(): Promise<string> {
-	return signAccessToken({ sub: "user-1", role: "admin" }, TEST_SECRET);
-}
-
 describe("Global auth middleware", () => {
 	test("unauthenticated request to protected route returns 401", async () => {
 		const app = createApiServer(createStubDeps());
@@ -91,31 +84,29 @@ describe("Global auth middleware", () => {
 		expect(res.status).toBe(200);
 	});
 
-	test("unauthenticated request to /api/v1/auth/login passes through", async () => {
+	test("unauthenticated request to /api/auth/** is forwarded to better-auth handler", async () => {
 		const app = createApiServer(createStubDeps());
-		const res = await app.handle(new Request("http://localhost/api/v1/auth/login", {
+		const res = await app.handle(new Request("http://localhost/api/auth/sign-in/email", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ username: "test", password: "test" }),
+			body: JSON.stringify({ email: "test@example.com", password: "test" }),
 		}));
-		// Login with invalid creds returns 401 from auth route itself, not from middleware
-		// But it should NOT return the middleware's generic 401 — it should reach the route
-		expect(res.status).not.toBe(403);
+		// The mock handler returns 501 — it reached better-auth, not the guard
+		expect(res.status).toBe(501);
 	});
 
-	test("authenticated request with valid JWT passes through to route handler", async () => {
+	test("authenticated request with valid session token passes through to route handler", async () => {
 		const app = createApiServer(createStubDeps());
-		const token = await makeValidToken();
 		const res = await app.handle(new Request("http://localhost/api/v1/strategies", {
-			headers: { Authorization: `Bearer ${token}` },
+			headers: { Authorization: "Bearer test-session-token" },
 		}));
 		expect(res.status).toBe(200);
 	});
 
-	test("request with invalid JWT returns 401", async () => {
+	test("request with no bearer token returns 401", async () => {
 		const app = createApiServer(createStubDeps());
 		const res = await app.handle(new Request("http://localhost/api/v1/strategies", {
-			headers: { Authorization: "Bearer invalid-token-value" },
+			headers: { Authorization: "Bearer " },
 		}));
 		expect(res.status).toBe(401);
 	});

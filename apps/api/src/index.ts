@@ -1,6 +1,25 @@
-import { createApiServer, type ApiServerDeps } from "./server.js";
+import { createApiServer, type ApiServerDeps, type AuthLike } from "./server.js";
 
 const PORT = Number(process.env.PORT) || 3000;
+
+/**
+ * Stub auth instance for development before the DB is wired.
+ * Replace with a real createAuth(drizzleAdapter(db)) call once DB wiring is complete.
+ */
+const stubAuth: AuthLike = {
+	handler: async (_req: Request): Promise<Response> => {
+		return new Response(JSON.stringify({ error: "Auth not wired to DB yet" }), {
+			status: 503,
+			headers: { "content-type": "application/json" },
+		});
+	},
+	api: {
+		getSession: async (_ctx: { headers: Headers }) => {
+			// In development without DB, reject all sessions
+			return null;
+		},
+	},
+};
 
 /**
  * Server entry point.
@@ -10,7 +29,7 @@ const PORT = Number(process.env.PORT) || 3000;
  * Replace these with real implementations as DB wiring tasks complete.
  */
 const stubDeps: ApiServerDeps = {
-	jwtSecret: process.env.JWT_SECRET ?? "dev-secret-change-in-production!!",
+	auth: stubAuth,
 	masterEncryptionKey: process.env.MASTER_ENCRYPTION_KEY ?? "0".repeat(64),
 	strategyRepository: {
 		findAll: async () => [],
@@ -33,7 +52,6 @@ const stubDeps: ApiServerDeps = {
 		getActiveStates: async () => [],
 		getAuditEvents: async () => ({ items: [], total: 0 }),
 	},
-	findUserByUsername: async () => null,
 	sseSubscribe: () => () => {},
 	credentialDeps: {
 		masterKey: process.env.MASTER_ENCRYPTION_KEY ?? "0".repeat(64),

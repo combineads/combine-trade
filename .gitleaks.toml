@@ -1,0 +1,18 @@
+title = "Combine Trade gitleaks config"
+
+[allowlist]
+  description = "Allowlist for test fixtures and example values"
+  regexes = [
+    # Test fixture API keys (format: test_ prefix)
+    '''test_[a-zA-Z0-9]{32}''',
+    # Example placeholder values in documentation
+    '''example_secret_here''',
+    # JWT example tokens in docs/SECURITY.md
+    '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJ''',
+  ]
+  paths = [
+    '''docs/''',
+    '''__tests__/fixtures/''',
+    '''\.test\.ts$''',
+    '''\.spec\.ts$''',
+  ]

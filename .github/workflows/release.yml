@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.0.0)'
+        required: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate semver format
+        run: |
+          if ! echo "${{ github.event.inputs.version }}" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid version format: ${{ github.event.inputs.version }}"
+            echo "Expected: v<major>.<minor>.<patch>"
+            exit 1
+          fi
+
+  ci:
+    needs: validate
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get previous tag
+        id: prev-tag
+        run: |
+          PREV=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "value=$PREV" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          PREV="${{ steps.prev-tag.outputs.value }}"
+          if [ -z "$PREV" ]; then
+            LOG=$(git log --oneline --no-decorate)
+          else
+            LOG=$(git log --oneline --no-decorate "${PREV}..HEAD")
+          fi
+          echo "## ${VERSION} ($(date +%Y-%m-%d))" > /tmp/release-notes.md
+          echo "" >> /tmp/release-notes.md
+          echo "$LOG" | while IFS= read -r line; do
+            echo "- ${line}" >> /tmp/release-notes.md
+          done
+          echo "log<<EOF" >> $GITHUB_OUTPUT
+          cat /tmp/release-notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Update CHANGELOG.md
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [ ! -f CHANGELOG.md ]; then
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          fi
+          # Prepend new release notes after the first line
+          head -1 CHANGELOG.md > /tmp/new-changelog.md
+          echo "" >> /tmp/new-changelog.md
+          cat /tmp/release-notes.md >> /tmp/new-changelog.md
+          echo "" >> /tmp/new-changelog.md
+          tail -n +2 CHANGELOG.md >> /tmp/new-changelog.md
+          mv /tmp/new-changelog.md CHANGELOG.md
+          git add CHANGELOG.md
+          git commit -m "chore: update CHANGELOG.md for $VERSION [skip ci]"
+          git push
+
+      - name: Create annotated tag
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          body_path: /tmp/release-notes.md
+          draft: false
+          prerelease: false
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile.api
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/combine-trade-api:${{ github.event.inputs.version }}
+
+      - uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile.workers
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/combine-trade-workers:${{ github.event.inputs.version }}
+
+      - uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile.web
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/combine-trade-web:${{ github.event.inputs.version }}

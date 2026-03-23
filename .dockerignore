@@ -1,10 +1,28 @@
+# Secrets and environment
 .env
 .env.*
-node_modules
+!.env.example
+
+# Dependencies (rebuilt in each stage)
+node_modules/
+.next/
+
+# Test artifacts
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+coverage/
+
+# Dev and agent tooling
+.agents/
+.harness/
+.claude/
 docs/
-.git
-.github
-.harness
-*.test.ts
-__tests__
-.claude
+
+# Source control
+.git/
+.github/
+
+# OS artifacts
+.DS_Store
+Thumbs.db

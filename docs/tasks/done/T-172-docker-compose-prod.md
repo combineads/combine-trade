@@ -232,3 +232,27 @@ docker compose -f docker-compose.prod.yml down
 - Staging compose project (second compose project on different port) — separate operational concern, documented in runbook
 - Nginx or reverse proxy layer — deferred to cloud infrastructure phase
 - Container image vulnerability scanning — deferred post-MVP
+
+## Implementation Notes
+
+### TDD Cycle
+- RED: wrote `scripts/__tests__/docker-compose-prod.test.ts` with 29 tests covering all three deliverables before any files existed
+- GREEN: created `docker-compose.prod.yml`, updated `.dockerignore`, created `.github/workflows/build.yml`
+- REFACTOR: no structural changes needed; files matched spec exactly
+
+### Key Decisions
+- Used `ghcr.io/${GITHUB_REPOSITORY}/...` image prefix (matching task spec) instead of bare `combine-trade-*` names from the user prompt, since GHCR is the designated registry per Constraints section
+- `workers` service is a single service (not split into candle-collector + strategy-worker), matching the task spec's `Dockerfile.workers` single-image model; the task prompt showed separate services but the spec's deliverable shows a single `workers` service
+- `.dockerignore` was updated from the minimal existing version to match the full spec content
+- `postgres` (not `db`) is used as the service name, matching task spec's deliverable YAML
+
+### Outputs
+- `docker-compose.prod.yml` — production compose file with api, workers, web, postgres; all services use `ghcr.io/${GITHUB_REPOSITORY}/...` tagged images
+- `.dockerignore` — covers secrets, node_modules, .next, test files, docs, agent tooling, .git
+- `.github/workflows/build.yml` — builds and pushes all three images on merge to `main`, tags with `git describe` and `latest`
+- `scripts/__tests__/docker-compose-prod.test.ts` — 29 tests, all passing
+
+### Validation Results
+- `bun test scripts/__tests__/docker-compose-prod.test.ts`: 29 pass, 0 fail
+- `bun run typecheck`: 0 errors
+- `bun test` (full suite): no new failures introduced by T-172

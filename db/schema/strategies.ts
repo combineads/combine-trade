@@ -1,9 +1,13 @@
 import { index, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { authUser } from "./better-auth.js";
 
 export const strategies = pgTable(
 	"strategies",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => authUser.id),
 		version: integer("version").notNull().default(1),
 		name: text("name").notNull(),
 		description: text("description"),
@@ -24,6 +28,7 @@ export const strategies = pgTable(
 		deletedAt: timestamp("deleted_at", { withTimezone: true }),
 	},
 	(table) => [
+		index("strategies_user_id_idx").on(table.userId),
 		index("strategies_name_version_idx").on(table.name, table.version),
 		index("strategies_status_idx").on(table.status),
 	],

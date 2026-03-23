@@ -1,0 +1,60 @@
+name: Build Images
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Image tag override (default: git describe)'
+        required: false
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute image tag
+        id: tag
+        run: |
+          TAG=${{ github.event.inputs.tag || '' }}
+          if [ -z "$TAG" ]; then
+            TAG=$(git describe --tags --always)
+          fi
+          echo "value=$TAG" >> $GITHUB_OUTPUT
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile.api
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/combine-trade-api:${{ steps.tag.outputs.value }}
+            ghcr.io/${{ github.repository }}/combine-trade-api:latest
+
+      - uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile.workers
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/combine-trade-workers:${{ steps.tag.outputs.value }}
+            ghcr.io/${{ github.repository }}/combine-trade-workers:latest
+
+      - uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile.web
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/combine-trade-web:${{ steps.tag.outputs.value }}
+            ghcr.io/${{ github.repository }}/combine-trade-web:latest

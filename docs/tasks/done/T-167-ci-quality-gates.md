@@ -117,3 +117,35 @@ bun x js-yaml .github/workflows/ci.yml
 - Updating baseline.json on production deploys — T-174 and T-175 (release workflow)
 - Configuring test runner coverage output format — assumed to produce standard JSON
 - Branch protection rule enforcement — manual GitHub UI step
+
+## Implementation Notes
+
+### TDD cycle
+- RED: wrote `scripts/__tests__/check-coverage.test.ts` (17 tests) and `scripts/__tests__/check-perf-regression.test.ts` (19 tests) before any implementation
+- GREEN: implemented `scripts/check-coverage.ts` and `scripts/check-perf-regression.ts`; all 36 tests pass
+- REFACTOR: extracted pure functions (parseCoverageJson, buildCoverageReport, checkThresholds, parseBenchmarkJson, checkRegressions, buildComparisonTable) for testability; constants named CORE_COVERAGE_THRESHOLD, OVERALL_COVERAGE_THRESHOLD, REGRESSION_THRESHOLD
+
+### Design decisions
+- Scripts use `export`ed pure functions plus an `if (import.meta.main)` guard so they are both runnable as scripts and importable by tests without spawning subprocess
+- Coverage script: reads Istanbul/V8 `coverage-summary.json` (standard Bun coverage output); exits 0 with warning when file absent (first-run safety)
+- Perf regression script: exits 0 with warning when `baseline.json` absent; exits 1 with clear message when `current.json` absent; new benchmarks with no baseline entry are ignored to avoid false positives
+- `.gitignore` updated: changed `.harness/` (whole directory) to `.harness/state/` + `.harness/benchmarks/current.json` so `baseline.json` can be committed
+- `bench.ts` stub created as a runnable placeholder; outputs valid BenchmarkFile JSON for extension as real benchmarks are added
+
+### Files created / modified
+- `scripts/check-coverage.ts` — new
+- `scripts/check-perf-regression.ts` — new
+- `scripts/bench.ts` — new stub
+- `scripts/__tests__/check-coverage.test.ts` — new, 17 tests
+- `scripts/__tests__/check-perf-regression.test.ts` — new, 19 tests
+- `.harness/benchmarks/baseline.json` — new initial baseline (empty benchmarks)
+- `.github/workflows/ci.yml` — added coverage-gate and performance-regression jobs
+- `package.json` — added test:unit and bench scripts
+- `.gitignore` — scoped .harness exclusion to allow baseline.json tracking
+
+## Outputs
+- 36 tests pass (bun test scripts/__tests__/check-coverage.test.ts scripts/__tests__/check-perf-regression.test.ts)
+- bun run typecheck passes
+- bun x js-yaml .github/workflows/ci.yml passes (valid YAML)
+- bun run scripts/check-coverage.ts exits 0 (no coverage data → warn + skip)
+- bun run scripts/check-perf-regression.ts exits 0 (no regressions vs empty baseline)

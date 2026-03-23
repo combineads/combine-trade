@@ -103,3 +103,33 @@ curl -s http://localhost:3000/api/v1/strategies \
 - Session extraction in individual route handlers — T-181
 - Client-side auth — T-182
 - Rate limiting verification — T-183
+
+## Implementation Notes
+
+### Discovery: no `better-auth/integrations/elysia`
+The installed `better-auth@1.5.6` package ships integrations for Next.js, SvelteKit, SolidStart, and TanStack Start — but **not Elysia**. The `betterAuthPlugin` import from the task spec does not exist.
+
+### Solution: custom `betterAuthPlugin`
+A custom Elysia plugin was implemented in `server.ts`:
+- `.all("/api/auth/*")` route forwards all better-auth requests to `auth.handler(request)`. This is needed because returning a `Response` from `onBeforeHandle` does not forward the response correctly in Elysia — the wildcard route pattern ensures proper routing.
+- `onBeforeHandle({ as: "global" })` validates sessions for all other routes using `auth.api.getSession({ headers })`.
+- `/api/v1/health` is bypassed without auth.
+
+### `AuthLike` structural interface
+Instead of directly typing `ApiServerDeps.auth` as `Auth` (from better-auth), a minimal structural `AuthLike` interface was introduced. This decouples unit tests from the full better-auth runtime (which requires a DB connection) and allows clean test doubles via `createMockAuth()`.
+
+### Test helper updates
+- `apps/api/__tests__/helpers/auth.ts` — replaced `signAccessToken` JWT generation with `createMockAuth()` factory and simplified `makeAuthHeaders()` to return a static Bearer token. The mock auth accepts any non-empty Bearer token as a valid session, preserving the existing `makeAuthHeaders()` call pattern across all wiring tests.
+- `auth-middleware.test.ts`, `server-bootstrap.test.ts`, `routes-wiring.test.ts`, `credentials-wiring.test.ts` — updated to remove `jwtSecret`/`findUserByUsername` from stub deps and use `createMockAuth()`.
+
+### Helmet package
+The installed package is `elysiajs-helmet` (not `@elysiajs/helmet`). Export is `elysiaHelmet` (function), not a default export. Added `elysiajs-helmet` and `better-auth` to `apps/api/package.json` dependencies.
+
+### `apps/api/src/index.ts`
+Updated to use a stub `AuthLike` (dev placeholder) instead of `jwtSecret`/`findUserByUsername`. The real auth instance wiring (with `drizzleAdapter(db)`) will be done in the DB wiring task.
+
+### Validation results
+```
+bun run typecheck  → 0 errors
+bun test apps/api/ → 127 pass, 0 fail
+```

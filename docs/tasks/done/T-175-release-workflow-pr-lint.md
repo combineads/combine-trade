@@ -249,3 +249,35 @@ head -30 CHANGELOG.md
 - Automated baseline.json update in release workflow — baseline is updated by `scripts/deploy.ts` after production deploy, not by the release workflow itself
 - Pre-release version formats (e.g., `v1.0.0-rc.1`) — deferred post-MVP
 - GitHub Release asset uploads (binaries, archives) — no binary releases at MVP
+
+## Implementation Notes
+
+**TDD cycle completed: RED → GREEN → REFACTOR**
+
+### Files created
+- `.github/__tests__/release-workflow.test.ts` — 30 tests validating release.yml structure (triggers, job chain, semver validation, changelog, tagging, GitHub Release, Docker image push)
+- `.github/__tests__/pr-lint-workflow.test.ts` — 23 tests validating pr-lint.yml structure (triggers, types, action version, requireScope)
+- `.github/workflows/release.yml` — manual release workflow with validate → ci → release job chain
+- `.github/workflows/pr-lint.yml` — PR title linting with `amannn/action-semantic-pull-request@v5`
+- `CHANGELOG.md` — initial empty changelog structure
+
+### Key decisions
+- `release.yml` uses `workflow_call` reuse for the `ci` job (`./.github/workflows/ci.yml`) — satisfies the constraint that CI re-runs rather than trusting cached results
+- CHANGELOG.md commit includes `[skip ci]` to prevent CI loop as required
+- PR lint trigger includes all four types: `opened`, `synchronize`, `edited`, `reopened` — catches title changes after PR is opened
+- Docker images pushed to `ghcr.io/${{ github.repository }}/combine-trade-{api,workers,web}:{version}`
+- `style` type omitted from conventional commit types per task spec (spec lists: feat, fix, chore, docs, refactor, test, perf, security, ci — 9 types)
+
+### Validation results
+- `bun x js-yaml .github/workflows/release.yml` — exits 0 (valid YAML)
+- `bun x js-yaml .github/workflows/pr-lint.yml` — exits 0 (valid YAML)
+- `bun test ./.github/__tests__/release-workflow.test.ts ./.github/__tests__/pr-lint-workflow.test.ts` — 53 pass, 0 fail
+- `bun run typecheck` — exits 0
+- `bunx @biomejs/biome check ./.github/__tests__/release-workflow.test.ts ./.github/__tests__/pr-lint-workflow.test.ts` — no errors
+
+## Outputs
+- `.github/workflows/release.yml`
+- `.github/workflows/pr-lint.yml`
+- `CHANGELOG.md`
+- `.github/__tests__/release-workflow.test.ts`
+- `.github/__tests__/pr-lint-workflow.test.ts`

@@ -104,3 +104,40 @@ psql $DATABASE_URL -c "SELECT COUNT(*) FROM orders WHERE user_id IS NULL;"
 - Updating repository query methods to filter by `user_id` — T-180
 - Extracting `userId` from sessions in routes — T-181
 - Removing the legacy `users` table — covered by T-176 migration
+
+## Implementation Notes
+
+**Date**: 2026-03-23
+
+### Key decision: `text` type for userId column
+
+`authUser.id` in `db/schema/better-auth.ts` is `text("id").primaryKey()` — not `uuid`. better-auth uses text PKs so it can inject IDs via `generateId` without driver coercion. All six `userId` columns therefore use `text("user_id")` to match the FK target type exactly.
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `db/schema/strategies.ts` | Added `userId: text("user_id").notNull().references(() => authUser.id)` + `strategies_user_id_idx` |
+| `db/schema/orders.ts` | Added `userId`, `orders_user_id_idx`; restructured from flat `pgTable` to `pgTable` with index callback |
+| `db/schema/kill-switch.ts` | Added `userId` + index to `killSwitchState` and `killSwitchEvents`; restructured both tables |
+| `db/schema/daily-loss-limits.ts` | Added `userId` + index to `dailyLossLimits` and `dailyPnlTracking`; restructured both tables |
+| `db/__tests__/multiuser-schema.test.ts` | New: 30 pure schema-shape tests (no DB required) |
+
+### Test approach
+
+Tests inspect Drizzle's runtime object structure:
+- Column presence/name/notNull: via direct property access (`table.userId.name`, `.notNull`)
+- FK verification: via `Symbol(drizzle:PgInlineForeignKeys)` which holds `{ reference() }` objects; validates `user_id → user.id`
+- Index verification: via `Symbol(drizzle:ExtraConfigBuilder).toString()` which contains the declared index name
+
+### Validation results
+
+```
+bun test db/__tests__/multiuser-schema.test.ts  → 30 pass, 0 fail
+bun run typecheck                                → 0 errors
+bun test                                         → 1572 pass, 0 fail, 1 skip
+```
+
+### Migration note
+
+`bun run db:generate` and `bun run db:migrate` were not run (require interactive terminal + running DB per task constraints). The schema TypeScript is complete and typecheck-verified. Migration generation will produce `ALTER TABLE … ADD COLUMN user_id text NOT NULL REFERENCES "user"(id)` statements for all six tables.

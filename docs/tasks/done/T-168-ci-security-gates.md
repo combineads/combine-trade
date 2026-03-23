@@ -156,6 +156,23 @@ bun x js-yaml .github/workflows/ci.yml
 bun x js-yaml .github/workflows/security-schedule.yml
 ```
 
+## Implementation Notes
+
+- **Lockfile format**: Repo uses `bun.lock` (Bun >=1.2 text format), not `bun.lockb`. Script supports both via candidate list; checks `bun.lock` first, falls back to `bun.lockb` for older setups.
+- **Staleness check**: Uses mtime comparison (`package.json.mtimeMs > lockfile.mtimeMs`). This is a lightweight, read-only check that works locally and in CI. The task spec also mentions `bun install --dry-run`, but mtime comparison avoids network access and side effects.
+- **LOCKFILE_CHECK_ROOT env var**: Injects the working directory path in tests so we can run the script against a controlled temp directory without touching the real repo root.
+- **bun.lock is stale in this repo**: The real `bun.lock` (mtime 08:50) predates `package.json` (mtime 08:59), so `check-lockfile.ts` correctly exits 1 when run against the repo root. This is expected — the repo owner needs to run `bun install` and commit the updated lockfile.
+- **YAML validation**: Both workflow files parse cleanly with `bun x js-yaml`.
+- **Biome fixes applied**: Import ordering (bun:test first, then node:*) and `process.env.FOO` over `process.env["FOO"]`.
+
+## Outputs
+
+- `scripts/check-lockfile.ts` — read-only lockfile integrity checker
+- `scripts/__tests__/check-lockfile.test.ts` — 6 tests (all pass)
+- `.gitleaks.toml` — gitleaks config with allowlist for test fixtures and docs
+- `.github/workflows/ci.yml` — extended with `audit`, `lockfile-integrity`, `secret-scan` jobs
+- `.github/workflows/security-schedule.yml` — nightly security run at 03:00 UTC
+
 ## Out of Scope
 - Sandbox escape test job — sandbox escape tests belong to T-021 (sandbox-runtime). The CI job to run them can be added to ci.yml in that epic if needed.
 - `depcheck` unused dependency linting — warn-only, deferred to post-MVP

@@ -1,10 +1,10 @@
 import { describe, expect, test, mock } from "bun:test";
 import { createApiServer, type ApiServerDeps } from "../src/server.js";
-import { signAccessToken } from "../../../packages/shared/auth/jwt.js";
+import { createMockAuth, makeAuthHeaders } from "./helpers/auth.js";
 
 function makeDeps(overrides: Partial<ApiServerDeps> = {}): ApiServerDeps {
 	return {
-		jwtSecret: "test-secret-32-chars-long-at-least!!",
+		auth: createMockAuth(),
 		masterEncryptionKey: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 		strategyRepository: {
 			findAll: mock(() => Promise.resolve([])),
@@ -27,7 +27,6 @@ function makeDeps(overrides: Partial<ApiServerDeps> = {}): ApiServerDeps {
 			getActiveStates: mock(() => Promise.resolve([])),
 			getAuditEvents: mock(() => Promise.resolve({ items: [], total: 0 })),
 		},
-		findUserByUsername: mock(() => Promise.resolve(null)),
 		sseSubscribe: mock(() => () => {}),
 		credentialDeps: {
 			masterKey: "0".repeat(64),
@@ -67,12 +66,6 @@ function makeDeps(overrides: Partial<ApiServerDeps> = {}): ApiServerDeps {
 	};
 }
 
-const TEST_SECRET = "test-secret-32-chars-long-at-least!!";
-async function makeAuthHeaders(): Promise<Record<string, string>> {
-	const token = await signAccessToken({ sub: "user-1", role: "admin" }, TEST_SECRET);
-	return { Authorization: `Bearer ${token}` };
-}
-
 describe("createApiServer", () => {
 	test("creates an Elysia app instance", () => {
 		const deps = makeDeps();
@@ -95,23 +88,22 @@ describe("createApiServer", () => {
 		const app = createApiServer(deps);
 
 		const res = await app.handle(new Request("http://localhost/api/v1/strategies"));
-		// Should still respond (auth may be optional per route setup)
-		expect(res.status).toBeDefined();
+		expect(res.status).toBe(401);
 	});
 
-	test("auth login endpoint is accessible", async () => {
+	test("better-auth route is forwarded to auth handler", async () => {
 		const deps = makeDeps();
 		const app = createApiServer(deps);
 
 		const res = await app.handle(
-			new Request("http://localhost/api/v1/auth/login", {
+			new Request("http://localhost/api/auth/sign-in/email", {
 				method: "POST",
 				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ username: "admin", password: "test" }),
+				body: JSON.stringify({ email: "admin@example.com", password: "test" }),
 			}),
 		);
-		// 401 because user not found, but endpoint exists
-		expect(res.status).toBe(401);
+		// Mock handler returns 501, but endpoint is reached (not blocked by guard)
+		expect(res.status).toBe(501);
 	});
 
 	test("kill switch status endpoint is accessible", async () => {

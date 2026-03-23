@@ -9,6 +9,10 @@
 		"start": "bun run src/index.ts"
 	},
 	"dependencies": {
-		"@combine/shared": "workspace:*"
+		"@combine/candle": "workspace:*",
+		"@combine/exchange": "workspace:*",
+		"@combine/shared": "workspace:*",
+		"drizzle-orm": "^0.41.0",
+		"postgres": "^3.4.5"
 	}
 }

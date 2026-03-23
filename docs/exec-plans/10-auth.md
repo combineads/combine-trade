@@ -1,5 +1,8 @@
 # 10-auth
 
+> **DEPRECATED** — superseded by `docs/exec-plans/18-better-auth-multiuser.md`.
+> All auth implementation is now in EP18. This document is retained for historical reference only.
+
 > ⚠️ **DEPRECATED** — 이 에픽은 `18-better-auth-multiuser`로 대체됩니다. 새 작업은 18번 에픽을 참조하세요.
 
 ## Objective

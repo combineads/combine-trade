@@ -12,7 +12,7 @@ Single-user system, but real funds are at stake. Exchange API keys and the order
 ## Secrets handling
 - Exchange API keys: stored in DB with AES-256-GCM encryption (master key in environment variable)
 - Exchange key retrieval: masked on read (`sk-****...1234`), decrypted in memory only at execution time
-- JWT secret key: environment variable only (never stored in code or DB)
+- better-auth session secret: environment variable `BETTER_AUTH_SECRET` (never stored in code or DB)
 - `.env` file: included in `.gitignore`, never committed
 - Slack webhook URL: environment variable
 - DB connection credentials: environment variable
@@ -60,26 +60,44 @@ Single-user system, but real funds are at stake. Exchange API keys and the order
 - Isolation mechanism: determined by EP02-M0 PoC (Bun worker threads vs V8 isolates)
 
 ## Auth and authorization
-- All API endpoints require JWT authentication (real funds at stake — auth is mandatory even for single user)
-- JWT: Access token (15 min) + Refresh token (7 days, stored in DB, revocable)
-- Exempt endpoints: `GET /api/health`, `POST /api/auth/login`, `POST /api/auth/refresh`
-- Next.js web: tokens stored in httpOnly cookie or secure storage
-- Tauri app: tokens stored in OS native secure storage
-- SSE streaming: token validated on initial connection
-- Details: `docs/exec-plans/10-auth.md`
 
-### JWT implementation details
+> **Implementation**: better-auth (EP18). `docs/exec-plans/10-auth.md` is retained for historical reference only.
 
-#### JWT specification
-- **Signing algorithm**: HS256 (symmetric) — chosen for single-user system simplicity
-- **Secret key**: Minimum 256-bit (32 bytes) random secret in environment variable `JWT_SECRET`
-- **Access token TTL**: 15 minutes
-- **Refresh token TTL**: 7 days
-- **Rejected algorithms**: `none`, RS256 (to prevent algorithm confusion attacks)
-- **Validation**: Always verify algorithm is HS256 before accepting token. Reject tokens with mismatched `alg` header.
-- Required claims: iss, aud, exp, iat, jti
-- Refresh token rotation: new refresh token issued on use, old token invalidated
-- Refresh token reuse detection: reused token triggers all-session invalidation (theft indicator)
+- All API endpoints require authentication (real funds at stake — auth is mandatory even for single user)
+- Authentication mechanism: better-auth cookie-based sessions (server-managed)
+- Exempt endpoints: `GET /api/v1/health`, `/api/auth/*` (better-auth managed endpoints)
+- Next.js web and Tauri app: sessions stored in `HttpOnly; SameSite=Strict` cookies
+- SSE streaming: session validated on initial connection via `auth.api.getSession()`
+- Session implementation: `packages/shared/auth/better-auth.ts` (factory), wired in `apps/api/src/server.ts`
+
+### better-auth session model
+
+#### Session flow
+1. Client POSTs credentials to `POST /api/auth/sign-in/email`
+2. better-auth validates credentials, creates a server-side session record in the DB
+3. Session token returned as `HttpOnly; SameSite=Strict` cookie with prefix `combine-trade`
+4. All subsequent requests include the cookie automatically (browser) or explicitly (Tauri/API client)
+5. Server validates session on every request via `auth.api.getSession({ headers })`
+6. On logout (`POST /api/auth/sign-out`), session is invalidated in the DB
+
+#### Cookie configuration
+- **Prefix**: `combine-trade` (configurable via `advanced.cookiePrefix`)
+- **Flags**: `HttpOnly`, `SameSite=Strict`, `Secure` (in production)
+- **Storage**: session tokens stored server-side in the `session` table
+
+#### CORS configuration
+- `ALLOWED_ORIGIN` environment variable controls the permitted origin (default: `http://localhost:3001`)
+- Wildcard `*` is prohibited; explicit origin allowlist only
+- Credentials mode enabled (`credentials: true` in CORS config)
+
+#### Rate limiting
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| `POST /api/auth/sign-in/email` | 5 attempts | per minute |
+| General API | 100 requests | per minute |
+
+- Exceeded limit returns `429 Too Many Requests` with `Retry-After` header
+- better-auth has built-in rate limiting; additional application-level guards are in `apps/api/src/server.ts`
 
 ### Password hashing specification
 - **Algorithm**: Argon2id (recommended variant)
@@ -170,7 +188,7 @@ Single-user system, but real funds are at stake. Exchange API keys and the order
 | Data | Sensitivity | Protection |
 |------|-------------|------------|
 | Exchange API keys | Critical | DB AES-256-GCM encrypted (master key in env), never logged |
-| JWT tokens (access/refresh) | Critical | Memory only, httpOnly cookie, never logged |
+| Session tokens (better-auth) | Critical | HttpOnly cookie, server-side session in DB, never logged |
 | Master encryption key | Critical | Environment variable, never logged |
 | Order/position data | High | DB access control |
 | User password hash | High | DB stored, Argon2id (memory: 64 MB, iterations: 3, parallelism: 4, salt: 16 bytes) |
@@ -199,9 +217,9 @@ Single-user system, but real funds are at stake. Exchange API keys and the order
 - Cookie settings: Secure, HttpOnly, SameSite=Strict (for refresh tokens)
 
 #### CSRF mitigation
-- API uses Bearer token authentication (JWT in Authorization header), which is inherently CSRF-resistant (browsers do not auto-attach Authorization headers)
-- SameSite=Strict on any session cookies
-- No cookie-based authentication for state-changing operations
+- Sessions use `SameSite=Strict` cookies — browsers will not send the session cookie on cross-site requests
+- better-auth's built-in CSRF protection validates `Origin` and `Referer` headers on state-changing requests
+- `SameSite=Strict` on all session cookies
 
 #### TLS enforcement
 - All production traffic must be served over HTTPS (TLS 1.2+)

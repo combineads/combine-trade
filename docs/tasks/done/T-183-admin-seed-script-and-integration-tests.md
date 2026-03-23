@@ -141,3 +141,28 @@ done
 - 2FA
 - User self-registration
 - Organization multitenancy
+
+## Implementation Notes
+
+### Approach
+- Used a pure dependency-injection pattern for `seedAdmin()` — the core function accepts `AdminSeedDeps` with no DB coupling, making it fully testable without a real database.
+- The script entry point (`import.meta.main`) uses dynamic `import()` to wire in real Drizzle/Postgres deps, so unit tests never trigger a DB connection.
+- Auth integration tests use per-test isolated `makeAuth()` instances (each with its own `sessionStore` and `loginAttempts` map) to prevent inter-test state leakage.
+
+### Design decisions
+- `getAdminConfig()` reads from env vars with safe defaults. The default password `changeme-on-first-login` is intentionally weak with a console warning to force operators to change it.
+- Rate limiting is tested against the mock auth double (5 failed → 6th returns 429). Real better-auth rate limiting behavior is noted in the test file.
+- Live-DB tests are guarded with `describe.skipIf(!process.env.TEST_DB_URL)`.
+
+### Files created / modified
+- `db/seed/admin.ts` — pure `seedAdmin()` + `getAdminConfig()` + script entry
+- `db/__tests__/admin-seed.test.ts` — 17 unit tests (all pass)
+- `apps/api/src/__tests__/auth-integration.test.ts` — 10 integration tests (all pass; 3 live-DB skipped)
+- `package.json` — added `"db:seed:admin": "bun run db/seed/admin.ts"`
+- `docs/SECURITY.md` — replaced JWT section with better-auth session model documentation
+- `docs/exec-plans/10-auth.md` — added English deprecation notice at top
+
+## Outputs
+- 1669 tests pass, 4 skip, 0 fail (full suite)
+- `bun run typecheck` — clean
+- `bunx biome check db/__tests__/admin-seed.test.ts db/seed/admin.ts apps/api/src/__tests__/auth-integration.test.ts` — 0 errors, 0 warnings

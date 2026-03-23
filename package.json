@@ -3,7 +3,9 @@
 	"private": true,
 	"workspaces": ["apps/*", "packages/*", "workers/*"],
 	"scripts": {
-		"dev": "bun run --cwd apps/api dev",
+		"dev": "bun run --filter '@combine/api' dev & bun run --filter '@combine/web' dev",
+		"dev:api": "bun run --cwd apps/api dev",
+		"dev:web": "bun run --cwd apps/web dev",
 		"build": "bun run typecheck",
 		"test": "bun test --recursive",
 		"test:unit": "bun test --recursive",

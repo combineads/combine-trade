@@ -137,12 +137,12 @@ bun run db:migrate
 # 6. 어드민 계정 생성
 bun run db:seed:admin
 
-# 7. API 서버 시작
+# 7. API 서버 + 웹 UI 시작
 bun run dev
 ```
 
-API 서버가 `http://localhost:3000`에서 실행됩니다.
-헬스 체크: `GET /api/v1/health`
+- API 서버: `http://localhost:3000` — 헬스 체크: `GET /api/v1/health`
+- 웹 UI: `http://localhost:3001`
 
 ---
 
@@ -192,7 +192,9 @@ LOG_LEVEL=info
 
 ```bash
 bun install          # 의존성 설치
-bun run dev          # API 서버 개발 모드 (hot reload)
+bun run dev          # API 서버(3000) + 웹 UI(3001) 동시 시작
+bun run dev:api      # API 서버만 시작 (port 3000)
+bun run dev:web      # 웹 UI만 시작 (port 3001)
 bun test             # 전체 테스트 실행
 bun run lint         # 코드 린트 (Biome)
 bun run typecheck    # 타입 체크 (tsc --noEmit)

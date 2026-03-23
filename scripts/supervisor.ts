@@ -13,7 +13,6 @@ const WORKER_CONFIGS: WorkerConfig[] = [
 	{ name: "label-worker", command: "bun run workers/label-worker/src/index.ts" },
 	{ name: "alert-worker", command: "bun run workers/alert-worker/src/index.ts" },
 	{ name: "execution-worker", command: "bun run workers/execution-worker/src/index.ts" },
-	{ name: "macro-collector", command: "bun run workers/macro-collector/src/index.ts" },
 	{ name: "journal-worker", command: "bun run workers/journal-worker/src/index.ts" },
 ];
 

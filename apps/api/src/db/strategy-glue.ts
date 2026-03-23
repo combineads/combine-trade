@@ -4,11 +4,11 @@ import * as schema from "../../../../db/schema/index.js";
 import type {
 	StrategyDbDeps,
 	StrategyRow,
-} from "../../../../packages/core/strategy/drizzle-repository.js";
+} from "@combine/core/strategy/drizzle-repository.js";
 import type {
 	CreateStrategyInput,
 	UpdateStrategyInput,
-} from "../../../../packages/core/strategy/types.js";
+} from "@combine/core/strategy/types.js";
 
 type Db = PostgresJsDatabase<typeof schema>;
 

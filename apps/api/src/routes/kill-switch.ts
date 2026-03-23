@@ -3,7 +3,7 @@ import type {
 	KillSwitchScope,
 	KillSwitchState,
 	KillSwitchTrigger,
-} from "../../../../packages/core/risk/types.js";
+} from "@combine/core/risk/types.js";
 import { UnauthorizedError } from "../lib/errors.js";
 import { ok, paginated } from "../lib/response.js";
 

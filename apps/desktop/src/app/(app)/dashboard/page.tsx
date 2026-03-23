@@ -1,6 +1,6 @@
 "use client";
 
-import { DashboardView } from "@combine/ui/src/views/dashboard/dashboard-view";
+import { DashboardView } from "@combine/ui";
 
 export default function DashboardPage() {
 	return (

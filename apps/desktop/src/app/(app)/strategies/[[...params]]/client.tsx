@@ -13,24 +13,29 @@ const emptyStats: StrategyStatsData = {
 };
 
 export default function StrategyDetailClient() {
-	const params = useParams<{ id: string }>();
+	const params = useParams<{ params?: string[] }>();
+	const id = params.params?.[0];
 	const router = useRouter();
 	const [strategy, setStrategy] = useState<StrategyDetail | null>(null);
 	const [stats, setStats] = useState<StrategyStatsData>(emptyStats);
 
 	useEffect(() => {
-		if (!params.id || params.id === "_") return;
+		if (!id) return;
 
-		fetch(`/api/v1/strategies/${params.id}`)
+		fetch(`/api/v1/strategies/${id}`)
 			.then((r) => r.json())
 			.then((data) => setStrategy(data))
 			.catch(() => {});
 
-		fetch(`/api/v1/strategies/${params.id}/statistics`)
+		fetch(`/api/v1/strategies/${id}/statistics`)
 			.then((r) => r.json())
 			.then((data) => setStats(data))
 			.catch(() => {});
-	}, [params.id]);
+	}, [id]);
+
+	if (!id) {
+		return null;
+	}
 
 	if (!strategy) {
 		return (
@@ -44,7 +49,7 @@ export default function StrategyDetailClient() {
 			stats={stats}
 			onBack={() => router.push("/strategies")}
 			onSave={(code) => {
-				fetch(`/api/v1/strategies/${params.id}`, {
+				fetch(`/api/v1/strategies/${id}`, {
 					method: "PUT",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ code }),

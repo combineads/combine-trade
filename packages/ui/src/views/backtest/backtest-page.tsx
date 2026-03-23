@@ -1,3 +1,5 @@
+"use client";
+
 import { EquityCurve, type EquityPoint } from "./equity-curve";
 import { type PnlBucket, PnlDistribution } from "./pnl-distribution";
 import { TradeStats, type TradeStatsData } from "./trade-stats";

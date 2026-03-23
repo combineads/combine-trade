@@ -219,6 +219,28 @@ bun test tests/integration
 
 ---
 
+## Desktop Setup
+
+사전 요구사항:
+- Rust toolchain: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+- Tauri CLI: `cargo install tauri-cli`
+
+데스크톱 개발 서버 실행:
+
+```bash
+bun run dev:desktop
+```
+
+데스크톱 앱 빌드:
+
+```bash
+cd apps/desktop
+bun run next:build    # Next.js static export → out/
+cargo tauri dev       # 개발 실행 (또는 cargo tauri build for production)
+```
+
+---
+
 ## 워커 실행
 
 워커는 독립 프로세스로 실행됩니다. 개발/운영 시 수퍼바이저로 한번에 시작합니다.

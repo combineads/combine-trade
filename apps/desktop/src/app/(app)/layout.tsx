@@ -2,7 +2,7 @@
 
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/top-bar";
-import { useSession } from "@/lib/auth-client";
+import { useAuth } from "@combine/ui";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -11,16 +11,16 @@ export default function AppLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	const { data: session, isPending } = useSession();
+	const { isAuthenticated, isLoading } = useAuth();
 	const router = useRouter();
 
 	useEffect(() => {
-		if (!isPending && !session) {
+		if (!isLoading && !isAuthenticated) {
 			router.replace("/login");
 		}
-	}, [isPending, session, router]);
+	}, [isLoading, isAuthenticated, router]);
 
-	if (isPending) {
+	if (isLoading) {
 		return (
 			<div
 				style={{
@@ -36,7 +36,7 @@ export default function AppLayout({
 		);
 	}
 
-	if (!session) {
+	if (!isAuthenticated) {
 		return null;
 	}
 

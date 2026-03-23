@@ -1,7 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { LoginView } from "@combine/ui/src/views/auth/login-view";
+import { LoginView } from "@combine/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 

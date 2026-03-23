@@ -229,6 +229,9 @@ export {
 	type UseStrategyPerformanceResult,
 } from "./hooks/use-strategy-performance";
 
+// Views — Auth
+export { LoginView, type LoginViewProps } from "./views/auth/login-view";
+
 // Auth
 export {
 	AuthProvider,

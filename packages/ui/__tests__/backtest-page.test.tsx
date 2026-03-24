@@ -3,9 +3,9 @@ import { renderToString } from "react-dom/server";
 import { BacktestPage } from "../src/views/backtest/backtest-page";
 
 describe("BacktestPage", () => {
-	test("renders heading", () => {
+	test("renders Korean heading", () => {
 		const html = renderToString(<BacktestPage strategies={[]} />);
-		expect(html).toContain("Backtest");
+		expect(html).toContain("백테스트");
 	});
 
 	test("renders strategy selector", () => {
@@ -13,20 +13,20 @@ describe("BacktestPage", () => {
 		expect(html).toContain("Momentum v3");
 	});
 
-	test("renders date inputs", () => {
+	test("renders Korean date labels", () => {
 		const html = renderToString(<BacktestPage strategies={[]} />);
-		expect(html).toContain("Start Date");
-		expect(html).toContain("End Date");
+		expect(html).toContain("시작");
+		expect(html).toContain("종료");
 	});
 
-	test("renders run button", () => {
+	test("renders Korean run button", () => {
 		const html = renderToString(<BacktestPage strategies={[]} />);
-		expect(html).toContain("Run Backtest");
+		expect(html).toContain("백테스트 실행");
 	});
 
-	test("renders empty results message", () => {
+	test("renders Korean empty results message", () => {
 		const html = renderToString(<BacktestPage strategies={[]} />);
-		expect(html).toContain("Run a backtest to see results");
+		expect(html).toContain("백테스트를 실행하여 결과를 확인하세요");
 	});
 
 	test("renders error message", () => {
@@ -54,6 +54,7 @@ describe("BacktestPage", () => {
 			/>,
 		);
 		expect(html).toContain("100");
-		expect(html).toContain("55.0");
+		// winrate 0.55 = 55% via Intl formatPercent
+		expect(html).toContain("55%");
 	});
 });

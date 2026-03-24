@@ -1,3 +1,5 @@
+import { useTranslations } from "../../i18n";
+
 export interface PnlBucket {
 	range: string;
 	count: number;
@@ -8,6 +10,8 @@ export interface PnlDistributionProps {
 }
 
 export function PnlDistribution({ buckets }: PnlDistributionProps) {
+	const t = useTranslations("backtest");
+
 	if (buckets.length === 0) {
 		return (
 			<div
@@ -18,7 +22,7 @@ export function PnlDistribution({ buckets }: PnlDistributionProps) {
 					fontSize: 14,
 				}}
 			>
-				No data
+				{t("stats.noData")}
 			</div>
 		);
 	}
@@ -36,7 +40,7 @@ export function PnlDistribution({ buckets }: PnlDistributionProps) {
 			<div
 				style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: "var(--text-primary)" }}
 			>
-				P&L Distribution
+				{t("stats.pnlDistribution")}
 			</div>
 			<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 				{buckets.map((bucket) => {

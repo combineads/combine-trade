@@ -1,3 +1,5 @@
+import { useTranslations } from "../../i18n";
+
 const TIMEFRAMES = ["1m", "3m", "5m", "15m", "1h", "4h", "1d"] as const;
 export type Timeframe = (typeof TIMEFRAMES)[number];
 
@@ -7,6 +9,8 @@ export interface TimeframeSelectorProps {
 }
 
 export function TimeframeSelector({ current, onSelect }: TimeframeSelectorProps) {
+	const t = useTranslations("charts");
+
 	return (
 		<div style={{ display: "flex", gap: 2 }}>
 			{TIMEFRAMES.map((tf) => {
@@ -29,7 +33,7 @@ export function TimeframeSelector({ current, onSelect }: TimeframeSelectorProps)
 							cursor: "pointer",
 						}}
 					>
-						{tf}
+						{t(`timeframes.${tf}`)}
 					</button>
 				);
 			})}

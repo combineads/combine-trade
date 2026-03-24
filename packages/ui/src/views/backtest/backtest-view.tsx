@@ -1,3 +1,5 @@
+import { useTranslations } from "../../i18n";
+
 export interface BacktestStrategy {
 	id: string;
 	name: string;
@@ -9,6 +11,8 @@ export interface BacktestViewProps {
 }
 
 export function BacktestView({ strategies, onRun }: BacktestViewProps) {
+	const t = useTranslations("backtest");
+
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 			<div
@@ -26,7 +30,7 @@ export function BacktestView({ strategies, onRun }: BacktestViewProps) {
 						margin: 0,
 					}}
 				>
-					Backtest
+					{t("pageTitle")}
 				</h1>
 			</div>
 
@@ -49,7 +53,7 @@ export function BacktestView({ strategies, onRun }: BacktestViewProps) {
 						cursor: "pointer",
 					}}
 				>
-					{strategies.length === 0 && <option>No strategies</option>}
+					{strategies.length === 0 && <option>{t("noStrategies")}</option>}
 					{strategies.map((s) => (
 						<option key={s.id} value={s.id}>
 							{s.name}
@@ -75,7 +79,7 @@ export function BacktestView({ strategies, onRun }: BacktestViewProps) {
 						cursor: "pointer",
 					}}
 				>
-					Run Backtest
+					{t("runBacktest")}
 				</button>
 			</div>
 		</div>

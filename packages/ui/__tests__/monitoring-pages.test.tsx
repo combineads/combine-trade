@@ -68,9 +68,9 @@ describe("EventsView", () => {
 		},
 	];
 
-	test("renders events heading", () => {
+	test("renders events heading (Korean default)", () => {
 		const html = renderToString(<EventsView events={events} total={1} page={1} pageSize={20} />);
-		expect(html).toContain("Events");
+		expect(html).toContain("이벤트");
 	});
 
 	test("renders event data", () => {
@@ -80,9 +80,9 @@ describe("EventsView", () => {
 		expect(html).toContain("LONG");
 	});
 
-	test("renders empty state", () => {
+	test("renders empty state (Korean default)", () => {
 		const html = renderToString(<EventsView events={[]} total={0} page={1} pageSize={20} />);
-		expect(html).toContain("No events");
+		expect(html).toContain("이벤트가 없습니다");
 	});
 });
 

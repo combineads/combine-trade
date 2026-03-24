@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "../../i18n";
 import { EquityCurve, type EquityPoint } from "./equity-curve";
 import { type PnlBucket, PnlDistribution } from "./pnl-distribution";
 import { TradeStats, type TradeStatsData } from "./trade-stats";
@@ -19,10 +20,12 @@ export interface BacktestPageProps {
 }
 
 export function BacktestPage({ strategies, onRun, isRunning, result, error }: BacktestPageProps) {
+	const t = useTranslations("backtest");
+
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 			<h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
-				Backtest
+				{t("pageTitle")}
 			</h1>
 
 			{/* Form */}
@@ -37,7 +40,7 @@ export function BacktestPage({ strategies, onRun, isRunning, result, error }: Ba
 							letterSpacing: "0.05em",
 						}}
 					>
-						Strategy
+						{t("strategy")}
 					</label>
 					<select
 						id="backtest-strategy"
@@ -51,7 +54,7 @@ export function BacktestPage({ strategies, onRun, isRunning, result, error }: Ba
 							borderRadius: "var(--radius-md)",
 						}}
 					>
-						{strategies.length === 0 && <option>No strategies</option>}
+						{strategies.length === 0 && <option>{t("noStrategies")}</option>}
 						{strategies.map((s) => (
 							<option key={s.id} value={s.id}>
 								{s.name}
@@ -70,7 +73,7 @@ export function BacktestPage({ strategies, onRun, isRunning, result, error }: Ba
 							letterSpacing: "0.05em",
 						}}
 					>
-						Start Date
+						{t("startDate")}
 					</label>
 					<input
 						id="backtest-start-date"
@@ -97,7 +100,7 @@ export function BacktestPage({ strategies, onRun, isRunning, result, error }: Ba
 							letterSpacing: "0.05em",
 						}}
 					>
-						End Date
+						{t("endDate")}
 					</label>
 					<input
 						id="backtest-end-date"
@@ -134,7 +137,7 @@ export function BacktestPage({ strategies, onRun, isRunning, result, error }: Ba
 						opacity: isRunning ? 0.6 : 1,
 					}}
 				>
-					Run Backtest
+					{t("runBacktest")}
 				</button>
 			</div>
 
@@ -164,7 +167,7 @@ export function BacktestPage({ strategies, onRun, isRunning, result, error }: Ba
 							fontSize: 14,
 						}}
 					>
-						Run a backtest to see results
+						{t("runToSeeResults")}
 					</div>
 				)}
 
@@ -177,7 +180,7 @@ export function BacktestPage({ strategies, onRun, isRunning, result, error }: Ba
 							fontSize: 14,
 						}}
 					>
-						Running backtest...
+						{t("running")}
 					</div>
 				)}
 

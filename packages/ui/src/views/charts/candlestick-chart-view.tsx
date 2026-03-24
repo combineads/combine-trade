@@ -1,4 +1,5 @@
 import { ChartContainer } from "../../components/chart-container";
+import { useTranslations } from "../../i18n";
 import { type Timeframe, TimeframeSelector } from "./timeframe-selector";
 
 export interface CandlestickChartViewProps {
@@ -14,6 +15,8 @@ export function CandlestickChartView({
 	onTimeframeChange,
 	onSymbolChange,
 }: CandlestickChartViewProps) {
+	const t = useTranslations("charts");
+
 	return (
 		<div>
 			{/* Chart header */}
@@ -38,6 +41,7 @@ export function CandlestickChartView({
 						cursor: "pointer",
 						padding: 0,
 					}}
+					aria-label={t("candlestick")}
 				>
 					{symbol}
 				</button>

@@ -1,3 +1,5 @@
+import { useTranslations } from "../../i18n";
+
 export interface EquityPoint {
 	index: number;
 	equity: number;
@@ -8,6 +10,8 @@ export interface EquityCurveProps {
 }
 
 export function EquityCurve({ points }: EquityCurveProps) {
+	const t = useTranslations("backtest");
+
 	if (points.length === 0) {
 		return (
 			<div
@@ -18,7 +22,7 @@ export function EquityCurve({ points }: EquityCurveProps) {
 					fontSize: 14,
 				}}
 			>
-				No data
+				{t("stats.noData")}
 			</div>
 		);
 	}
@@ -38,7 +42,7 @@ export function EquityCurve({ points }: EquityCurveProps) {
 			<div
 				style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: "var(--text-primary)" }}
 			>
-				Equity Curve
+				{t("stats.equityCurve")}
 			</div>
 			<div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 120 }}>
 				{points.map((p) => {

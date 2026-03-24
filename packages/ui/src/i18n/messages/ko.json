@@ -196,6 +196,100 @@
       "noEvents": "감지된 이벤트 없음"
     }
   },
+  "auth": {
+    "login": "로그인",
+    "logout": "로그아웃",
+    "signingIn": "로그인 중...",
+    "signIn": "로그인",
+    "username": "사용자 이름",
+    "email": "이메일",
+    "password": "비밀번호",
+    "keepLoggedIn": "로그인 유지",
+    "loginFailed": "로그인 실패",
+    "sessionExpired": "토큰 만료",
+    "loginAgain": "다시 로그인",
+    "unauthorized": "권한 없음",
+    "encryptedCredentials": "AES-256-GCM 암호화 자격 증명"
+  },
+  "backtest": {
+    "pageTitle": "백테스트",
+    "runBacktest": "백테스트 실행",
+    "running": "백테스트 실행 중...",
+    "runToSeeResults": "백테스트를 실행하여 결과를 확인하세요",
+    "strategy": "전략 선택",
+    "noStrategies": "전략 없음",
+    "startDate": "시작",
+    "endDate": "종료",
+    "period": "기간",
+    "results": "결과",
+    "stats": {
+      "totalTrades": "거래 횟수",
+      "winRate": "승률",
+      "expectancy": "기댓값",
+      "profitFactor": "수익 팩터",
+      "maxDrawdown": "최대 낙폭",
+      "sharpeRatio": "샤프 비율",
+      "avgHold": "평균 보유",
+      "bars": "봉",
+      "equityCurve": "자산 곡선",
+      "pnlDistribution": "손익 분포",
+      "noData": "데이터 없음"
+    },
+    "status": {
+      "running": "실행 중",
+      "completed": "완료",
+      "failed": "실패"
+    }
+  },
+  "events": {
+    "pageTitle": "이벤트",
+    "eventLog": "이벤트 목록",
+    "noEvents": "이벤트가 없습니다",
+    "eventType": "이벤트 유형",
+    "timestamp": "발생 시간",
+    "columns": {
+      "symbol": "심볼",
+      "direction": "방향",
+      "strategy": "전략",
+      "winrate": "승률",
+      "decision": "결정",
+      "date": "날짜"
+    },
+    "types": {
+      "pipeline": "파이프라인",
+      "decision": "결정",
+      "alert": "알림",
+      "system": "시스템",
+      "signal": "신호",
+      "vector": "벡터"
+    },
+    "fields": {
+      "signal": "신호",
+      "vector": "벡터",
+      "similarity": "유사도"
+    }
+  },
+  "charts": {
+    "pageTitle": "차트",
+    "candlestick": "캔들스틱",
+    "indicators": "지표",
+    "overlays": "오버레이",
+    "fullscreen": "전체화면",
+    "timeframes": {
+      "1m": "1분",
+      "3m": "3분",
+      "5m": "5분",
+      "15m": "15분",
+      "1h": "1시간",
+      "4h": "4시간",
+      "1d": "1일"
+    },
+    "chartTypes": {
+      "candlestick": "캔들스틱",
+      "line": "라인",
+      "area": "영역"
+    }
+  },
   "strategies": {
     "pageTitle": "전략",
     "createStrategy": "전략 생성",

@@ -1,3 +1,6 @@
+import { type Locale, useTranslations } from "../../i18n";
+import { formatNumber, formatPercent } from "../../i18n/formatters";
+
 export interface TradeStatsData {
 	totalTrades: number;
 	winrate: number;
@@ -10,6 +13,8 @@ export interface TradeStatsData {
 
 export interface TradeStatsProps {
 	stats: TradeStatsData;
+	/** Locale for number formatting. Defaults to "ko". */
+	locale?: Locale;
 }
 
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -46,7 +51,9 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
 	);
 }
 
-export function TradeStats({ stats }: TradeStatsProps) {
+export function TradeStats({ stats, locale = "ko" }: TradeStatsProps) {
+	const t = useTranslations("backtest", locale);
+
 	return (
 		<div
 			style={{
@@ -55,25 +62,37 @@ export function TradeStats({ stats }: TradeStatsProps) {
 				gap: 12,
 			}}
 		>
-			<Stat label="Total Trades" value={stats.totalTrades.toLocaleString()} />
 			<Stat
-				label="Win Rate"
-				value={`${(stats.winrate * 100).toFixed(1)}%`}
+				label={t("stats.totalTrades")}
+				value={formatNumber(stats.totalTrades, locale)}
+			/>
+			<Stat
+				label={t("stats.winRate")}
+				value={formatPercent(stats.winrate, locale)}
 				color={stats.winrate > 0.5 ? "var(--color-win)" : "var(--text-secondary)"}
 			/>
 			<Stat
-				label="Expectancy"
-				value={stats.expectancy.toFixed(2)}
+				label={t("stats.expectancy")}
+				value={formatNumber(stats.expectancy, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 				color={stats.expectancy > 0 ? "var(--color-win)" : "var(--color-secondary)"}
 			/>
-			<Stat label="Profit Factor" value={stats.profitFactor.toFixed(2)} />
 			<Stat
-				label="Max Drawdown"
-				value={`${stats.maxDrawdown.toFixed(1)}%`}
+				label={t("stats.profitFactor")}
+				value={formatNumber(stats.profitFactor, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+			/>
+			<Stat
+				label={t("stats.maxDrawdown")}
+				value={formatPercent(stats.maxDrawdown / 100, locale)}
 				color="var(--color-secondary)"
 			/>
-			<Stat label="Sharpe Ratio" value={stats.sharpeRatio.toFixed(2)} />
-			<Stat label="Avg Hold" value={`${stats.avgHoldBars} bars`} />
+			<Stat
+				label={t("stats.sharpeRatio")}
+				value={formatNumber(stats.sharpeRatio, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+			/>
+			<Stat
+				label={t("stats.avgHold")}
+				value={`${formatNumber(stats.avgHoldBars, locale)} ${t("stats.bars")}`}
+			/>
 		</div>
 	);
 }

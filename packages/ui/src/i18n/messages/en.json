@@ -196,6 +196,100 @@
       "noEvents": "No events detected"
     }
   },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "signingIn": "Signing in...",
+    "signIn": "Sign In",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "keepLoggedIn": "Keep me logged in",
+    "loginFailed": "Login failed",
+    "sessionExpired": "Session expired",
+    "loginAgain": "Sign in again",
+    "unauthorized": "Unauthorized",
+    "encryptedCredentials": "AES-256-GCM encrypted credentials"
+  },
+  "backtest": {
+    "pageTitle": "Backtest",
+    "runBacktest": "Run Backtest",
+    "running": "Running backtest...",
+    "runToSeeResults": "Run a backtest to see results",
+    "strategy": "Strategy",
+    "noStrategies": "No strategies",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "period": "Period",
+    "results": "Results",
+    "stats": {
+      "totalTrades": "Total Trades",
+      "winRate": "Win Rate",
+      "expectancy": "Expectancy",
+      "profitFactor": "Profit Factor",
+      "maxDrawdown": "Max Drawdown",
+      "sharpeRatio": "Sharpe Ratio",
+      "avgHold": "Avg Hold",
+      "bars": "bars",
+      "equityCurve": "Equity Curve",
+      "pnlDistribution": "P&L Distribution",
+      "noData": "No data"
+    },
+    "status": {
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
+  "events": {
+    "pageTitle": "Events",
+    "eventLog": "Event Log",
+    "noEvents": "No events found",
+    "eventType": "Event Type",
+    "timestamp": "Timestamp",
+    "columns": {
+      "symbol": "Symbol",
+      "direction": "Direction",
+      "strategy": "Strategy",
+      "winrate": "Winrate",
+      "decision": "Decision",
+      "date": "Date"
+    },
+    "types": {
+      "pipeline": "Pipeline",
+      "decision": "Decision",
+      "alert": "Alert",
+      "system": "System",
+      "signal": "Signal",
+      "vector": "Vector"
+    },
+    "fields": {
+      "signal": "Signal",
+      "vector": "Vector",
+      "similarity": "Similarity"
+    }
+  },
+  "charts": {
+    "pageTitle": "Charts",
+    "candlestick": "Candlestick",
+    "indicators": "Indicators",
+    "overlays": "Overlays",
+    "fullscreen": "Fullscreen",
+    "timeframes": {
+      "1m": "1m",
+      "3m": "3m",
+      "5m": "5m",
+      "15m": "15m",
+      "1h": "1h",
+      "4h": "4h",
+      "1d": "1d"
+    },
+    "chartTypes": {
+      "candlestick": "Candlestick",
+      "line": "Line",
+      "area": "Area"
+    }
+  },
   "strategies": {
     "pageTitle": "Strategies",
     "createStrategy": "Create Strategy",

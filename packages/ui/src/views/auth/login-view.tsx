@@ -1,3 +1,5 @@
+import { useTranslations } from "../../i18n";
+
 export interface LoginViewProps {
 	onSubmit: (username: string, password: string) => Promise<void>;
 	error?: string;
@@ -5,6 +7,8 @@ export interface LoginViewProps {
 }
 
 export function LoginView({ onSubmit, error, loading }: LoginViewProps) {
+	const t = useTranslations("auth");
+
 	return (
 		<div
 			style={{
@@ -43,7 +47,7 @@ export function LoginView({ onSubmit, error, loading }: LoginViewProps) {
 						marginBottom: 24,
 					}}
 				>
-					AES-256-GCM encrypted credentials
+					{t("encryptedCredentials")}
 				</p>
 
 				{error && (
@@ -83,7 +87,7 @@ export function LoginView({ onSubmit, error, loading }: LoginViewProps) {
 								marginBottom: 6,
 							}}
 						>
-							Username
+							{t("username")}
 						</label>
 						<input
 							id="username"
@@ -116,7 +120,7 @@ export function LoginView({ onSubmit, error, loading }: LoginViewProps) {
 								marginBottom: 6,
 							}}
 						>
-							Password
+							{t("password")}
 						</label>
 						<input
 							id="password"
@@ -154,7 +158,7 @@ export function LoginView({ onSubmit, error, loading }: LoginViewProps) {
 							opacity: loading ? 0.7 : 1,
 						}}
 					>
-						{loading ? "Signing in..." : "Sign In"}
+						{loading ? t("signingIn") : t("signIn")}
 					</button>
 				</form>
 			</div>

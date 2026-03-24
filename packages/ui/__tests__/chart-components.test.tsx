@@ -26,12 +26,13 @@ describe("ChartContainer", () => {
 });
 
 describe("TimeframeSelector", () => {
-	test("renders all timeframes", () => {
+	test("renders all timeframes (Korean labels by default)", () => {
 		const html = renderToString(<TimeframeSelector current="1m" onSelect={() => {}} />);
-		expect(html).toContain("1m");
-		expect(html).toContain("5m");
-		expect(html).toContain("15m");
-		expect(html).toContain("1h");
+		// Korean locale: 1분, 5분, 15분, 1시간
+		expect(html).toContain("1분");
+		expect(html).toContain("5분");
+		expect(html).toContain("15분");
+		expect(html).toContain("1시간");
 	});
 
 	test("highlights current timeframe", () => {
@@ -47,10 +48,10 @@ describe("CandlestickChartView", () => {
 		expect(html).toContain("BTCUSDT");
 	});
 
-	test("renders timeframe selector", () => {
+	test("renders timeframe selector (Korean labels)", () => {
 		const html = renderToString(<CandlestickChartView symbol="BTCUSDT" timeframe="5m" />);
-		expect(html).toContain("1m");
-		expect(html).toContain("5m");
+		expect(html).toContain("1분");
+		expect(html).toContain("5분");
 	});
 
 	test("renders chart area", () => {

@@ -8,3 +8,9 @@ export type {
 	OrderSide,
 	OrderType,
 } from "./types.js";
+export {
+	OkxFuturesAdapter,
+	type OkxFuturesAdapterOptions,
+	type OkxContractType,
+	type OkxMarginMode,
+} from "./adapters/index.js";

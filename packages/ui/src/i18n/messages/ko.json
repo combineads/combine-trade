@@ -1,389 +1,102 @@
 {
-  "common": {
-    "loading": "불러오는 중...",
-    "error": "오류",
-    "confirm": "확인",
-    "cancel": "취소",
-    "save": "저장",
-    "close": "닫기",
-    "status": {
-      "active": "활성",
-      "inactive": "비활성"
-    },
-    "direction": {
-      "long": "LONG",
-      "short": "SHORT",
-      "pass": "PASS"
-    }
-  },
-  "orders": {
-    "pageTitle": "주문 내역",
-    "openOrders": "미체결 주문",
-    "orderHistory": "체결 내역",
-    "noOrders": "주문 내역이 없습니다",
-    "columns": {
-      "symbol": "심볼",
-      "side": "방향",
-      "type": "유형",
-      "status": "상태",
-      "quantity": "수량",
-      "price": "가격",
-      "filled": "체결량",
-      "strategy": "전략",
-      "fee": "수수료",
-      "date": "체결시간"
-    },
-    "side": {
-      "long": "LONG",
-      "short": "SHORT"
-    },
-    "type": {
-      "market": "시장가",
-      "limit": "지정가",
-      "stopMarket": "스탑 마켓",
-      "stopLimit": "스탑 리밋"
-    },
-    "status": {
-      "submitted": "대기",
-      "filled": "체결",
-      "partiallyFilled": "부분체결",
-      "cancelled": "취소",
-      "rejected": "거부"
-    },
-    "actions": {
-      "cancel": "주문 취소",
-      "modify": "주문 수정"
-    },
-    "position": {
-      "title": "포지션",
-      "avgEntryPrice": "평균 진입가",
-      "currentPrice": "현재가",
-      "unrealizedPnl": "미실현 손익",
-      "leverage": "레버리지"
-    }
-  },
-  "alerts": {
-    "pageTitle": "알림",
-    "newAlert": "새 알림",
-    "alertRules": "알림 규칙",
-    "condition": "조건",
-    "channel": "채널",
-    "webhook": "웹훅",
-    "email": "이메일",
-    "slack": "슬랙",
-    "alertType": "알림 유형",
-    "priceAlert": "가격 알림",
-    "signalAlert": "신호 알림",
-    "killSwitchAlert": "킬 스위치 알림",
-    "lossLimitAlert": "손실 한도 알림",
-    "liquidationAlert": "강제 청산 알림",
-    "severity": {
-      "info": "정보",
-      "warning": "경고",
-      "critical": "위급"
-    },
-    "status": {
-      "active": "활성",
-      "inactive": "비활성",
-      "triggered": "발동됨"
-    },
-    "columns": {
-      "symbol": "심볼",
-      "direction": "방향",
-      "strategy": "전략",
-      "message": "메시지",
-      "status": "상태",
-      "date": "날짜"
-    },
-    "empty": "알림이 없습니다",
-    "actions": {
-      "acknowledge": "확인",
-      "dismiss": "닫기",
-      "viewDetails": "상세 보기"
-    }
-  },
-  "risk": {
-    "pageTitle": "리스크 관리",
-    "killSwitch": {
-      "label": "킬 스위치",
-      "statusArmed": "ARMED",
-      "statusTriggered": "TRIGGERED",
-      "tradingActive": "트레이딩 활성",
-      "allTradingHalted": "전체 트레이딩 중단",
-      "activateButton": "킬 스위치 활성화",
-      "releaseButton": "킬 스위치 해제",
-      "shortcut": "Ctrl+Shift+K"
-    },
-    "lossLimit": {
-      "label": "일일 손실 한도",
-      "currentLoss": "현재 손실",
-      "limit": "한도",
-      "exceeded": "한도 초과",
-      "haltAutoTrade": "자동매매 중단",
-      "emergencyLiquidation": "긴급 청산",
-      "setLimit": "한도 설정"
-    },
-    "auditLog": {
-      "label": "감사 로그",
-      "empty": "기록된 감사 이벤트가 없습니다",
-      "columns": {
-        "action": "작업",
-        "reason": "사유",
-        "actor": "수행자",
-        "timestamp": "시간"
-      }
-    },
-    "positionSizing": "포지션 크기",
-    "leverage": "레버리지",
-    "exposure": "노출"
-  },
-  "settings": {
-    "pageTitle": "설정",
-    "sections": {
-      "appearance": "외관",
-      "general": "일반",
-      "language": "언어",
-      "notifications": "알림 설정",
-      "exchange": "거래소",
-      "security": "보안"
-    },
-    "appearance": {
-      "dark": "다크",
-      "light": "라이트"
-    },
-    "account": "계정",
-    "apiKey": "API 키",
-    "language": "언어",
-    "theme": "테마",
-    "notificationSettings": "알림 설정",
-    "security": "보안",
-    "twoFactorAuth": "2단계 인증",
-    "logout": "로그아웃",
-    "general": {
-      "comingSoon": "일반 설정 준비 중입니다."
-    },
-    "exchange": {
-      "managedInCredentials": "거래소 설정은 자격 증명에서 관리됩니다."
-    }
-  },
-  "dashboard": {
-    "title": "대시보드",
-    "sections": {
-      "workers": "워커",
-      "strategies": "전략",
-      "recentEvents": "최근 이벤트"
-    },
-    "killSwitch": {
-      "label": "킬 스위치",
-      "statusArmed": "ARMED",
-      "statusTriggered": "TRIGGERED",
-      "tradingActive": "트레이딩 활성",
-      "allTradingHalted": "전체 트레이딩 중단",
-      "activateButton": "킬 스위치 활성화",
-      "releaseButton": "킬 스위치 해제"
-    },
-    "workerStatus": {
-      "running": "실행 중",
-      "warning": "경고",
-      "down": "다운",
-      "inactive": "비활성"
-    },
-    "strategies": {
-      "noStrategies": "전략 없음",
-      "events": "이벤트"
-    },
-    "recentEvents": {
-      "noEvents": "감지된 이벤트 없음"
-    }
-  },
-  "auth": {
-    "login": "로그인",
-    "logout": "로그아웃",
-    "signingIn": "로그인 중...",
-    "signIn": "로그인",
-    "username": "사용자 이름",
-    "email": "이메일",
-    "password": "비밀번호",
-    "keepLoggedIn": "로그인 유지",
-    "loginFailed": "로그인 실패",
-    "sessionExpired": "토큰 만료",
-    "loginAgain": "다시 로그인",
-    "unauthorized": "권한 없음",
-    "encryptedCredentials": "AES-256-GCM 암호화 자격 증명"
-  },
-  "backtest": {
-    "pageTitle": "백테스트",
-    "runBacktest": "백테스트 실행",
-    "running": "백테스트 실행 중...",
-    "runToSeeResults": "백테스트를 실행하여 결과를 확인하세요",
-    "strategy": "전략 선택",
-    "noStrategies": "전략 없음",
-    "startDate": "시작",
-    "endDate": "종료",
-    "period": "기간",
-    "results": "결과",
-    "stats": {
-      "totalTrades": "거래 횟수",
-      "winRate": "승률",
-      "expectancy": "기댓값",
-      "profitFactor": "수익 팩터",
-      "maxDrawdown": "최대 낙폭",
-      "sharpeRatio": "샤프 비율",
-      "avgHold": "평균 보유",
-      "bars": "봉",
-      "equityCurve": "자산 곡선",
-      "pnlDistribution": "손익 분포",
-      "noData": "데이터 없음"
-    },
-    "status": {
-      "running": "실행 중",
-      "completed": "완료",
-      "failed": "실패"
-    }
-  },
-  "events": {
-    "pageTitle": "이벤트",
-    "eventLog": "이벤트 목록",
-    "noEvents": "이벤트가 없습니다",
-    "eventType": "이벤트 유형",
-    "timestamp": "발생 시간",
-    "columns": {
-      "symbol": "심볼",
-      "direction": "방향",
-      "strategy": "전략",
-      "winrate": "승률",
-      "decision": "결정",
-      "date": "날짜"
-    },
-    "types": {
-      "pipeline": "파이프라인",
-      "decision": "결정",
-      "alert": "알림",
-      "system": "시스템",
-      "signal": "신호",
-      "vector": "벡터"
-    },
-    "fields": {
-      "signal": "신호",
-      "vector": "벡터",
-      "similarity": "유사도"
-    }
-  },
-  "charts": {
-    "pageTitle": "차트",
-    "candlestick": "캔들스틱",
-    "indicators": "지표",
-    "overlays": "오버레이",
-    "fullscreen": "전체화면",
-    "timeframes": {
-      "1m": "1분",
-      "3m": "3분",
-      "5m": "5분",
-      "15m": "15분",
-      "1h": "1시간",
-      "4h": "4시간",
-      "1d": "1일"
-    },
-    "chartTypes": {
-      "candlestick": "캔들스틱",
-      "line": "라인",
-      "area": "영역"
-    }
-  },
-  "strategies": {
-    "pageTitle": "전략",
-    "createStrategy": "전략 생성",
-    "editStrategy": "전략 편집",
-    "deleteStrategy": "전략 삭제",
-    "activateStrategy": "전략 활성화",
-    "deactivateStrategy": "전략 비활성화",
-    "runBacktest": "백테스트 실행",
-    "saveStrategy": "저장",
-    "cancelAction": "취소",
-    "backAction": "뒤로",
-    "empty": {
-      "title": "전략이 없습니다",
-      "description": "첫 번째 트레이딩 전략을 만들어 시작하세요."
-    },
-    "fields": {
-      "name": "전략 이름",
-      "description": "설명",
-      "symbol": "심볼",
-      "symbols": "심볼",
-      "timeframe": "시간프레임",
-      "timeframes": "시간프레임",
-      "version": "버전",
-      "status": "상태",
-      "direction": "방향",
-      "mode": "실행 모드"
-    },
-    "status": {
-      "active": "활성",
-      "inactive": "비활성",
-      "draft": "초안",
-      "backtesting": "백테스팅"
-    },
-    "form": {
-      "namePlaceholder": "전략 이름",
-      "symbolsPlaceholder": "BTC/USDT, ETH/USDT",
-      "creating": "생성 중..."
-    },
-    "editor": {
-      "codePanel": "코드 에디터",
-      "configPanel": "설정",
-      "statusBar": {
-        "language": "TypeScript",
-        "encoding": "UTF-8"
-      }
-    },
-    "config": {
-      "basicInfo": "기본 정보",
-      "features": "피처",
-      "searchConfig": "검색 설정",
-      "resultConfig": "결과 설정",
-      "decisionConfig": "결정 설정",
-      "executionMode": "실행 모드",
-      "topK": "Top K",
-      "similarityThreshold": "유사도 임계값",
-      "minSamples": "최소 샘플",
-      "takeProfitPct": "익절 %",
-      "stopLossPct": "손절 %",
-      "maxHoldBars": "최대 보유 봉",
-      "minWinrate": "최소 승률",
-      "minExpectancy": "최소 기댓값"
-    },
-    "stats": {
-      "winrate": "승률",
-      "expectancy": "기댓값",
-      "samples": "샘플",
-      "events": "이벤트",
-      "avgHold": "평균 보유"
-    },
-    "events": {
-      "tabTitle": "이벤트",
-      "loading": "이벤트 로딩 중...",
-      "empty": "이 전략에 아직 이벤트가 없습니다.",
-      "columns": {
-        "direction": "방향",
-        "symbol": "심볼",
-        "entry": "진입가",
-        "exit": "청산가",
-        "pnl": "손익",
-        "outcome": "결과",
-        "time": "시간"
-      }
-    },
-    "version": {
-      "label": "버전",
-      "newVersion": "새 버전",
-      "versionHistory": "버전 이력",
-      "currentVersion": "현재 버전"
-    },
-    "modes": {
-      "analysis": "분석",
-      "alert": "알림",
-      "paperTrade": "모의 거래",
-      "autoTrade": "자동 거래"
-    }
-  }
+	"common": {
+		"loading": "불러오는 중...",
+		"error": "오류가 발생했습니다",
+		"confirm": "확인",
+		"cancel": "취소",
+		"save": "저장",
+		"close": "닫기",
+		"delete": "삭제",
+		"edit": "수정",
+		"create": "생성",
+		"update": "업데이트",
+		"search": "검색",
+		"filter": "필터",
+		"reset": "초기화",
+		"refresh": "새로고침",
+		"back": "뒤로",
+		"next": "다음",
+		"previous": "이전",
+		"submit": "제출",
+		"apply": "적용",
+		"status": {
+			"active": "활성",
+			"inactive": "비활성",
+			"running": "실행 중",
+			"stopped": "중지",
+			"error": "오류",
+			"pending": "대기 중"
+		},
+		"direction": {
+			"long": "LONG",
+			"short": "SHORT",
+			"pass": "PASS"
+		},
+		"noData": "데이터가 없습니다",
+		"unknown": "알 수 없음"
+	},
+	"journal": {
+		"pageTitle": "트레이드 저널",
+		"list": "저널 목록",
+		"empty": "저널 항목이 없습니다",
+		"filters": {
+			"dateRange": "날짜 범위",
+			"strategy": "전략 필터",
+			"symbol": "심볼 필터",
+			"side": "방향 필터",
+			"searchPlaceholder": "심볼, 전략 이름으로 검색..."
+		},
+		"entry": {
+			"tradeDate": "거래 날짜",
+			"symbol": "심볼",
+			"side": "방향",
+			"entryPrice": "진입가",
+			"exitPrice": "청산가",
+			"pnl": "손익 (PnL)",
+			"duration": "보유 기간",
+			"entryReason": "진입 근거",
+			"exitReason": "청산 근거",
+			"notes": "메모",
+			"tags": "태그",
+			"tradeSummary": "거래 요약"
+		},
+		"analysis": {
+			"title": "분석",
+			"mfe": "최대 유리 가격 이동 (MFE)",
+			"mae": "최대 불리 가격 이동 (MAE)",
+			"riskReward": "리스크/리워드 비율",
+			"edgeRatio": "엣지 비율"
+		},
+		"stats": {
+			"title": "통계",
+			"periodPnl": "기간별 수익",
+			"strategyPerformance": "전략별 성과",
+			"totalTrades": "총 거래 수",
+			"winRate": "승률",
+			"avgPnl": "평균 손익",
+			"totalPnl": "총 손익"
+		},
+		"comparison": {
+			"title": "비교",
+			"backtest": "백테스트",
+			"live": "실거래",
+			"backtestVsLive": "백테스트 vs 실거래",
+			"backtestPnl": "백테스트 손익",
+			"livePnl": "실거래 손익",
+			"backtestWinRate": "백테스트 승률",
+			"liveWinRate": "실거래 승률"
+		},
+		"export": "내보내기",
+		"columns": {
+			"date": "날짜",
+			"symbol": "심볼",
+			"side": "방향",
+			"entryPrice": "진입가",
+			"exitPrice": "청산가",
+			"pnl": "손익",
+			"duration": "기간",
+			"strategy": "전략",
+			"tags": "태그"
+		}
+	}
 }

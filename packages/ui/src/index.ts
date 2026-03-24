@@ -299,3 +299,27 @@ export {
 	type PlatformAdapter,
 	type PlatformProviderProps,
 } from "./platform/index";
+
+// i18n
+export {
+	useTranslations,
+	type Locale,
+	type Namespace,
+	type TranslationKey,
+} from "./i18n/index";
+
+// Views — Journal
+export { JournalView } from "./views/journal/journal-view";
+export { JournalEntryDetail } from "./views/journal/journal-entry-detail";
+export { JournalFilters } from "./views/journal/journal-filters";
+export { JournalStats } from "./views/journal/journal-stats";
+export { JournalComparison } from "./views/journal/journal-comparison";
+export type {
+	JournalEntry,
+	JournalViewProps,
+	JournalEntryDetailProps,
+	JournalFiltersState,
+	JournalStatsProps,
+	JournalStatsData,
+	JournalComparisonProps,
+} from "./views/journal/types";

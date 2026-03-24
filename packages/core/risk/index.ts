@@ -49,6 +49,9 @@ export {
 	type PositionSyncResult,
 } from "./position-monitor.js";
 export {
-	LiquidationPriceCalculator,
-	LiquidationPriceError,
-} from "./liquidation-price.js";
+	isNearLiquidation,
+	LiquidationWarningMonitor,
+	type LiquidationPosition,
+	type LiquidationWarningDeps,
+	type LiquidationWarningConfig,
+} from "./liquidation-warning-monitor.js";

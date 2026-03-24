@@ -1,5 +1,6 @@
 export { sma } from "./sma.js";
 export { ema } from "./ema.js";
+export { wma } from "./wma.js";
 export { bb } from "./bb.js";
 export { rsi } from "./rsi.js";
 export { macd } from "./macd.js";

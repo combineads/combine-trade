@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { adx, atr, bb, cci, ema, macd, obv, rsi, sma, stochastic, vwap } from "../index.js";
+import { adx, atr, bb, cci, ema, macd, obv, rsi, sma, stochastic, vwap, wma } from "../index.js";
 
 describe("SMA", () => {
 	test("SMA(5) of [1,2,3,4,5] = [3]", async () => {
@@ -339,5 +339,58 @@ describe("VWAP", () => {
 		for (const val of result) {
 			expect(val).toBeCloseTo(100, 2);
 		}
+	});
+});
+
+describe("WMA", () => {
+	test("WMA(3) of [1,2,3,4,5] produces linearly weighted values", async () => {
+		// WMA(3): weights=[1,2,3], denominator=6
+		// position 0: (1*1 + 2*2 + 3*3)/6 = 14/6 ≈ 2.333
+		// position 1: (2*1 + 3*2 + 4*3)/6 = 20/6 ≈ 3.333
+		// position 2: (3*1 + 4*2 + 5*3)/6 = 26/6 ≈ 4.333
+		const result = await wma([1, 2, 3, 4, 5], 3);
+		expect(result.length).toBe(3);
+		expect(result[0]).toBeCloseTo(14 / 6, 5);
+		expect(result[1]).toBeCloseTo(20 / 6, 5);
+		expect(result[2]).toBeCloseTo(26 / 6, 5);
+	});
+
+	test("WMA(1) returns input values unchanged", async () => {
+		const input = [10, 20, 30];
+		const result = await wma(input, 1);
+		expect(result.length).toBe(3);
+		expect(result[0]).toBeCloseTo(10, 5);
+		expect(result[1]).toBeCloseTo(20, 5);
+		expect(result[2]).toBeCloseTo(30, 5);
+	});
+
+	test("WMA of constant values returns that constant", async () => {
+		const result = await wma([7, 7, 7, 7, 7], 3);
+		for (const v of result) {
+			expect(v).toBeCloseTo(7, 5);
+		}
+	});
+
+	test("WMA gives more weight to recent values", async () => {
+		// spike at the end should pull last WMA value higher than previous
+		const result = await wma([1, 1, 1, 1, 100], 3);
+		const last = result[result.length - 1];
+		const prev = result[result.length - 2];
+		expect(last).toBeDefined();
+		expect(prev).toBeDefined();
+		expect(last!).toBeGreaterThan(prev!);
+	});
+
+	test("WMA with period > length returns empty array", async () => {
+		const result = await wma([1, 2], 5);
+		expect(result.length).toBe(0);
+	});
+
+	test("WMA(5) of [1,2,3,4,5] equals 5*1+4*2+3*3+2*4+1*5 / 15", async () => {
+		// weights oldest→newest = 1,2,3,4,5; denominator = 15
+		// (1*1 + 2*2 + 3*3 + 4*4 + 5*5)/15 = (1+4+9+16+25)/15 = 55/15 ≈ 3.667
+		const result = await wma([1, 2, 3, 4, 5], 5);
+		expect(result.length).toBe(1);
+		expect(result[0]).toBeCloseTo(55 / 15, 5);
 	});
 });

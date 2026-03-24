@@ -38,13 +38,16 @@ export class VectorRepository {
 	/**
 	 * L2 similarity search with threshold filtering and min_samples gate.
 	 * Searches only within the specific strategy+version table and symbol.
+	 *
+	 * Pass `beforeTimestamp` during backtests to prevent look-ahead bias:
+	 * only vectors inserted before that time are considered.
 	 */
 	async search(
 		strategyId: string,
 		version: number,
 		symbol: string,
 		queryVector: number[],
-		options?: { topK?: number; minSamples?: number },
+		options?: { topK?: number; minSamples?: number; beforeTimestamp?: Date },
 	): Promise<SearchResponse> {
 		const tableName = this.tableManager.getTableName(strategyId, version);
 		const topK = options?.topK ?? DEFAULT_TOP_K;
@@ -52,10 +55,15 @@ export class VectorRepository {
 		const threshold = this.computeThreshold(queryVector.length);
 		const vectorLiteral = `[${queryVector.join(",")}]`;
 
+		const timeFilter =
+			options?.beforeTimestamp != null
+				? ` AND created_at < '${options.beforeTimestamp.toISOString()}'`
+				: "";
+
 		const result = await this.sql.execute(
 			`SELECT event_id, embedding <-> '${vectorLiteral}' AS distance
 			FROM ${tableName}
-			WHERE symbol = '${symbol}'
+			WHERE symbol = '${symbol}'${timeFilter}
 			ORDER BY embedding <-> '${vectorLiteral}'
 			LIMIT ${topK}`,
 		);

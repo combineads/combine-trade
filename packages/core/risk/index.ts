@@ -55,3 +55,4 @@ export {
 	type LiquidationWarningDeps,
 	type LiquidationWarningConfig,
 } from "./liquidation-warning-monitor.js";
+export { BalanceLock, BalanceLockError } from "./balance-lock.js";

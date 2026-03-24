@@ -157,4 +157,42 @@ describe("VectorRepository", () => {
 		const searchSQL = executor.queries.find((q) => q.includes("LIMIT"));
 		expect(searchSQL).toContain("LIMIT 50");
 	});
+
+	test("search without beforeTimestamp has no created_at filter", async () => {
+		const executor = createMockExecutor([]);
+		const tableManager = createMockTableManager();
+		const repo = new VectorRepository(executor, tableManager);
+
+		await repo.search("strat-1", 1, "BTCUSDT", [0.1, 0.5, 0.9]);
+
+		const searchSQL = executor.queries.find((q) => q.includes("ORDER BY"));
+		expect(searchSQL).not.toContain("created_at");
+	});
+
+	test("search with beforeTimestamp includes created_at < filter", async () => {
+		const executor = createMockExecutor([]);
+		const tableManager = createMockTableManager();
+		const repo = new VectorRepository(executor, tableManager);
+
+		const ts = new Date("2024-01-15T12:00:00Z");
+		await repo.search("strat-1", 1, "BTCUSDT", [0.1, 0.5, 0.9], { beforeTimestamp: ts });
+
+		const searchSQL = executor.queries.find((q) => q.includes("ORDER BY"));
+		expect(searchSQL).toContain("created_at");
+		expect(searchSQL).toContain("<");
+		expect(searchSQL).toContain("2024-01-15");
+	});
+
+	test("beforeTimestamp filter is added to WHERE clause alongside symbol", async () => {
+		const executor = createMockExecutor([]);
+		const tableManager = createMockTableManager();
+		const repo = new VectorRepository(executor, tableManager);
+
+		const ts = new Date("2024-06-01T00:00:00Z");
+		await repo.search("strat-1", 1, "ETHUSDT", [0.1, 0.5], { beforeTimestamp: ts });
+
+		const searchSQL = executor.queries.find((q) => q.includes("ORDER BY"));
+		expect(searchSQL).toContain("symbol = 'ETHUSDT'");
+		expect(searchSQL).toContain("created_at");
+	});
 });

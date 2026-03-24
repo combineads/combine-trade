@@ -45,3 +45,9 @@ export {
 	type TrackedPosition,
 	type PositionSyncResult,
 } from "./position-monitor.js";
+export {
+	createAuditEvent,
+	recordDeactivation,
+	type KillSwitchAuditEvent,
+	type KillSwitchAuditDeps,
+} from "./kill-switch-audit.js";

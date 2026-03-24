@@ -53,3 +53,32 @@ export {
 	type ConsecutiveSlState,
 	type ConsecutiveSlDeps,
 } from "./consecutive-sl-limiter.js";
+export {
+	createAuditEvent,
+	recordDeactivation,
+	type KillSwitchAuditEvent,
+	type KillSwitchAuditDeps,
+} from "./kill-switch-audit.js";
+export {
+	buildActivationMessage,
+	buildDeactivationMessage,
+	KillSwitchNotifier,
+	type KillSwitchNotifierDeps,
+} from "./kill-switch-notifier.js";
+export {
+	evaluateInfrastructureTriggers,
+	InfrastructureTriggerMonitor,
+	type InfrastructureHealthState,
+	type InfrastructureTriggerResult,
+} from "./infrastructure-trigger-monitor.js";
+export {
+	evaluateSandboxEvent,
+	SandboxTriggerMonitor,
+	type SandboxTriggerResult,
+} from "./sandbox-trigger-monitor.js";
+export {
+	shouldResetDaily,
+	shouldResetWeekly,
+	LossLimitResetScheduler,
+	type LossLimitResetDeps,
+} from "./loss-limit-reset.js";

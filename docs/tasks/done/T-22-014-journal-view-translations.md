@@ -56,26 +56,3 @@ bun test packages/ui
 
 ## Out of Scope
 저널 데이터 내보내기 기능, desktop 통합 (T-22-015)
-
-## Implementation Notes
-
-- Created `packages/ui/src/i18n/` with `use-translations.ts` (self-contained hook, no next-intl dep) and `index.ts`
-- `ko.json` and `en.json` contain `common` namespace (from T-22-005 baseline) + new `journal` namespace
-- `journal` namespace covers: pageTitle, list, empty, filters (dateRange/strategy/symbol/side/searchPlaceholder), entry (all fields), analysis (MFE/MAE/riskReward/edgeRatio), stats, comparison (backtest vs live), columns, export
-- Created journal view components from scratch (no existing journal views in this worktree): `journal-view.tsx`, `journal-entry-row.tsx`, `journal-filters.tsx`, `journal-stats.tsx`, `journal-entry-detail.tsx`, `journal-comparison.tsx`
-- All components accept `locale` prop defaulting to `"ko"` and use `useTranslations('journal', locale)`
-- User-authored content (notes, tags values) is rendered as-is, not translated
-- Exported all journal components and i18n utilities from `packages/ui/src/index.ts`
-- 66 tests added across `journal-i18n.test.ts` and `journal-view.test.tsx`
-
-## Outputs
-
-- `packages/ui/src/i18n/messages/ko.json` — common + journal namespaces
-- `packages/ui/src/i18n/messages/en.json` — common + journal namespaces
-- `packages/ui/src/i18n/use-translations.ts`
-- `packages/ui/src/i18n/index.ts`
-- `packages/ui/src/views/journal/` (6 component files + types.ts + index.ts)
-- `packages/ui/__tests__/journal-i18n.test.ts` (36 tests)
-- `packages/ui/__tests__/journal-view.test.tsx` (30 tests)
-
-Validation: `bun run typecheck` — pass, `bun test packages/ui` — 309 pass, 0 fail

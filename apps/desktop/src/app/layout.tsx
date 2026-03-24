@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthProviderWrapper } from "@/components/auth-provider-wrapper";
+import { LocaleProvider } from "@/providers/LocaleProvider";
 import { PlatformProvider, ThemeProvider } from "@combine/ui";
 import "./globals.css";
 
@@ -10,7 +11,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<html lang="en" data-theme="dark" suppressHydrationWarning>
+		<html lang="ko" data-theme="dark" suppressHydrationWarning>
 			<body
 				style={{
 					margin: 0,
@@ -20,9 +21,11 @@ export default function RootLayout({
 				}}
 			>
 				<ThemeProvider defaultTheme="dark">
-					<AuthProviderWrapper>
-						<PlatformProvider>{children}</PlatformProvider>
-					</AuthProviderWrapper>
+					<LocaleProvider>
+						<AuthProviderWrapper>
+							<PlatformProvider>{children}</PlatformProvider>
+						</AuthProviderWrapper>
+					</LocaleProvider>
 				</ThemeProvider>
 			</body>
 		</html>

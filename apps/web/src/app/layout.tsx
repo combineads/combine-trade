@@ -1,5 +1,3 @@
-import { AuthProviderWrapper } from "@/components/auth-provider-wrapper";
-import { ThemeProvider } from "@combine/ui";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -8,13 +6,18 @@ export const metadata: Metadata = {
 	description: "Strategy-defined vectorization trading system",
 };
 
+/**
+ * Root HTML shell. Locale-specific providers (I18nProvider, ThemeProvider,
+ * AuthProviderWrapper) live in `[locale]/layout.tsx` so that the `lang`
+ * attribute on <html> reflects the resolved locale.
+ */
 export default function RootLayout({
 	children,
 }: {
 	children: React.ReactNode;
 }) {
 	return (
-		<html lang="en" data-theme="dark" suppressHydrationWarning>
+		<html suppressHydrationWarning>
 			<body
 				style={{
 					margin: 0,
@@ -23,9 +26,7 @@ export default function RootLayout({
 					fontFamily: "var(--font-sans)",
 				}}
 			>
-				<ThemeProvider defaultTheme="dark">
-					<AuthProviderWrapper>{children}</AuthProviderWrapper>
-				</ThemeProvider>
+				{children}
 			</body>
 		</html>
 	);

@@ -69,14 +69,14 @@ If task-closer validation fails after reviewer approval, the task returns to the
 ## Parallel execution
 
 - Two implementer agents may work simultaneously if their tasks have **no shared file dependencies**
-- Tasks touching the same module must run sequentially (lower T-NNN first). A module is defined as a single `packages/` subdirectory (e.g., `packages/core/vector/`) or `apps/` subdirectory.
+- Tasks touching the same module must run sequentially (lower T-EP-NNN first). A module is defined as a single `packages/` subdirectory (e.g., `packages/core/vector/`) or `apps/` subdirectory.
 - WIP limit (see CLAUDE.md section "WIP limits"; currently max 2) applies globally regardless of parallelism
 - After completing a parallel task, re-run project-wide validation to detect merge conflicts
 
 ### Conflict resolution (parallel execution)
 - Prevention: tasks touching the same module run sequentially (existing rule)
 - Detection: after parallel task completion, run project-wide validation (`bun test && bun run typecheck`)
-- Resolution order: higher T-NNN task rolls back (lower T-NNN has priority)
+- Resolution order: higher T-EP-NNN task rolls back (lower T-EP-NNN has priority)
 - Rolled-back task returns to `backlog/` with a `## Conflict Note` recording what happened
 - Re-implementation must account for the winning task's changes
 

@@ -130,25 +130,21 @@
   ```
 
 ## Task candidates
-- T-064: Implement historical candle bulk downloader (REST + rate limit + optional Binance Vision archive)
-- T-064a: Evaluate and implement Binance Vision CSV archive download as primary source
-- T-065: Add download resume logic (skip existing ranges)
-- T-066: Implement backtest replay engine (sequential candle processing)
-- T-067: Integrate strategy sandbox into replay loop
-- T-068: Integrate vector generation into replay loop
-- T-069: Integrate label judgment into replay loop (forward scan)
-- T-070: Implement checkpoint system (save/resume every 1000 events)
-- T-071: Optimize replay performance (target: < 5min for 3yr)
-- T-072: Implement backtest statistics aggregation
-- T-073: Implement backtest JSON report generator
-- T-074: Implement re-vectorization workflow for version changes
-- T-074a: Implement look-ahead bias prevention (time boundary filter in vector search)
-- T-074b: Implement cold start period tracking and reporting
-- T-074c: Implement slippage estimation statistics (entry price vs next candle open)
-- T-075: Integration test: full 3-year backtest end-to-end
-- T-076: Performance benchmark: measure and optimize backtest latency
-- T-076a: Implement post-backtest HNSW REINDEX trigger
-- T-076b: Implement partial state recovery/cleanup utility for failed backtests
+- T-05-001: Implement historical candle bulk downloader with Binance Vision CSV archive (monthly + daily) as primary source, REST API fallback, CHECKSUM verification
+- (not implemented): Add download resume logic (skip existing ranges)
+- T-05-002: Implement backtest replay engine (sequential candle processing) with strategy sandbox integration
+- T-05-003: Integrate label judgment into replay loop (forward scan)
+- (not implemented): Implement checkpoint system (save/resume every 1000 events)
+- (not implemented): Optimize replay performance (target: < 5min for 3yr)
+- T-05-004: Implement backtest statistics aggregation and JSON report generator
+- (not implemented): Implement re-vectorization workflow for version changes
+- (not implemented): Implement look-ahead bias prevention (time boundary filter in vector search)
+- (not implemented): Implement cold start period tracking and reporting
+- (not implemented): Implement slippage estimation statistics (entry price vs next candle open)
+- T-05-005: Integration test: full 3-year backtest end-to-end
+- (not implemented): Performance benchmark: measure and optimize backtest latency
+- (not implemented): Implement post-backtest HNSW REINDEX trigger
+- (not implemented): Implement partial state recovery/cleanup utility for failed backtests
 
 ## Risks
 - 3년치 1분봉 데이터 볼륨 (~158만건/심볼) 메모리 관리 필요
@@ -168,5 +164,5 @@
 | 2026-03-22 | Binance Vision 3-tier backfill 채택 | Monthly→Daily→REST 순서로 3년치 벌크 로드. Monthly: 당월 첫 월요일 게시, Daily: T-1 (익일 게시). SHA256 CHECKSUM 검증 필수. |
 
 ## Progress notes
-- 2026-03-22: Tasks generated — T-038 (CSV parser), T-039 (engine), T-040 (labeler), T-041 (report), T-042 (integration).
+- 2026-03-22: Tasks generated — T-05-001 (CSV parser), T-05-002 (engine), T-05-003 (labeler), T-05-004 (report), T-05-005 (integration).
 - 2026-03-22: M1 partial (CSV parser), M2 (replay engine + labeler), M3 (statistics report) completed. 353 tests passing. M1 Binance Vision download, M4 re-vectorization deferred to future tasks.

@@ -132,23 +132,23 @@ Until EP09 (risk management) is complete, the following hard caps apply:
   ```
 
 ## Task candidates
-- T-077: Implement Slack webhook client with retry
-- T-078: Implement alert message formatter (strategy, stats, prices)
-- T-079: Build alert-worker with LISTEN → decide → alert → send
-- T-080: Implement alert delivery state tracking (pending/sent/failed)
-- T-081: Add alert deduplication (unique event_id)
-- T-082: Extend exchange adapter with createOrder, cancelOrder, fetchOrder
-- T-083: Implement order builder (market, limit, SL/TP)
-- T-084: Implement order executor with validation and client_order_id
-- T-085: Build execution-worker with decision → order → track
-- T-086: Implement order status tracking (polling exchange)
-- T-087: Implement execution mode service (analysis/alert/auto-trade)
-- T-088: Add per-strategy execution mode configuration
-- T-089: Integration test: decision → alert + order execution
-- T-089a: Implement slippage tracking (expected price vs actual fill price)
-- T-089b: Add slippage threshold alert (abnormal slippage → WARNING + Slack)
-- T-089c: Implement partial fill handling and status tracking
-- T-089d: Implement symbol-level order serialization queue (advisory locks)
+- T-06-007: Implement Slack webhook client with retry
+- T-06-001: Implement alert message formatter (strategy, stats, prices)
+- T-06-004: Build alert-worker with LISTEN → decide → alert → send
+- T-06-010: Implement alert delivery state tracking (pending/sent/failed)
+- (not implemented): Add alert deduplication (unique event_id)
+- T-06-006: Extend exchange adapter with createOrder, cancelOrder, fetchOrder
+- T-06-003: Implement order builder (market, limit, SL/TP)
+- T-06-008: Implement order executor with validation and client_order_id
+- T-06-011: Build execution-worker with decision → order → track
+- T-06-009: Implement order status tracking (polling exchange)
+- T-06-002: Implement execution mode service (analysis/alert/auto-trade)
+- T-06-012: Add per-strategy execution mode configuration
+- T-06-005: Integration test: decision → alert + order execution
+- (not implemented): Implement slippage tracking (expected price vs actual fill price)
+- (not implemented): Add slippage threshold alert (abnormal slippage → WARNING + Slack)
+- (not implemented): Implement partial fill handling and status tracking
+- (not implemented): Implement symbol-level order serialization queue (advisory locks)
 
 ## Risks
 - 거래소 주문 API 응답 지연으로 1초 레이턴시 예산 초과 가능
@@ -166,6 +166,6 @@ Until EP09 (risk management) is complete, the following hard caps apply:
 | 2026-03-21 | client_order_id 기반 중복 방지 | 네트워크 재시도 시 이중 주문 방지 |
 
 ## Progress notes
-- 2026-03-22: Tasks generated — T-043 (formatter), T-044 (mode service), T-045 (order builder), T-046 (alert handler), T-047 (integration).
+- 2026-03-22: Tasks generated — T-06-001 (formatter), T-06-002 (mode service), T-06-003 (order builder), T-06-004 (alert handler), T-06-005 (integration).
 - 2026-03-22: M1 (formatter), M2 partial (alert handler), M3 partial (order builder), M5 (mode service) completed. 396 tests passing. Full workers and DB schemas deferred to future tasks.
-- 2026-03-22: M2-M4 completed. T-105 (Binance adapter order methods), T-106 (Slack webhook), T-107 (execution worker handler), T-109 (order tracker), T-110 (alert worker event bus), T-111 (execution worker event bus). 1008 tests passing. EP06 fully implemented.
+- 2026-03-22: M2-M4 completed. T-06-006 (Binance adapter order methods), T-06-007 (Slack webhook), T-06-008 (execution worker handler), T-06-009 (order tracker), T-06-010 (alert worker event bus), T-06-011 (execution worker event bus). 1008 tests passing. EP06 fully implemented.

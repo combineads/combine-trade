@@ -120,22 +120,18 @@
   ```
 
 ## Task candidates
-- T-039: Implement percent, sigmoid, boolean normalizers
-- T-040: Implement rolling percentile normalizer
-- T-041: Implement min-max normalizer with domain-fixed ranges
-- T-042: Build normalization orchestrator (strategy config → pipeline)
-- T-043: Implement dynamic vector table creation with pgvector + HNSW
-- T-044: Implement vector table existence cache
-- T-045: Build vector repository (store + L2 search)
-- T-046: Implement similarity threshold filtering (√d × 0.3)
-- T-047: Enforce isolation: strategy+version+symbol scope in queries
-- T-048: Implement pattern statistics calculator (winrate, expectancy)
-- T-049: Build vector-worker with LISTEN → normalize → store → search → stats → decision(inline) → NOTIFY decision_completed
-- T-050: Add vector write idempotency (unique event_id per table)
-- T-051: Integration test: event → vector → search → statistics pipeline
-- T-052: Performance test: L2 search < 100ms for top_k=50
-- T-052a: Implement dynamic vector table schema migration utility (dimension change)
-- T-052b: Vector table count guard — enforce max 1,000 dynamic vector tables per deployment, reject creation beyond limit with ERR_USER_TABLE_LIMIT error
+- T-03-001: Implement percent, sigmoid, boolean, rolling-percentile, and min-max normalizers
+- T-03-002: Build normalization orchestrator (strategy config → pipeline)
+- T-03-003: Implement dynamic vector table creation with pgvector + HNSW
+- (not implemented): Implement vector table existence cache
+- T-03-004: Build vector repository (store + L2 search) with similarity threshold filtering (√d × 0.3) and strategy+version+symbol isolation
+- T-03-005: Implement pattern statistics calculator (winrate, expectancy)
+- T-03-007: Build vector-worker with LISTEN → normalize → store → search → stats → decision(inline) → NOTIFY decision_completed
+- (not implemented): Add vector write idempotency (unique event_id per table)
+- T-03-008: Integration test: event → vector → search → statistics pipeline
+- (not implemented): Performance test: L2 search < 100ms for top_k=50
+- (not implemented): Implement dynamic vector table schema migration utility (dimension change)
+- (not implemented): Vector table count guard — enforce max 1,000 dynamic vector tables per deployment, reject creation beyond limit with ERR_USER_TABLE_LIMIT error
 
 ## Risks
 - pgvector HNSW 인덱스 빌드 시간이 대량 벡터 삽입 시 느릴 수 있음
@@ -158,5 +154,5 @@
 | 2026-03-21 | EP03-M5 depends on EP04-M3 (circular dependency resolution) | EP03-M5 (vector-worker) calls EP04-M3 (decision engine) inline for latency optimization. This creates a reverse dependency: EP03-M5 must be scheduled after EP04-M3 completion. Decision engine is implemented as a pure function in packages/core/decision, importable by vector-worker without worker-level dependency. PLANS.md milestone graph updated to reflect: EP03-M5 depends on EP04-M3. |
 
 ## Progress notes
-- 2026-03-22: Tasks generated T-027 through T-034 (8 tasks). Includes decision engine (EP04-M3) as T-032 since it's required by vector worker (EP03-M5). Deferred: HNSW tuning benchmark, schema migration utility, orphan table cleanup.
-- 2026-03-22: All tasks implemented (T-027–T-034). 283 tests passing. Typecheck clean. Lint clean.
+- 2026-03-22: Tasks generated T-03-001 through T-03-008 (8 tasks). Includes decision engine (EP04-M3) as T-03-006 since it's required by vector worker (EP03-M5). Deferred: HNSW tuning benchmark, schema migration utility, orphan table cleanup.
+- 2026-03-22: All tasks implemented (T-03-001–T-03-008). 283 tests passing. Typecheck clean. Lint clean.

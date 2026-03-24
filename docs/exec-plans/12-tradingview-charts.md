@@ -157,24 +157,26 @@ TradingView 차트 라이브러리(Lightweight Charts / Advanced Charts)와 위�
   ```
 
 ## Task candidates
-- T-161: Integrate TradingView Lightweight Charts library
-- T-162: Implement candlestick chart component with timeframe/symbol switching
-- T-163: Implement real-time candle update via SSE
-- T-164: Implement chart data API with pagination (infinite scroll)
-- T-165: Implement technical indicator overlay components (SMA, EMA, BB)
-- T-166: Implement separate panel indicators (RSI, MACD, Stochastic)
-- T-167: Implement indicator data API (server-side calculation)
-- T-168: Implement strategy event markers on chart (LONG/SHORT/WIN/LOSS)
-- T-169: Implement TP/SL overlay lines and event detail popup
-- T-170: Implement equity curve and drawdown chart components
-- T-171: Implement PnL distribution histogram and monthly heatmap
-- T-172: Implement backtest version comparison chart
-- T-173: Integrate TradingView Ticker Tape and Market Overview widgets
-- T-174: Integrate Timeline (news) and Economic Calendar widgets
-- T-175: Implement real-time position PnL and daily PnL timeline charts
-- T-176: Implement strategy performance radar chart
-- T-177: Implement pipeline latency gauge chart
-- T-178: Add dark/light theme support for all charts and widgets
+- T-12-006: Integrate TradingView Lightweight Charts library
+- T-12-001: Chart container component (layout, resize, base structure)
+- T-12-002: Implement candlestick chart component with timeframe/symbol switching
+- T-12-007: Implement real-time candle update via SSE
+- (not implemented): Implement chart data API with pagination (infinite scroll)
+- (not implemented): Implement technical indicator overlay components (SMA, EMA, BB)
+- (not implemented): Implement separate panel indicators (RSI, MACD, Stochastic)
+- (not implemented): Implement indicator data API (server-side calculation)
+- T-12-003: Implement event markers overlay on chart (LONG/SHORT/WIN/LOSS)
+- T-12-008: Implement strategy event chart overlay with TP/SL lines and event detail popup
+- T-12-009: Implement equity curve chart component
+- T-12-004: Implement backtest result views (drawdown, distribution, heatmap)
+- T-12-005: Backtest page integrating chart views
+- (not implemented): Implement backtest version comparison chart
+- (not implemented): Integrate TradingView Ticker Tape and Market Overview widgets
+- (not implemented): Integrate Timeline (news) and Economic Calendar widgets
+- (not implemented): Implement real-time position PnL and daily PnL timeline charts
+- (not implemented): Implement strategy performance radar chart
+- (not implemented): Implement pipeline latency gauge chart
+- (not implemented): Add dark/light theme support for all charts and widgets
 
 ## Risks
 - TradingView Lightweight Charts의 기능 제한 (Advanced Charts 대비): 일부 고급 기능 부재

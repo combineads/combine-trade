@@ -339,27 +339,26 @@
 
 ## Task candidates
 
-- T-195: DB 스키마 설계 — `economic_events`, `news_items` 테이블 + DrizzleORM 마이그레이션
-- T-196: `trade_journals` 확장 마이그레이션 — `entry_macro_context`, `retrospective_report`, `retrospective_generated_at` 컬럼 추가
-- T-197: saveticker.com HTTP 클라이언트 구현 — calendar + news API, 재시도, 에러 처리
-- T-198: impact-parser 구현 — 제목에서 ★ 파싱, LOW/MEDIUM/HIGH 매핑
-- T-199: 캘린더 수집 워커 구현 — 일 1회 cron, 7일 범위, HIGH/MEDIUM upsert
-- T-200: 이벤트 트리거 뉴스 수집 구현 — 1분 스케줄러, 5분 지연, ±30분 필터링
-- T-201: `context-enricher` 구현 — 진입/청산 시점 ±2h 이벤트, ±1h 뉴스 조회
-- T-202: `macro-tagger` 구현 — fomc_week, cpi_day, pre_high_impact_event 등 태그 로직
-- T-203: journal-worker 확장 — 매크로 컨텍스트 비동기 부착 + 태그 병합
-- T-204: `journal_ready` 이벤트 버스 채널 추가 — journal-worker NOTIFY, retrospective-worker LISTEN
-- T-205: `prompt-builder` 구현 — 매매 + 매크로 컨텍스트 → 한국어 분석 프롬프트 조합
-- T-206: `retrospective-worker` 구현 — `claude -p` 서브프로세스, stdout 저장, graceful degradation
-- T-207: 매크로 집계 분석 API — `/api/v1/macro/events`, `/api/v1/journals/macro-analytics`
-- T-208: 통합 테스트 (M1~M6) — 경제 이벤트 → 뉴스 수집 → 일지 컨텍스트 부착 → 회고 리포트 생성
-- T-209: `strategies` 테이블 확장 — `use_llm_filter` 컬럼 + 마이그레이션
-- T-210: `decisions` 테이블 확장 — `llm_action`, `llm_reason`, `llm_confidence`, `llm_risk_factors`, `llm_evaluated_at` 컬럼
-- T-211: `decision-prompt-builder` 구현 — kNN 결과 + 최근 매매 이력 + 매크로 컨텍스트 → 구조화 프롬프트
-- T-212: `llm-evaluator` 구현 — `claude -p` 호출, JSON 파싱, 타임아웃/장애 시 CONFIRM fallback
-- T-213: `decision_pending_llm` 이벤트 버스 채널 + vector-worker 분기 로직 (timeframe ≥ 15m + opt-in 체크)
-- T-214: `llm-decision-worker` 구현 — 컨텍스트 수집 → LLM 평가 → 최종 결정 발행 (CONFIRM/PASS/REDUCE_SIZE)
-- T-215: 통합 테스트 (M7) — kNN LONG → LLM PASS 오버라이드 → alert/execution 미실행 확인
+- T-16-001: DB 스키마 설계 — `economic_events`, `news_items` 테이블 + DrizzleORM 마이그레이션 + impact-parser (★ → LOW/MEDIUM/HIGH)
+- (not implemented): `trade_journals` 확장 마이그레이션 — `entry_macro_context`, `retrospective_report`, `retrospective_generated_at` 컬럼 추가
+- T-16-002: saveticker.com HTTP 클라이언트 구현 — calendar + news API, 재시도, 에러 처리
+- T-16-003: 캘린더 수집 워커 구현 — 일 1회 cron, 7일 범위, HIGH/MEDIUM upsert
+- T-16-004: 이벤트 트리거 뉴스 수집 구현 — 1분 스케줄러, 5분 지연, ±30분 필터링
+- T-16-005: `context-enricher` 구현 — 진입/청산 시점 ±2h 이벤트, ±1h 뉴스 조회
+- T-16-006: `macro-tagger` 구현 — fomc_week, cpi_day, pre_high_impact_event 등 태그 로직
+- (not implemented): journal-worker 확장 — 매크로 컨텍스트 비동기 부착 + 태그 병합
+- (not implemented): `journal_ready` 이벤트 버스 채널 추가 — journal-worker NOTIFY, retrospective-worker LISTEN
+- T-16-007: `prompt-builder` 구현 — 매매 + 매크로 컨텍스트 → 한국어 분석 프롬프트 조합
+- T-16-008: `retrospective-worker` 구현 — `claude -p` 서브프로세스, stdout 저장, graceful degradation
+- T-16-009: 매크로 집계 분석 API — `/api/v1/macro/events`, `/api/v1/journals/macro-analytics`
+- (not implemented): 통합 테스트 (M1~M6) — 경제 이벤트 → 뉴스 수집 → 일지 컨텍스트 부착 → 회고 리포트 생성
+- (not implemented): `strategies` 테이블 확장 — `use_llm_filter` 컬럼 + 마이그레이션
+- (not implemented): `decisions` 테이블 확장 — `llm_action`, `llm_reason`, `llm_confidence`, `llm_risk_factors`, `llm_evaluated_at` 컬럼
+- T-16-010: `decision-prompt-builder` 구현 — kNN 결과 + 최근 매매 이력 + 매크로 컨텍스트 → 구조화 프롬프트
+- T-16-011: `llm-evaluator` 구현 — `claude -p` 호출, JSON 파싱, 타임아웃/장애 시 CONFIRM fallback
+- (not implemented): `decision_pending_llm` 이벤트 버스 채널 + vector-worker 분기 로직 (timeframe ≥ 15m + opt-in 체크)
+- T-16-012: `llm-decision-worker` 구현 — 컨텍스트 수집 → LLM 평가 → 최종 결정 발행 (CONFIRM/PASS/REDUCE_SIZE)
+- (not implemented): 통합 테스트 (M7) — kNN LONG → LLM PASS 오버라이드 → alert/execution 미실행 확인
 
 ## Risks
 

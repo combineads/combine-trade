@@ -13,7 +13,7 @@
 - **done → archive**: Moved during periodic cleanup (harness-cleanup skill).
 
 ## Task file format
-`T-NNN-kebab-slug.md`
+`T-{EP}-{NNN}-kebab-slug.md` (EP = 2-digit epic number, NNN = 3-digit sequential)
 
 ## Required sections
 Goal, Why, Inputs, Dependencies, Expected Outputs, Deliverables, Constraints,

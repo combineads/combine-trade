@@ -6,7 +6,7 @@ Patterns tried and failed. Check here before attempting similar approaches.
 
 ```
 ### [Short description]
-- **Tried**: YYYY-MM-DD, T-NNN
+- **Tried**: YYYY-MM-DD, T-EP-NNN
 - **Problem**: [what went wrong]
 - **Instead**: [what works]
 ```

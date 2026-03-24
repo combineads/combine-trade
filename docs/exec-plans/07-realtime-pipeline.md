@@ -111,21 +111,21 @@ Note: 이벤트 버스 인프라(LISTEN/NOTIFY 추상화)는 00-project-bootstra
   ```
 
 ## Task candidates
-- T-090: Build worker process supervisor with auto-restart
-- T-091: Implement graceful shutdown handler (SIGTERM)
-- T-092: Add worker health check heartbeat (30s)
-- T-093: Implement correlation ID propagation across pipeline
-- T-094: Add per-stage latency timing logs
-- T-095: Implement dead-letter handling for failed events
-- T-096: Implement backpressure queue management
-- T-097: Add missed event recovery on worker restart
-- T-097a: Implement periodic catch-up polling for missed NOTIFY events (60s interval)
-- T-098: Implement vector search timeout graceful degradation
-- T-099: Build metrics collection service (latency, errors, worker status)
-- T-100: Implement metrics DB flush for history
-- T-101: Create Docker Compose for full system stack
-- T-102: E2E pipeline integration test (candle → decision → action)
-- T-103: Pipeline latency benchmark (target: < 1s p99 envelope)
+- T-07-006: Build worker process supervisor with auto-restart
+- (not implemented): Implement graceful shutdown handler (SIGTERM)
+- (not implemented): Add worker health check heartbeat (30s)
+- T-07-001: Implement correlation ID propagation across pipeline
+- T-07-001: Add per-stage latency timing logs
+- T-07-002: Implement dead-letter handling for failed events
+- (not implemented): Implement backpressure queue management
+- T-07-003: Add missed event recovery on worker restart
+- T-07-003: Implement periodic catch-up polling for missed NOTIFY events (60s interval)
+- (not implemented): Implement vector search timeout graceful degradation
+- T-07-004: Build metrics collection service (latency, errors, worker status)
+- (not implemented): Implement metrics DB flush for history
+- (not implemented): Create Docker Compose for full system stack
+- T-07-005: E2E pipeline integration test (candle → decision → action)
+- (not implemented): Pipeline latency benchmark (target: < 1s p99 envelope)
 
 ## Risks
 - PostgreSQL LISTEN/NOTIFY의 메시지 유실 가능성 (트랜잭션 롤백 시)
@@ -147,6 +147,7 @@ Note: 이벤트 버스 인프라(LISTEN/NOTIFY 추상화)는 00-project-bootstra
 | 2026-03-21 | decision_completed replaces vector_created for downstream | Clearer signal that includes decision result, not just vector existence |
 
 ## Progress notes
-- 2026-03-22: Tasks generated — T-048 (correlation), T-049 (dead-letter), T-050 (catch-up), T-051 (metrics), T-052 (integration).
+- 2026-03-22: Tasks generated — T-07-001 (correlation), T-07-002 (dead-letter), T-07-003 (catch-up), T-07-004 (metrics), T-07-005 (integration).
 - 2026-03-22: Pipeline infrastructure modules completed. M1 supervisor, M4 Docker deferred. 431 tests passing.
-- 2026-03-22: M1 (worker supervisor) completed. T-108: WorkerSupervisor with exponential backoff restart, graceful shutdown. 1008 tests passing. M4 Docker deferred (user runs locally).
+- 2026-03-22: M1 (worker supervisor) completed. T-07-006: WorkerSupervisor with exponential backoff restart, graceful shutdown. 1008 tests passing. M4 Docker deferred (user runs locally).
+- 2026-03-25: Task files renamed to T-07-NNN scheme (T-07-001→T-07-001, T-07-002→T-07-002, T-07-003→T-07-003, T-07-004→T-07-004, T-07-005→T-07-005, T-07-006→T-07-006).

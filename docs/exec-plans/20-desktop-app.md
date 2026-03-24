@@ -29,9 +29,9 @@ All existing web views become available on desktop through thin `'use client'` w
 
 ## Prerequisites
 
-- EP08 (API UI) T-128–T-165: `packages/ui/` fully built with all views and hooks ✅
-- EP10 (Auth) T-112–T-116 + EP18 T-176–T-183: better-auth integration complete ✅
-- EP19 (API DB Wiring) T-184–T-196: all API endpoints wired to real DB ✅
+- EP08 (API UI) T-08-010–T-08-033: `packages/ui/` fully built with all views and hooks ✅
+- EP10 (Auth) T-10-005–T-10-009 + EP18 T-18-001–T-18-008: better-auth integration complete ✅
+- EP19 (API DB Wiring) T-19-001–T-19-013: all API endpoints wired to real DB ✅
 - **Manual**: Rust toolchain + Tauri CLI (`cargo install tauri-cli`) installed on dev machine
 - `apps/web/` functional as reference implementation ✅
 
@@ -146,24 +146,24 @@ All existing web views become available on desktop through thin `'use client'` w
 
 | # | Title | Description | Milestone |
 |---|-------|-------------|-----------|
-| T-197 | scaffold-apps-desktop | `apps/desktop/package.json`, `next.config.ts`, `tsconfig.json`, `globals.css`, `page.tsx` redirect stub | M1 |
-| T-198 | src-tauri-init | `src-tauri/Cargo.toml` (Tauri v2 + plugins), `main.rs`, `lib.rs` (plugin registration), `build.rs`, `tauri.conf.json` (CSP + distDir), `capabilities/default.json`, placeholder icons | M2 |
-| T-199 | platform-adapter-core | `packages/ui/src/platform/` — `PlatformAdapter` interface, `PlatformProvider`, `usePlatform()`, web adapter; export from `index.ts`; unit tests | M3 |
-| T-200 | platform-adapter-tauri | `packages/ui/src/platform/tauri.ts` — dynamic import `@tauri-apps/plugin-notification` + `@tauri-apps/plugin-store`; runtime detection; unit tests | M3 |
-| T-201 | desktop-root-layout | `apps/desktop` root layout, login page, (app) layout with client-side auth guard | M4 |
-| T-202 | desktop-pages-core | dashboard, strategies list, strategy detail `[[...params]]`, strategy create pages | M4 |
-| T-203 | desktop-pages-secondary | events, orders, alerts, risk, backtest, settings pages | M4 |
-| T-204 | desktop-build-scripts | `apps/desktop` scripts (dev/build/next:build), root `dev:desktop`, README desktop setup section | M5 |
+| T-20-001 | scaffold-apps-desktop | `apps/desktop/package.json`, `next.config.ts`, `tsconfig.json`, `globals.css`, `page.tsx` redirect stub | M1 |
+| T-20-002 | src-tauri-init | `src-tauri/Cargo.toml` (Tauri v2 + plugins), `main.rs`, `lib.rs` (plugin registration), `build.rs`, `tauri.conf.json` (CSP + distDir), `capabilities/default.json`, placeholder icons | M2 |
+| T-20-003 | platform-adapter-core | `packages/ui/src/platform/` — `PlatformAdapter` interface, `PlatformProvider`, `usePlatform()`, web adapter; export from `index.ts`; unit tests | M3 |
+| T-20-004 | platform-adapter-tauri | `packages/ui/src/platform/tauri.ts` — dynamic import `@tauri-apps/plugin-notification` + `@tauri-apps/plugin-store`; runtime detection; unit tests | M3 |
+| T-20-005 | desktop-root-layout | `apps/desktop` root layout, login page, (app) layout with client-side auth guard | M4 |
+| T-20-006 | desktop-pages-core | dashboard, strategies list, strategy detail `[[...params]]`, strategy create pages | M4 |
+| T-20-007 | desktop-pages-secondary | events, orders, alerts, risk, backtest, settings pages | M4 |
+| T-20-008 | desktop-build-scripts | `apps/desktop` scripts (dev/build/next:build), root `dev:desktop`, README desktop setup section | M5 |
 
 ## Risks
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Static export + dynamic routes — `[id]` fails without known IDs at build time | High | Use `[[...params]]` catch-all for strategy detail route (T-202). Client reads `params[0]` as ID. |
+| Static export + dynamic routes — `[id]` fails without known IDs at build time | High | Use `[[...params]]` catch-all for strategy detail route (T-20-005). Client reads `params[0]` as ID. |
 | `__TAURI_INTERNALS__` detection timing — window globals not yet set on server render path | Medium | Gate detection inside `useEffect` (SSR-safe); already specified in ARCHITECTURE.md design |
 | Tauri v2 plugin API breaking changes from Tauri v1 patterns | Medium | Use Tauri v2 docs; `@tauri-apps/plugin-*` packages instead of the old `@tauri-apps/api` sub-modules |
 | Rust toolchain / Cargo.lock conflicts — Tauri + plugin deps may require specific `rustc` version | Medium | Pin `apps/desktop/src-tauri/rust-toolchain.toml` at MSRV for selected Tauri version |
-| `@tauri-apps` dependencies leaking into `apps/web` bundle | Low | Dynamic import gating on `__TAURI_INTERNALS__` prevents inclusion; verify with `next build` on apps/web post T-199 |
+| `@tauri-apps` dependencies leaking into `apps/web` bundle | Low | Dynamic import gating on `__TAURI_INTERNALS__` prevents inclusion; verify with `next build` on apps/web post T-20-002 |
 
 ## Decision log
 

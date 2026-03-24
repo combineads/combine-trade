@@ -114,22 +114,22 @@ Note: 이 에픽은 08-api-ui와 병렬 또는 직후에 진행. API 엔드포�
   ```
 
 ## Task candidates
-- T-134: Create users table schema and initial admin seed
-- T-135: Implement password hashing (Argon2id)
-- T-136: Implement JWT access/refresh token service
-- T-137: Implement refresh token storage and revocation
-- T-138: Build Elysia authentication middleware
-- T-139: Implement login/refresh/logout API endpoints
-- T-140: Add authentication exception for public routes (health, login)
-- T-141: Implement SSE connection authentication
-- T-142: Build Next.js login page and auth flow
-- T-143: Implement Next.js token storage and auto-refresh
-- T-144: Build Tauri login screen and secure token storage
-- T-145: Implement exchange API key encryption service (AES-256-GCM)
-- T-146: Build exchange credential CRUD API with masking
-- T-147: Integration test: login → token → API access → refresh → logout
-- T-147a: Implement master key rotation CLI utility
-- T-147b: Test: master key rotation with zero data loss verification
+- T-10-001: Create users table schema and initial admin seed
+- T-10-006: Implement password hashing (Argon2id)
+- T-10-005: Implement JWT access/refresh token service
+- (not implemented): Implement refresh token storage and revocation
+- T-10-007: Build Elysia authentication middleware
+- T-10-008: Implement login/refresh/logout API endpoints
+- T-10-002: Add authentication exception for public routes (health, login)
+- (not implemented): Implement SSE connection authentication
+- (not implemented): Build Next.js login page and auth flow
+- (not implemented): Implement Next.js token storage and auto-refresh
+- (not implemented): Build Tauri login screen and secure token storage
+- T-10-009: Implement exchange API key encryption service (AES-256-GCM)
+- T-10-004: Build exchange credential CRUD API with masking
+- (not implemented): Integration test: login → token → API access → refresh → logout
+- (not implemented): Implement master key rotation CLI utility
+- (not implemented): Test: master key rotation with zero data loss verification
 
 ## Risks
 - JWT secret key 관리: 환경변수 유출 시 모든 토큰 위조 가능

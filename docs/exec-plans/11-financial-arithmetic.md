@@ -107,19 +107,14 @@
 packages/shared/decimal/ must not call exchange APIs directly. Precision metadata (tick sizes, lot sizes) is fetched by packages/exchange/ or workers, then cached in DB. packages/shared/decimal/ reads from the cache only.
 
 ## Task candidates
-- T-148: Implement Decimal.js wrapper with standard financial arithmetic functions
-- T-149: Implement exchange precision metadata cache (tick size, lot size, min notional)
-- T-150: Implement automatic price/quantity rounding to exchange rules
-- T-151: Implement fee calculator with maker/taker rates per exchange
-- T-152: Implement round-trip fee calculation (entry + exit)
-- T-153: Create funding_rates table and collector service
-- T-154: Implement cumulative funding rate calculation for open positions
-- T-155: Integrate historical funding rates into backtest engine
-- T-156: Modify labeling engine to support net PnL (fee-adjusted)
-- T-157: Add fee/funding breakdown to backtest report
-- T-158: Update decision engine for net expectancy option
-- T-159: Update position sizer with fee-adjusted effective risk
-- T-160: Integration test: full PnL pipeline with fees and funding
+- T-11-001: Implement Decimal.js wrapper with standard financial arithmetic functions
+- T-11-002: Implement exchange precision validator (tick size, lot size, min notional)
+- T-11-003: Implement fee calculator with maker/taker rates per exchange
+- T-11-004: Implement funding rate calculator (pure arithmetic)
+- T-11-005: Financial arithmetic integration test
+- T-11-006: Implement funding rate collector service (collect + persist)
+- T-11-007: Funding rate collector service (with accumulation and warning)
+- T-11-008: PnL integration with fees and funding
 
 ## Risks
 - Decimal.js 성능 오버헤드: 대량 백테스트 시 네이티브 float 대비 10-50배 느릴 수 있음
@@ -138,5 +133,6 @@ packages/shared/decimal/ must not call exchange APIs directly. Precision metadat
 | 2026-03-21 | Decimal.js 적용 경계: 지표=float, PnL=Decimal | 기술지표 계산은 float 성능이 필수(대량 백테스트), PnL/수수료/잔고는 정확성이 필수. 경계: strategy sandbox 출력(features)은 float, fee/PnL 계산부터 Decimal |
 
 ## Progress notes
-- 2026-03-22: Tasks generated — T-058 (decimal wrapper), T-059 (precision validator), T-060 (fee calculator), T-061 (funding rate), T-062 (integration test).
+- 2026-03-22: Tasks generated — T-11-001 (decimal wrapper), T-11-002 (precision validator), T-11-003 (fee calculator), T-11-004 (funding rate), T-11-005 (integration test).
 - 2026-03-22: M1 (decimal precision) and M2 (fee engine) core logic completed. M3 (funding rate collection) and M4 (PnL pipeline integration) deferred (require DB/exchange). 542 tests passing.
+- 2026-03-25: Task files migrated from T-NNN to T-11-NNN naming. T-11-006 (funding collector, EP11 M3), T-11-007 (funding collector with accumulation), T-11-008 (PnL integration, EP11 M4) added from backlog.

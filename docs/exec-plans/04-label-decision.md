@@ -99,20 +99,13 @@
   ```
 
 ## Task candidates
-- T-053: Implement TP/SL price calculator from strategy config
-- T-054: Implement forward candle scanner (max_hold_bars traversal)
-- T-055: Implement WIN/LOSS/TIME_EXIT judgment logic
-- T-056: Implement simultaneous TP+SL handling (sl_hit_first)
-- T-057: Implement pnl_pct/mfe_pct/mae_pct/hold_bars calculation
-- T-058: Build label-worker with periodic scan + conditional labeling
-- T-059: Implement candle gap detection guard for labeling
-- T-060: Implement decision engine with configurable thresholds
-- T-060a: Implement Wilson score CI calculation and confidence tier classification (Low/Medium/High/Very High)
-- T-061: Implement custom decision_config override from strategy
-- T-061a: Implement optional confidence tier filtering (strategy config: min_confidence_tier)
-- T-062: Integration test: label → stats refresh → decision output (including CI + tier)
-- T-063: Edge case tests: zero samples, exactly 30 samples, 55% boundary, CI boundary tests
-- T-063a: Add simultaneous TP/SL hit ratio tracking to backtest report
+- T-04-001: Labeler engine — TP/SL price calculator, forward candle scanner, WIN/LOSS/TIME_EXIT judgment, simultaneous TP+SL handling, pnl_pct/mfe_pct/mae_pct/hold_bars calculation
+- T-04-002: Label-worker — periodic scan, conditional labeling, candle gap detection guard
+- T-03-006: Decision engine — configurable thresholds, Wilson score CI calculation, confidence tier classification (Low/Medium/High/Very High), custom decision_config override
+- (not implemented): Implement optional confidence tier filtering (strategy config: min_confidence_tier)
+- T-04-003: Integration test: label → stats refresh → decision output (including CI + tier)
+- (not implemented): Edge case tests: zero samples, exactly 30 samples, 55% boundary, CI boundary tests
+- (not implemented): Add simultaneous TP/SL hit ratio tracking to backtest report
 
 ## Risks
 - 라벨링 시 forward 캔들이 충분하지 않은 경우 (최근 이벤트) 처리
@@ -141,5 +134,5 @@
 | 2026-03-22 | Decision confidence tiers added (Low/Medium/High/Very High) | min_samples=30 유지 (CLT 최소). 30개 샘플의 55% winrate CI는 37%-73%로 매우 넓음 — 사용자에게 불확실성을 명시적으로 표시. 기준을 올리면 초기에 진입 신호 부족. CI + tier 표시로 정보 비대칭 해소. decisions 테이블에 ci_lower, ci_upper, confidence_tier 컬럼 추가. |
 
 ## Progress notes
-- 2026-03-22: Tasks generated — T-035 (labeler), T-036 (label worker), T-037 (integration test). Decision engine covered by T-032 in EP03.
-- 2026-03-22: All tasks completed. T-035 labeler (Decimal.js, MFE/MAE tracking), T-036 label worker (scanner + health), T-037 integration test (7 scenarios). 307 tests passing.
+- 2026-03-22: Tasks generated — T-04-001 (labeler), T-04-002 (label worker), T-04-003 (integration test). Decision engine covered by T-03-006 in EP03.
+- 2026-03-22: All tasks completed. T-04-001 labeler (Decimal.js, MFE/MAE tracking), T-04-002 label worker (scanner + health), T-04-003 integration test (7 scenarios). 307 tests passing.

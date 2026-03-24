@@ -39,7 +39,7 @@ Workers covered:
 
 ## Prerequisites
 
-- EP19 (API DB Wiring) T-184–T-196: `db/index.ts` Drizzle singleton available ✅
+- EP19 (API DB Wiring) T-19-001–T-19-013: `db/index.ts` Drizzle singleton available ✅
 - `packages/shared/event-bus/`: `PgEventSubscriber`, `PgEventPublisher` implemented ✅
 - Domain logic packages fully implemented (EP01–EP17): all handler/collector/evaluator classes ready ✅
 - `DATABASE_URL` and `MASTER_ENCRYPTION_KEY` in `.env` ✅
@@ -207,28 +207,28 @@ The most complex workers — require sandbox executor and exchange adapter wirin
 
 | # | Title | Description | Milestone |
 |---|-------|-------------|-----------|
-| T-205 | journal-worker-process-wiring | `workers/journal-worker/src/db.ts` (JournalStorage → Drizzle trade_journals) + `index.ts` (LISTEN label_ready, shutdown) | M1 |
-| T-206 | alert-worker-process-wiring | `workers/alert-worker/src/db.ts` + `index.ts` (wraps entry.ts startAlertWorker, wires SlackWebhookClient) | M2 |
-| T-207 | llm-decision-worker-process-bootstrap | `workers/llm-decision-worker/src/db.ts` + `main.ts` (LISTEN decision_pending_llm, Claude API evaluate) | M2 |
-| T-208 | retrospective-worker-process-bootstrap | `workers/retrospective-worker/src/db.ts` + `main.ts` (LISTEN journal_ready, Claude spawn runner) | M2 |
-| T-209 | label-worker-process-wiring | `workers/label-worker/src/db.ts` + `index.ts` (LISTEN strategy_event_created + catch-up poll) | M3 |
-| T-210 | vector-worker-process-wiring | `workers/vector-worker/src/db.ts` (VectorTableManager + all deps) + `index.ts` (LISTEN strategy_event_created → VectorEventHandler) | M3 |
-| T-211 | execution-worker-process-wiring | `workers/execution-worker/src/db.ts` (RiskGate + OrderBuilder + exchange adapter + credential decrypt) + `index.ts` (wraps entry.ts) | M4 |
-| T-212 | strategy-worker-process-wiring | `workers/strategy-worker/src/db.ts` (strategy/event/candle repos) + `index.ts` (LISTEN candle_closed → StrategyEvaluator, StrategyExecutor sandbox) | M5 |
-| T-213 | candle-collector-process-wiring | `workers/candle-collector/src/db.ts` (CandleRepository + findActiveSymbolTimeframes) + `index.ts` (multi-pair polling loop + dynamic pair detection) | M5 |
-| T-214 | macro-collector-process-entry | `workers/macro-collector/src/db.ts` + `index.ts` NEW (scheduled polling, SavetickerClient wiring) + supervisor.ts update | M6 |
-| T-215 | worker-supervisor-smoke-test | `workers/__tests__/supervisor-smoke.test.ts`: start all workers, verify running, SIGTERM, verify clean exit | M6 |
+| T-21-001 | journal-worker-process-wiring | `workers/journal-worker/src/db.ts` (JournalStorage → Drizzle trade_journals) + `index.ts` (LISTEN label_ready, shutdown) | M1 |
+| T-21-002 | alert-worker-process-wiring | `workers/alert-worker/src/db.ts` + `index.ts` (wraps entry.ts startAlertWorker, wires SlackWebhookClient) | M2 |
+| T-21-003 | llm-decision-worker-process-bootstrap | `workers/llm-decision-worker/src/db.ts` + `main.ts` (LISTEN decision_pending_llm, Claude API evaluate) | M2 |
+| T-21-004 | retrospective-worker-process-bootstrap | `workers/retrospective-worker/src/db.ts` + `main.ts` (LISTEN journal_ready, Claude spawn runner) | M2 |
+| T-21-005 | label-worker-process-wiring | `workers/label-worker/src/db.ts` + `index.ts` (LISTEN strategy_event_created + catch-up poll) | M3 |
+| T-21-006 | vector-worker-process-wiring | `workers/vector-worker/src/db.ts` (VectorTableManager + all deps) + `index.ts` (LISTEN strategy_event_created → VectorEventHandler) | M3 |
+| T-21-007 | execution-worker-process-wiring | `workers/execution-worker/src/db.ts` (RiskGate + OrderBuilder + exchange adapter + credential decrypt) + `index.ts` (wraps entry.ts) | M4 |
+| T-21-008 | strategy-worker-process-wiring | `workers/strategy-worker/src/db.ts` (strategy/event/candle repos) + `index.ts` (LISTEN candle_closed → StrategyEvaluator, StrategyExecutor sandbox) | M5 |
+| T-21-009 | candle-collector-process-wiring | `workers/candle-collector/src/db.ts` (CandleRepository + findActiveSymbolTimeframes) + `index.ts` (multi-pair polling loop + dynamic pair detection) | M5 |
+| T-21-010 | macro-collector-process-entry | `workers/macro-collector/src/db.ts` + `index.ts` NEW (scheduled polling, SavetickerClient wiring) + supervisor.ts update | M6 |
+| T-21-011 | worker-supervisor-smoke-test | `workers/__tests__/supervisor-smoke.test.ts`: start all workers, verify running, SIGTERM, verify clean exit | M6 |
 
 ## Risks
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| StrategyExecutor (isolated-vm sandbox) initialization in strategy-worker — complex setup with isolate pool and API injection | High | T-212 must audit `packages/core/strategy` constructor requirements before wiring; consider `--max-old-space-size` for Bun process |
-| candle-collector dynamic pair detection — polling strategies table every 60s may race with collector startup | Medium | T-213: load pairs at startup; use a Set to track active pairs; adding a new pair starts a new collector loop without restarting existing ones |
-| execution-worker credential decryption — wrong MASTER_ENCRYPTION_KEY silently fails or crashes | Medium | T-211: validate decryption at startup by attempting a round-trip; log clear error and exit if key is wrong |
-| PgEventSubscriber `connectionFactory` API — `ListenConnection` interface expects a factory but postgres.js connection API differs | Medium | T-205 (reference pattern) must establish the correct adapter; all subsequent workers copy the pattern |
-| vector-worker VectorTableManager raw SQL — dynamic table names must be sanitized (SQL injection risk) | Medium | VectorTableManager already exists in packages/core/vector — T-210 must use it, not bypass it |
-| llm-decision-worker + retrospective-worker entry points — these workers currently export a class in `index.ts`, not a default process entry | Low | T-207, T-208 add `main.ts` as the actual process entry; update package.json `main` field accordingly |
+| StrategyExecutor (isolated-vm sandbox) initialization in strategy-worker — complex setup with isolate pool and API injection | High | T-21-008 must audit `packages/core/strategy` constructor requirements before wiring; consider `--max-old-space-size` for Bun process |
+| candle-collector dynamic pair detection — polling strategies table every 60s may race with collector startup | Medium | T-21-009: load pairs at startup; use a Set to track active pairs; adding a new pair starts a new collector loop without restarting existing ones |
+| execution-worker credential decryption — wrong MASTER_ENCRYPTION_KEY silently fails or crashes | Medium | T-21-007: validate decryption at startup by attempting a round-trip; log clear error and exit if key is wrong |
+| PgEventSubscriber `connectionFactory` API — `ListenConnection` interface expects a factory but postgres.js connection API differs | Medium | T-21-001 (reference pattern) must establish the correct adapter; all subsequent workers copy the pattern |
+| vector-worker VectorTableManager raw SQL — dynamic table names must be sanitized (SQL injection risk) | Medium | VectorTableManager already exists in packages/core/vector — T-21-006 must use it, not bypass it |
+| llm-decision-worker + retrospective-worker entry points — these workers currently export a class in `index.ts`, not a default process entry | Low | T-21-003, T-21-004 add `main.ts` as the actual process entry; update package.json `main` field accordingly |
 
 ## Decision log
 

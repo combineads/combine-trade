@@ -145,23 +145,23 @@ bun run build
 
 | # | Task | Description |
 |---|------|-------------|
-| T-222 | next-intl 패키지 설치 및 기본 설정 | next-intl 설치, provider 구성, messages 디렉토리 생성, TypeScript 타입 설정 |
-| T-223 | packages/ui i18n provider 및 훅 래퍼 | useTranslations 래퍼, I18nProvider, locale context |
-| T-224 | apps/web locale 미들웨어 및 라우팅 | Accept-Language 감지, /ko/, /en/ 경로 라우팅, 리다이렉트 |
-| T-225 | apps/desktop 클라이언트 사이드 locale provider | static export 호환 locale 관리, localStorage 기반 |
-| T-226 | 공통 컴포넌트 번역 키 추출 및 common namespace | Button, Card, Table 등 공통 문자열 번역 |
-| T-227 | LanguageSwitcher 컴포넌트 구현 | top-bar 언어 선택 UI, localStorage 저장 |
-| T-228 | 숫자/날짜/통화 포맷팅 유틸리티 | Intl.NumberFormat/DateTimeFormat 기반 로케일 포맷터 |
-| T-229 | Dashboard 뷰 번역 (dashboard namespace) | 킬스위치 카드, 워커 상태, 전략 요약, 최근 이벤트 번역 |
-| T-230 | Strategies 뷰 번역 (strategies namespace) | 전략 목록, 상세, 에디터 UI 번역 |
-| T-231 | Orders 뷰 번역 (orders namespace) | 주문 목록, 포지션, 상태 번역 |
-| T-232 | 트레이딩 용어 한/영 대조표 작성 | 도메인 용어 glossary 작성 |
-| T-233 | Alerts/Risk/Settings 뷰 번역 | alerts, risk, settings namespace 번역 |
-| T-234 | Auth/Backtest/Events/Charts 뷰 번역 | auth, backtest, events, charts namespace 번역 |
-| T-235 | Journal 뷰 번역 (journal namespace) | 트레이드 저널 뷰 번역 |
-| T-236 | Desktop 앱 i18n 통합 | desktop static export 환경에서 i18n 동작 확인 |
-| T-237 | 번역 누락 감지 스크립트 | i18n-check.ts — 누락 키 검출, CI 연동 |
-| T-238 | i18n E2E 테스트 | 주요 시나리오에서 ko↔en 전환 E2E 검증 |
+| T-22-001 | next-intl 패키지 설치 및 기본 설정 | next-intl 설치, provider 구성, messages 디렉토리 생성, TypeScript 타입 설정 |
+| T-22-002 | packages/ui i18n provider 및 훅 래퍼 | useTranslations 래퍼, I18nProvider, locale context |
+| T-22-003 | apps/web locale 미들웨어 및 라우팅 | Accept-Language 감지, /ko/, /en/ 경로 라우팅, 리다이렉트 |
+| T-22-004 | apps/desktop 클라이언트 사이드 locale provider | static export 호환 locale 관리, localStorage 기반 |
+| T-22-005 | 공통 컴포넌트 번역 키 추출 및 common namespace | Button, Card, Table 등 공통 문자열 번역 |
+| T-22-006 | LanguageSwitcher 컴포넌트 구현 | top-bar 언어 선택 UI, localStorage 저장 |
+| T-22-007 | 숫자/날짜/통화 포맷팅 유틸리티 | Intl.NumberFormat/DateTimeFormat 기반 로케일 포맷터 |
+| T-22-008 | Dashboard 뷰 번역 (dashboard namespace) | 킬스위치 카드, 워커 상태, 전략 요약, 최근 이벤트 번역 |
+| T-22-009 | Strategies 뷰 번역 (strategies namespace) | 전략 목록, 상세, 에디터 UI 번역 |
+| T-22-010 | Orders 뷰 번역 (orders namespace) | 주문 목록, 포지션, 상태 번역 |
+| T-22-011 | 트레이딩 용어 한/영 대조표 작성 | 도메인 용어 glossary 작성 |
+| T-22-012 | Alerts/Risk/Settings 뷰 번역 | alerts, risk, settings namespace 번역 |
+| T-22-013 | Auth/Backtest/Events/Charts 뷰 번역 | auth, backtest, events, charts namespace 번역 |
+| T-22-014 | Journal 뷰 번역 (journal namespace) | 트레이드 저널 뷰 번역 |
+| T-22-015 | Desktop 앱 i18n 통합 | desktop static export 환경에서 i18n 동작 확인 |
+| T-22-016 | 번역 누락 감지 스크립트 | i18n-check.ts — 누락 키 검출, CI 연동 |
+| T-22-017 | i18n E2E 테스트 | 주요 시나리오에서 ko↔en 전환 E2E 검증 |
 
 ## Risks
 

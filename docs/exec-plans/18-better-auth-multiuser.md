@@ -261,20 +261,17 @@
 
 | 번호 | 제목 | 설명 |
 |------|------|------|
-| T-NNN | install-better-auth | better-auth, @elysiajs/helmet 설치; drizzle adapter 설정 |
-| T-NNN | better-auth-schema-migration | user/session/account/verification 테이블 생성; users 테이블 통합 마이그레이션 |
-| T-NNN | replace-auth-middleware | server.ts 내 authGuardPlugin 제거; better-auth Elysia 플러그인 + helmet + CORS 적용 |
-| T-NNN | delete-legacy-auth-code | packages/shared/auth/{jwt,token,middleware,service}.ts 삭제; apps/api/src/middleware/auth.ts 삭제; apps/api/src/routes/auth.ts 삭제 |
-| T-NNN | strategy-schema-user-isolation | strategies 테이블 user_id 추가 + 마이그레이션 + 백필 |
-| T-NNN | orders-kill-switch-loss-limit-user-isolation | orders/kill_switch_state/kill_switch_events/daily_loss_limits/daily_pnl_tracking 테이블 user_id 추가 |
-| T-NNN | strategy-repository-user-filter | StrategyRepository 모든 메서드에 userId 파라미터 추가; 쿼리에 user_id 필터 적용 |
-| T-NNN | orders-risk-repository-user-filter | OrderRepository, KillSwitchRepository, LossLimitRepository user_id 필터 적용 |
-| T-NNN | route-session-extraction | 모든 API 라우트에서 better-auth 세션 추출 후 userId를 repo에 전달 |
-| T-NNN | nextjs-auth-client | Next.js better-auth client 설정; 로그인 페이지; 세션 미들웨어; useAuth hook |
-| T-NNN | tauri-auth-client | Tauri better-auth vanilla client; LoginView 공통 컴포넌트; Keychain 세션 저장 |
-| T-NNN | sse-auth | SSE 엔드포인트 better-auth 세션 검증 적용 |
-| T-NNN | admin-seed-script | 초기 관리자 계정 시드 스크립트 (bun run db:seed:admin) |
-| T-NNN | auth-integration-test | 전체 인증 플로우 통합 테스트: 로그인 → API → 로그아웃 → 재접근 거부; user isolation 테스트 |
+| T-18-001 | better-auth-setup-and-configuration | better-auth, @elysiajs/helmet 설치; drizzle adapter 설정 |
+| T-18-009 | migrate-users-table-to-better-auth | user/session/account/verification 테이블 생성; users 테이블 통합 마이그레이션 |
+| T-18-002 | replace-server-auth-middleware | server.ts 내 authGuardPlugin 제거; better-auth Elysia 플러그인 + helmet + CORS 적용 |
+| T-18-003 | delete-legacy-auth-code | packages/shared/auth/{jwt,token,middleware,service}.ts 삭제; apps/api/src/middleware/auth.ts 삭제; apps/api/src/routes/auth.ts 삭제 |
+| T-18-004 | multiuser-db-schema | strategies/orders/kill_switch_state/kill_switch_events/daily_loss_limits/daily_pnl_tracking 테이블 user_id 추가 + 마이그레이션 + 백필 |
+| T-18-005 | repository-user-isolation | StrategyRepository, OrderRepository, KillSwitchRepository, LossLimitRepository 모든 메서드에 userId 파라미터 추가; 쿼리에 user_id 필터 적용 |
+| T-18-006 | route-session-extraction | 모든 API 라우트에서 better-auth 세션 추출 후 userId를 repo에 전달 |
+| T-18-007 | nextjs-auth-client | Next.js better-auth client 설정; 로그인 페이지; 세션 미들웨어; useAuth hook |
+| (not implemented) | tauri-auth-client | Tauri better-auth vanilla client; LoginView 공통 컴포넌트; Keychain 세션 저장 |
+| (not implemented) | sse-auth | SSE 엔드포인트 better-auth 세션 검증 적용 |
+| T-18-008 | admin-seed-script-and-integration-tests | 초기 관리자 계정 시드 스크립트 + 전체 인증 플로우 통합 테스트: 로그인 → API → 로그아웃 → 재접근 거부; user isolation 테스트 |
 
 ## Risks
 

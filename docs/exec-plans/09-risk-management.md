@@ -146,29 +146,29 @@
   ```
 
 ## Task candidates
-- T-133a: Implement symbol-level advisory lock for order serialization
-- T-133b: Implement pessimistic balance locking for position sizing
-- T-133c: Concurrency test: simultaneous orders for same symbol
-- T-120: Implement manual kill switch (API endpoint + state management + scope hierarchy)
-- T-121: Implement financial auto-triggers (balance deviation, untracked position, order rejection counter)
-- T-121a: Implement infrastructure auto-triggers (exchange API, DB, worker health) with grace period + position check
-- T-121b: Implement sandbox auto-triggers (OOM, timeout, crash counter) — integration with EP02 sandbox errors
-- T-121c: Implement data integrity auto-triggers (candle gap, vector search timeout)
-- T-121d: Implement kill_switch_events audit table with positions snapshot
-- T-122: Implement kill switch Slack notification (all trigger types)
-- T-123: Implement daily realized loss tracking service
-- T-124: Implement daily/weekly loss limit enforcement
-- T-125: Implement consecutive SL limit enforcement
-- T-126: Implement loss limit auto-reset (daily/weekly)
-- T-127: Implement fixed-fraction position sizer
-- T-128: Implement exchange lot size validation
-- T-129: Implement total exposure limit check
-- T-130: Implement position sync service (exchange → DB)
-- T-131: Implement external position detection
-- T-132: Implement position monitoring API for UI
-- T-132a: Implement liquidation price tracking (exchange API + fallback estimation)
-- T-132b: Implement liquidation proximity warning (N% threshold → Slack alert)
-- T-133: Integration test: loss limit → auto-trade suspension → Slack alert
+- T-09-009: Implement symbol-level advisory lock for order serialization
+- (not implemented): Implement pessimistic balance locking for position sizing
+- (not implemented): Concurrency test: simultaneous orders for same symbol
+- T-09-008: Implement manual kill switch (API endpoint + state management + scope hierarchy)
+- T-09-011: Implement financial auto-triggers (balance deviation, untracked position, order rejection counter)
+- (not implemented): Implement infrastructure auto-triggers (exchange API, DB, worker health) with grace period + position check
+- (not implemented): Implement sandbox auto-triggers (OOM, timeout, crash counter) — integration with EP02 sandbox errors
+- (not implemented): Implement data integrity auto-triggers (candle gap, vector search timeout)
+- (not implemented): Implement kill_switch_events audit table with positions snapshot
+- (not implemented): Implement kill switch Slack notification (all trigger types)
+- T-09-002: Implement daily realized loss tracking service
+- T-09-007: Implement daily/weekly loss limit enforcement
+- (not implemented): Implement consecutive SL limit enforcement
+- (not implemented): Implement loss limit auto-reset (daily/weekly)
+- T-09-003: Implement fixed-fraction position sizer
+- (not implemented): Implement exchange lot size validation
+- (not implemented): Implement total exposure limit check
+- T-09-010: Implement position sync service (exchange → DB)
+- T-09-012: Implement external position detection
+- T-09-012: Implement position monitoring API for UI
+- (not implemented): Implement liquidation price tracking (exchange API + fallback estimation)
+- (not implemented): Implement liquidation proximity warning (N% threshold → Slack alert)
+- T-09-005: Integration test: loss limit → auto-trade suspension → Slack alert
 
 ## Risks
 - 거래소 잔고 조회 지연으로 포지션 사이징 계산 시점의 잔고가 부정확할 수 있음
@@ -185,5 +185,5 @@
 | 2026-03-22 | Kill switch 자동 트리거 4개 카테고리 12개 조건 확정 | Discovery 세션에서 설계. Financial (즉시), Infrastructure (grace+position), Sandbox (즉시 per-strategy), Data integrity (즉시+position). 포지션 없을 때 infrastructure 장애는 신규 진입 차단만. 모든 자동 kill은 수동 해제 필수. Financial 해제는 원인 확인 체크박스 추가. |
 
 ## Progress notes
-- 2026-03-22: Tasks generated — T-053 (kill switch), T-054 (loss tracker), T-055 (position sizer), T-056 (risk gate), T-057 (integration test).
+- 2026-03-22: Tasks generated — T-09-001 (kill switch), T-09-002 (loss tracker), T-09-003 (position sizer), T-09-004 (risk gate), T-09-005 (integration test).
 - 2026-03-22: Core risk modules completed. M1-M3 pure logic implemented. M0/M4 deferred (require DB/exchange integration). 487 tests passing.

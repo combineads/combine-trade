@@ -63,7 +63,7 @@ Note: These services accept injected `*DbDeps` interfaces (not `db` directly). G
 
 ## Prerequisites
 
-- EP18 T-176~T-183 all in `docs/tasks/done/` ✅
+- EP18 T-18-001~T-18-008 all in `docs/tasks/done/` ✅
 - `docker compose up -d` — PostgreSQL running ✅
 - `.env` with `DATABASE_URL` and `MASTER_ENCRYPTION_KEY` configured ✅
 
@@ -176,29 +176,29 @@ Note: These services accept injected `*DbDeps` interfaces (not `db` directly). G
 
 | # | Title | Description | Milestone |
 |---|-------|-------------|-----------|
-| T-184 | create-db-index | `db/index.ts`: postgres-js pool + Drizzle singleton; validate DATABASE_URL at startup | M1 |
-| T-185 | better-auth-migration | `db:generate` for better-auth tables; apply migration; verify user/session/account/verification tables in DB | M1 |
-| T-186 | wire-auth-entry-point | Replace `stubAuth` in `index.ts` with `createAuth(drizzleAdapter(db, { provider: "pg" }))` | M2 |
-| T-187 | admin-seed-fix-and-verify | Fix `db/seed/admin.ts` import resolution; run seed; verify login via curl | M2 |
-| T-188 | wire-group-a-deps | Write Drizzle glue functions for strategy/executionMode/killSwitch; wire in `index.ts`; thread userId | M3 |
-| T-189 | implement-read-query-functions | Drizzle queries for events/orders/candles/alerts in `apps/api/src/db/`; wire in `index.ts` | M4 |
-| T-190 | implement-credentials-dep | Credential Drizzle queries with AES-GCM encrypt/decrypt; wire in `index.ts` | M4 |
-| T-191 | implement-journal-dep | Journal Drizzle queries (list/get/search/analytics); wire in `index.ts` | M4 |
-| T-192 | implement-paper-dep | Paper Drizzle queries (status/orders/perf/comparison/reset); wire in `index.ts` | M4 |
-| T-193 | implement-backtest-dep | Wire BacktestEngine to `backtestDeps`; wire in `index.ts` | M4 |
-| T-194 | wire-sse-subscribe | PostgreSQL LISTEN/NOTIFY → in-process bridge; LISTEN connection health check | M4 |
-| T-195 | auth-e2e-integration-test | Integration test (login → CRUD → logout → 401) + README quick-start update | M5 |
+| T-19-001 | create-db-index | `db/index.ts`: postgres-js pool + Drizzle singleton; validate DATABASE_URL at startup | M1 |
+| T-19-002 | better-auth-migration | `db:generate` for better-auth tables; apply migration; verify user/session/account/verification tables in DB | M1 |
+| T-19-003 | wire-auth-entry-point | Replace `stubAuth` in `index.ts` with `createAuth(drizzleAdapter(db, { provider: "pg" }))` | M2 |
+| T-19-004 | admin-seed-fix-and-verify | Fix `db/seed/admin.ts` import resolution; run seed; verify login via curl | M2 |
+| T-19-005 | wire-group-a-deps | Write Drizzle glue functions for strategy/executionMode/killSwitch; wire in `index.ts`; thread userId | M3 |
+| T-19-006 | implement-read-query-functions | Drizzle queries for events/orders/candles/alerts in `apps/api/src/db/`; wire in `index.ts` | M4 |
+| T-19-007 | implement-credentials-dep | Credential Drizzle queries with AES-GCM encrypt/decrypt; wire in `index.ts` | M4 |
+| T-19-008 | implement-journal-dep | Journal Drizzle queries (list/get/search/analytics); wire in `index.ts` | M4 |
+| T-19-009 | implement-paper-dep | Paper Drizzle queries (status/orders/perf/comparison/reset); wire in `index.ts` | M4 |
+| T-19-010 | implement-backtest-dep | Wire BacktestEngine to `backtestDeps`; wire in `index.ts` | M4 |
+| T-19-011 | wire-sse-subscribe | PostgreSQL LISTEN/NOTIFY → in-process bridge; LISTEN connection health check | M4 |
+| T-19-012 | auth-e2e-integration-test | Integration test (login → CRUD → logout → 401) + README quick-start update | M5 |
 
 ## Risks
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| better-auth Drizzle adapter column casing mismatch (camelCase vs snake_case) | High | Run `db:generate` immediately in T-185; diff generated SQL against `db/schema/better-auth.ts`; fix before applying |
-| Existing `users` table conflicts with better-auth `user` table in migration | Medium | Verify current DB state before T-185; EP18 M1 documented the migration path; may require manual SQL |
-| Drizzle glue layer impedance — Group A services accept injected query deps, not `db` directly | Medium | T-188 must write glue functions; check each service constructor signature before wiring |
+| better-auth Drizzle adapter column casing mismatch (camelCase vs snake_case) | High | Run `db:generate` immediately in T-19-002; diff generated SQL against `db/schema/better-auth.ts`; fix before applying |
+| Existing `users` table conflicts with better-auth `user` table in migration | Medium | Verify current DB state before T-19-002; EP18 M1 documented the migration path; may require manual SQL |
+| Drizzle glue layer impedance — Group A services accept injected query deps, not `db` directly | Medium | T-19-005 must write glue functions; check each service constructor signature before wiring |
 | userId threading — stub methods accept no params; real interfaces require `userId: string` on every method | Medium | Verify all Group A repository interfaces include userId; `server.ts` `derive` already injects `userId` into context |
-| LISTEN/NOTIFY connection lifecycle — silent failure if connection drops | Medium | T-194 must add connection health check + reconnect loop for the LISTEN connection |
-| BacktestEngine complexity — may have its own DB deps beyond simple instantiation | Medium | Audit `packages/backtest/` before T-193; if complex, safe-stub with structured error instead of crashing |
+| LISTEN/NOTIFY connection lifecycle — silent failure if connection drops | Medium | T-19-011 must add connection health check + reconnect loop for the LISTEN connection |
+| BacktestEngine complexity — may have its own DB deps beyond simple instantiation | Medium | Audit `packages/backtest/` before T-19-010; if complex, safe-stub with structured error instead of crashing |
 | Missing test DB for integration test | Low | Use `DATABASE_URL_TEST` from `.env`; follow existing test DB setup pattern from `db/__tests__/` |
 
 ## Decision log
@@ -215,7 +215,7 @@ Note: These services accept injected `*DbDeps` interfaces (not `db` directly). G
 
 - Round 1: Planner drafted initial plan (9 tasks, M3 too large, missing dep audit)
 - Round 2 (Architect): revise — audit missing implementations; add userId threading risk; clarify migration task; split M3
-- Round 2 (Critic): revise — Group C massively underscoped; split T-188/T-190; expand non-goals; add test infra; add glue layer risk
+- Round 2 (Critic): revise — Group C massively underscoped; split T-19-005/T-19-007; expand non-goals; add test infra; add glue layer risk
 - Round 3: Planner revised — pre-audited all 12 dep groups; split to 5 milestones + 12 tasks; expanded non-goals and risks
 - Round 3 (Architect): **approve** — architecturally aligned; correct query function location; milestones independently verifiable
 - Round 3 (Critic): **approve** — M4 wide but parallelizable; tasks right-sized; no blocking issues
@@ -223,5 +223,5 @@ Note: These services accept injected `*DbDeps` interfaces (not `db` directly). G
 
 ## Progress notes
 
-- 2026-03-23: 에픽 생성. EP18(T-176~T-183)의 코드 구현은 완료됐으나 `db/index.ts`가 없고 `apps/api/src/index.ts`가 전부 stub 상태. 이 에픽이 실제 서비스 동작의 마지막 연결 단계.
-- 2026-03-23: 태스크 생성 완료 (T-184~T-196, 13개). T-184 → T-185 → T-186 → T-187 → T-188 → [T-189~T-194 병렬] → T-195 → T-196(remove-stubs-and-dead-code)
+- 2026-03-23: 에픽 생성. EP18(T-18-001~T-18-008)의 코드 구현은 완료됐으나 `db/index.ts`가 없고 `apps/api/src/index.ts`가 전부 stub 상태. 이 에픽이 실제 서비스 동작의 마지막 연결 단계.
+- 2026-03-23: 태스크 생성 완료 (T-19-001~T-19-013, 13개). T-19-001 → T-19-002 → T-19-003 → T-19-004 → T-19-005 → [T-19-006~T-19-011 병렬] → T-19-012 → T-19-013(remove-stubs-and-dead-code)

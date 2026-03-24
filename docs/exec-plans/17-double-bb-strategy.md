@@ -253,20 +253,20 @@
 
 ## Task candidates
 
-- `T-080-sandbox-custom-precompute` — Sandbox executor 확장: strategy.indicator_config 기반 커스텀 지표 pre-compute (BB source/period/stddev, MA custom periods)
-- `T-081-timeframes-array-migration` — strategies.timeframe text → timeframes text[] 스키마 마이그레이션 + strategy-worker findActiveStrategies 쿼리 수정
-- `T-082-sandbox-context-injection` — Sandbox에 context.direction/timeframe/symbol 주입 + 전략 스크립트에서 접근 API 제공
-- `T-083-double-bb-detector-script` — BB20/BB4 기반 Double-BB 패턴 탐지 로직 (trend/reversal/breakout × bullish/bearish) + fixture 테스트
-- `T-084-candle-ma-evidence-script` — 캔들 패턴 에비던스 (hammer/doji/engulfing/strong-body) + MA 에비던스 (slope/ordering/reaction) 로직 + 테스트
-- `T-085-separation-bias-gate` — Separation 에비던스 + 1h bias 통합 + 이벤트 게이트 (Double-BB 필수 + ≥3 에비던스) + 테스트
-- `T-086-feature-definitions-atr-tpsl` — Feature 10개 defineFeature() 호출 + normalization config + ATR 기반 TP/SL 계산 + 테스트
-- `T-087-double-bb-strategy-assembly` — 전체 Double-BB 전략 스크립트 조립 (탐지 + 에비던스 + 게이트 + feature + direction 필터링) + 통합 테스트
-- `T-088-seed-registration-script` — Double-BB LONG/SHORT 전략 DB 등록 시드 스크립트 (indicator_config, features_definition, search_config, result_config)
-- `T-089-historical-data-loader` — 3yr BTCUSDT 1m Binance Vision 다운로더 완성 (monthly+daily ZIP → REST fallback) + 캔들 합성 (3m/5m/15m/1h)
-- `T-090-backtest-execution-validation` — Double-BB LONG/SHORT 백테스트 실행 + 통계 검증 (trades ≥ 100, expectancy > 0) + HNSW REINDEX
-- `T-091-realtime-pipeline-e2e` — 실시간 파이프라인 end-to-end 검증: candle close → strategy → vector → decision → alert (latency < 1s)
-- `T-092-paper-trading-validation` — Paper trading ≥ 7일 실행 + win rate z-test + readiness score 산출
-- `T-093-live-deployment` — Binance credentials 등록 + hedge mode + kill switch 테스트 + loss limit 설정 + go-live 절차
+- T-17-007: Sandbox executor 확장 — strategy.indicator_config 기반 커스텀 지표 pre-compute (BB source/period/stddev, MA custom periods)
+- (not implemented): strategies.timeframe text → timeframes text[] 스키마 마이그레이션 + strategy-worker findActiveStrategies 쿼리 수정
+- T-17-001: Sandbox에 context.direction/timeframe/symbol 주입 + 전략 스크립트에서 접근 API 제공
+- T-17-002: BB20/BB4 기반 Double-BB 패턴 탐지 로직 (trend/reversal/breakout × bullish/bearish) + fixture 테스트
+- T-17-003: 캔들 패턴 에비던스 (hammer/doji/engulfing/strong-body) + MA 에비던스 (slope/ordering/reaction) 로직 + 테스트
+- T-17-004: Separation 에비던스 + 1h bias 통합 + 이벤트 게이트 (Double-BB 필수 + ≥3 에비던스) + Feature 10개 defineFeature() + ATR 기반 TP/SL + 테스트
+- T-17-005: 전체 Double-BB 전략 스크립트 조립 (탐지 + 에비던스 + 게이트 + feature + direction 필터링) + 통합 테스트
+- T-17-006: Double-BB 전략 샌드박스 실행 스크립트 (sandbox runner + 결과 출력)
+- T-17-008: Double-BB LONG/SHORT 전략 DB 등록 시드 스크립트 (indicator_config, features_definition, search_config, result_config)
+- T-17-009: 3yr BTCUSDT 1m Binance Vision 다운로더 완성 (monthly+daily ZIP → REST fallback) + 캔들 합성 (3m/5m/15m/1h)
+- T-17-010: Double-BB LONG/SHORT 백테스트 실행 + 통계 검증 (trades ≥ 100, expectancy > 0) + HNSW REINDEX
+- T-17-011: 실시간 파이프라인 end-to-end 검증: candle close → strategy → vector → decision → alert (latency < 1s)
+- T-17-012: Paper trading ≥ 7일 실행 + win rate z-test + readiness score 산출
+- T-17-013: Binance credentials 등록 + hedge mode + kill switch 테스트 + loss limit 설정 + go-live 절차
 
 ## Risks
 

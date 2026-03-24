@@ -158,25 +158,24 @@ TypeScript로 작성된 전략 코드를 DB에 저장하고 런타임 샌드박�
   ```
 
 ## Task candidates
-- T-024: Implement SMA, EMA, WMA indicators with tests
-- T-025: Implement BB, RSI, MACD indicators with tests
-- T-026: Implement ATR, Stochastic, CCI, ADX indicators with tests
-- T-027: Implement OBV, VWAP indicators with tests
-- T-028: Create strategies DrizzleORM schema and CRUD service
-- T-028a: Implement strategy code pre-save validation (TypeScript parsing, forbidden API detection)
-- T-028b: Implement Strategy API type compatibility check at save time
-- T-029: Implement strategy version management (immutable versions)
-- T-030: Build sandbox runtime with V8 isolates (isolated-vm) — isolate factory, lifecycle management
-- T-031: Implement sandbox resource limits (128MB memory, 500ms timeout) + kill switch integration (ERR_FATAL_SANDBOX_OOM/TIMEOUT)
-- T-032: Design and implement Strategy API (candle access, indicators)
-- T-033: Implement multi-timeframe data access in sandbox API
-- T-034: Implement defineFeature API for vector feature registration
-- T-035: Implement optional setEntry/setExit custom trade conditions
-- T-035a: Implement strategy warm-up period auto-detection (max indicator lookback)
-- T-035b: Implement warm-up period event suppression (real-time + backtest)
-- T-036: Build strategy-worker with LISTEN candle_closed → evaluate
-- T-037: Add per-strategy error isolation in strategy-worker
-- T-038: Integration test: strategy code → sandbox → event generation
+- (not implemented): Implement SMA, EMA, WMA indicators with tests
+- T-02-001: Implement BB, RSI, MACD indicators with tests
+- T-02-002: Implement ATR, Stochastic, CCI, ADX indicators with tests
+- T-02-003: Implement OBV, VWAP indicators with tests
+- T-02-004: Create strategies DrizzleORM schema and CRUD service
+- T-02-005: Implement strategy code pre-save validation (TypeScript parsing, forbidden API detection)
+- (not implemented): Implement Strategy API type compatibility check at save time
+- (not implemented): Implement strategy version management (immutable versions)
+- T-02-006: Build sandbox runtime with V8 isolates (isolated-vm) — isolate factory, lifecycle management
+- (not implemented): Implement sandbox resource limits (128MB memory, 500ms timeout) + kill switch integration (ERR_FATAL_SANDBOX_OOM/TIMEOUT)
+- T-02-007: Design and implement Strategy API (candle access, indicators)
+- T-02-008: Implement multi-timeframe data access and warm-up period auto-detection in sandbox API
+- (not implemented): Implement defineFeature API for vector feature registration
+- (not implemented): Implement optional setEntry/setExit custom trade conditions
+- (not implemented): Implement warm-up period event suppression (real-time + backtest)
+- T-02-010: Build strategy-worker with LISTEN candle_closed → evaluate
+- (not implemented): Add per-strategy error isolation in strategy-worker
+- T-02-011: Integration test: strategy code → sandbox → event generation
 
 ## Risks
 - V8 isolate (`isolated-vm`) 라이브러리의 Bun 호환성 — Bun은 Node.js native addon을 대부분 지원하나, `isolated-vm`의 V8 바인딩이 Bun 버전에 따라 비호환 가능. M0 PoC에서 즉시 검증.
@@ -197,15 +196,15 @@ TypeScript로 작성된 전략 코드를 DB에 저장하고 런타임 샌드박�
 | 2026-03-22 | Sandbox 타임아웃 500ms (5초에서 단축) | 캔들 close → 결정 1초 budget에서 sandbox 500ms + vector search/decision 500ms 배분. |
 
 ## Progress notes
-- 2026-03-22: Tasks generated T-016 through T-026 (11 tasks)
-  - T-016: RSI, MACD indicators
-  - T-017: ATR, Stochastic, CCI, ADX indicators
-  - T-018: OBV, VWAP indicators
-  - T-019: Strategies schema + CRUD service
-  - T-020: Strategy code validation
-  - T-021: V8 isolate sandbox runtime
-  - T-022: Strategy API for sandbox
-  - T-023: Multi-timeframe + warm-up handling
-  - T-024: Strategy events schema
-  - T-025: Strategy evaluation worker
-  - T-026: Strategy sandbox integration test
+- 2026-03-22: Tasks generated T-02-001 through T-02-011 (11 tasks)
+  - T-02-001: RSI, MACD indicators
+  - T-02-002: ATR, Stochastic, CCI, ADX indicators
+  - T-02-003: OBV, VWAP indicators
+  - T-02-004: Strategies schema + CRUD service
+  - T-02-005: Strategy code validation
+  - T-02-006: V8 isolate sandbox runtime
+  - T-02-007: Strategy API for sandbox
+  - T-02-008: Multi-timeframe + warm-up handling
+  - T-02-009: Strategy events schema
+  - T-02-010: Strategy evaluation worker
+  - T-02-011: Strategy sandbox integration test

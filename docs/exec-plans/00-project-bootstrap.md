@@ -161,36 +161,36 @@ Bootstrap the Combine Trade monorepo so that coding agents can begin implementin
 
 | Candidate | Generated task | Notes |
 |-----------|---------------|-------|
-| T-001: Scaffold monorepo | T-001 | Merged with T-002 (Biome/TS config) |
-| T-002: Biome + TS config | T-001 | Merged into scaffold task |
-| T-004: Docker compose | T-002 | Renumbered |
-| T-003: DrizzleORM schemas | T-003 | Kept |
-| T-005: Indicator library | T-004 | Renumbered |
-| T-006: Candle model | T-005 | Renumbered |
-| T-007: IoC container | T-006 | Renumbered |
-| T-008: AOP decorators | T-007 | Renumbered |
-| T-009: Elysia skeleton | T-008 | Renumbered |
-| T-010a/b/c: Event bus | T-009 | Merged into single task |
-| T-010d/e/f: Test infra | T-010 | Merged into single task |
-| T-010: Integration test | T-011 | Renumbered |
-| T-010g/h/i: Backup | **Deferred** | M8 backup infra — not needed for dev pipeline |
+| T-00-001: Scaffold monorepo | T-00-001 | Merged with T-00-002 (Biome/TS config) |
+| T-00-002: Biome + TS config | T-00-001 | Merged into scaffold task |
+| T-00-004: Docker compose | T-00-002 | Renumbered |
+| T-00-003: DrizzleORM schemas | T-00-003 | Kept |
+| T-00-005: Indicator library | T-00-004 | Renumbered |
+| T-00-006: Candle model | T-00-005 | Renumbered |
+| T-00-007: IoC container | T-00-006 | Renumbered |
+| T-00-008: AOP decorators | T-00-007 | Renumbered |
+| T-00-009: Elysia skeleton | T-00-008 | Renumbered |
+| T-00-010a/b/c: Event bus | T-00-009 | Merged into single task |
+| T-00-010d/e/f: Test infra | T-00-010 | Merged into single task |
+| T-00-010: Integration test | T-00-011 | Renumbered |
+| T-00-010g/h/i: Backup | **Deferred** | M8 backup infra — not needed for dev pipeline |
 
 ## Dependency graph
 
 ```
-T-001 (scaffold) ──┬── T-002 (Docker) ──┬── T-003 (schemas) ──┬── T-005 (candle)
+T-00-001 (scaffold) ──┬── T-00-002 (Docker) ──┬── T-00-003 (schemas) ──┬── T-00-005 (candle)
                    │                    │                     │
-                   │                    ├── T-009 (event bus) │
+                   │                    ├── T-00-009 (event bus) │
                    │                    │                     │
-                   │                    └── T-010 (test infra)┤
+                   │                    └── T-00-010 (test infra)┤
                    │                                          │
-                   ├── T-004 (indicators)                     ├── T-011 (integration)
+                   ├── T-00-004 (indicators)                     ├── T-00-011 (integration)
                    │                                          │
-                   ├── T-006 (IoC) ── T-007 (AOP)            │
+                   ├── T-00-006 (IoC) ── T-00-007 (AOP)            │
                    │                                          │
-                   └── T-008 (Elysia)                         │
+                   └── T-00-008 (Elysia)                         │
 ```
 
 ## Progress notes
 - 2026-03-21: M1 complete — harness docs generated and tailored to project
-- 2026-03-22: Tasks generated — 11 tasks (T-001 through T-011) covering M2–M7. M8 (backup) deferred.
+- 2026-03-22: Tasks generated — 11 tasks (T-00-001 through T-00-011) covering M2–M7. M8 (backup) deferred.

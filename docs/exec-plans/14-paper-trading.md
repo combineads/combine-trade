@@ -187,25 +187,22 @@
   ```
 
 ## Task candidates
-- T-195: Design paper_balances, paper_positions, paper_orders DB schema
-- T-196: Implement paper order matcher (market order simulation with slippage)
-- T-197: Implement paper SL/TP simulation (candle-by-candle check)
-- T-198: Implement paper balance manager (initial balance, PnL tracking, reset)
-- T-199: Implement paper position tracker (open/close, margin, unrealized PnL)
-- T-200: Add 'paper' execution mode to mode management service
-- T-201: Route execution-worker to paper matcher when mode=paper
-- T-202: Add "[모의매매]" tag to Slack alerts in paper mode
-- T-203: Ensure trade journal marks paper trades (is_paper flag)
-- T-204: Implement paper vs backtest comparator (z-test, Sharpe √365, drawdown, expectancy)
-- T-205: Implement readiness score calculator (0-100, 4 categories: backtest 35 + paper 35 + risk 20 + manual 10)
-- T-205a: Implement win rate z-test (paper vs backtest, one-sided p<0.05)
-- T-205b: Implement readiness gate enforcement (API: reject mode change if score < 70)
-- T-205c: Implement readiness score reset conditions (loss limit breach, kill switch, code change)
-- T-206: Build paper trading status/orders/performance API endpoints
-- T-207: Build paper reset API with run history preservation
-- T-208: Add paper events to SSE stream
-- T-209: Integration test: full pipeline in paper mode (candle → decision → paper fill → journal)
-- T-210: Safety test: verify zero real exchange calls in paper mode
+- (not implemented): Design paper_balances, paper_positions, paper_orders DB schema
+- T-14-001: Implement paper order matcher (market order simulation with slippage + SL/TP candle-by-candle check)
+- T-14-002: Implement paper balance tracker and position manager (initial balance, PnL tracking, reset, unrealized PnL)
+- T-14-006: Add 'paper' execution mode integration (mode management service wiring)
+- (not implemented): Route execution-worker to paper matcher when mode=paper
+- (not implemented): Add "[모의매매]" tag to Slack alerts in paper mode
+- (not implemented): Ensure trade journal marks paper trades (is_paper flag)
+- T-14-003: Implement paper vs backtest comparator (z-test, Sharpe √365, drawdown, expectancy)
+- T-14-004: Implement readiness score calculator (0-100, 4 categories: backtest 35 + paper 35 + risk 20 + manual 10, win rate z-test, gate enforcement, reset conditions)
+- (not implemented): Implement readiness gate enforcement (API: reject mode change if score < 70)
+- (not implemented): Implement readiness score reset conditions (loss limit breach, kill switch, code change)
+- (not implemented): Build paper trading status/orders/performance API endpoints
+- (not implemented): Build paper reset API with run history preservation
+- (not implemented): Add paper events to SSE stream
+- T-14-005: Integration test: full pipeline in paper mode (matcher → balance → comparator → readiness)
+- (not implemented): Safety test: verify zero real exchange calls in paper mode
 
 ## Risks
 - 가상 체결가(다음 캔들 open + 슬리피지)가 실제 체결가와 차이가 클 수 있음
@@ -229,10 +226,10 @@
 
 ## Progress notes
 - 2026-03-22: EP14 M1, M2, M4 pure computation layer implemented.
-  - T-068: Paper order matcher — `simulateMarketFill()`, `scanForExit()` (12 tests)
-  - T-069: Paper balance tracker — `applyEntry()`, `applyExit()`, `calculateUnrealizedPnl()`, `computePeriodSummary()` (13 tests)
-  - T-070: Paper comparator — `zTestWinRate()`, `sharpeRatio()`, `maxDrawdown()`, `expectancyDelta()` (18 tests)
-  - T-071: Readiness score — `calculateReadinessScore()` 0-100 composite (13 tests)
-  - T-072: Integration test — full pipeline matcher→balance→comparator→readiness (6 tests)
+  - T-14-001: Paper order matcher — `simulateMarketFill()`, `scanForExit()` (12 tests)
+  - T-14-002: Paper balance tracker — `applyEntry()`, `applyExit()`, `calculateUnrealizedPnl()`, `computePeriodSummary()` (13 tests)
+  - T-14-003: Paper comparator — `zTestWinRate()`, `sharpeRatio()`, `maxDrawdown()`, `expectancyDelta()` (18 tests)
+  - T-14-004: Readiness score — `calculateReadinessScore()` 0-100 composite (13 tests)
+  - T-14-005: Integration test — full pipeline matcher→balance→comparator→readiness (6 tests)
   - Total: 62 tests, all passing
   - M3 (mode integration), M5 (API) deferred — requires EP06/EP08 framework setup

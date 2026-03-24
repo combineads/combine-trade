@@ -235,22 +235,17 @@ Establish a robust CI/CD pipeline and deployment strategy for Combine Trade — 
 
 ## Task candidates
 
-- T-211: Write GitHub Actions CI workflow (lint, typecheck, test:unit, test:integration, build)
-- T-212: Add coverage gate job to CI (packages/core >= 90%, overall >= 80%)
-- T-213: Add performance regression gate to CI (bench vs baseline.json, >20% fails)
-- T-214: Add `bun audit` and lockfile integrity check to CI
-- T-215: Integrate secret scanning (gitleaks) into CI
-- T-216: Add sandbox escape test job to CI (`bun test --filter "sandbox-escape"`)
-- T-217: Write Dockerfile.api (multi-stage, Bun, Elysia)
-- T-218: Write Dockerfile.workers (multi-stage, all workers via supervisor)
-- T-219: Write Dockerfile.web (Next.js production build)
-- T-220: Write docker-compose.prod.yml for tagged image deployment
-- T-221: Implement deploy script with pre-flight checks and graceful shutdown
-- T-222: Implement rollback script with deploy-history.json tracking
-- T-223: Add post-deploy health verification to deploy script
-- T-224: Write release workflow (semver tagging, changelog generation, image push)
-- T-225: Add conventional commit PR lint workflow
-- T-226: Document staging soak-test procedure and promotion gate in runbook
+- T-15-001: Write GitHub Actions CI workflow (lint, typecheck, test:unit, test:integration, build)
+- T-15-002: Add coverage gate and performance regression gate to CI (packages/core >= 90%, overall >= 80%, bench vs baseline.json)
+- T-15-003: Add security gates to CI (bun audit, lockfile integrity, gitleaks secret scanning, sandbox escape test)
+- T-15-004: Write Dockerfile.api (multi-stage, Bun, Elysia)
+- T-15-005: Write Dockerfile.workers (multi-stage, all workers via supervisor)
+- T-15-006: Write Dockerfile.web (Next.js production build)
+- T-15-007: Write docker-compose.prod.yml for tagged image deployment
+- T-15-008: Implement deploy script with pre-flight checks, graceful shutdown, and post-deploy health verification
+- T-15-009: Implement rollback script with deploy-history.json tracking
+- T-15-010: Write release workflow (semver tagging, changelog generation, image push) and conventional commit PR lint workflow
+- (not implemented): Document staging soak-test procedure and promotion gate in runbook
 
 ## Risks and rollback
 

@@ -157,22 +157,22 @@
 packages/core/journal/ must not import Elysia, CCXT, or Drizzle directly. Data access through repository interfaces injected by journal-worker.
 
 ## Task candidates
-- T-179: Design trade_journals + entry_snapshots DB schema and migration
-- T-180: Implement entry snapshot capture service (decision context + similar patterns)
-- T-181: Hook entry snapshot capture into vector-worker pipeline (async, non-blocking)
-- T-182: Implement market context collector (multi-TF trend, volatility, volume, funding)
-- T-183: Implement journal assembler (combine entry snapshot + label + exit context)
-- T-184: Build journal-worker (LISTEN label_ready → assemble journal)
-- T-185: Implement backtest vs live comparison calculator
-- T-186: Implement MFE/MAE timing analysis (peak bar identification)
-- T-187: Implement pattern match post-verification (top-k actual outcome ratio)
-- T-188: Implement auto-tagger (market state tags + trade result tags)
-- T-189: Implement pattern_drift detection with statistical significance check
-- T-190: Build journal list/detail/search API endpoints
-- T-191: Build journal analytics aggregation API (tag-based winrate/expectancy)
-- T-192: Build strategy drift comparison API (backtest vs live)
-- T-193: Implement user notes and custom tags API
-- T-194: Integration test: decision → entry snapshot → label → journal → tags
+- (not implemented): Design trade_journals + entry_snapshots DB schema and migration
+- T-13-001: Implement entry snapshot builder (decision context + similar patterns)
+- (not implemented): Hook entry snapshot capture into vector-worker pipeline (async, non-blocking)
+- T-13-002: Implement market context calculator (multi-TF trend, volatility, volume, funding)
+- T-13-003: Implement journal assembler (combine entry snapshot + label + exit context)
+- T-13-006: Build journal-worker event handler (LISTEN label_ready → assemble journal)
+- (not implemented): Implement backtest vs live comparison calculator
+- (not implemented): Implement MFE/MAE timing analysis (peak bar identification)
+- (not implemented): Implement pattern match post-verification (top-k actual outcome ratio)
+- T-13-004: Implement auto-tagger (market state tags + trade result tags)
+- (not implemented): Implement pattern_drift detection with statistical significance check
+- (not implemented): Build journal list/detail/search API endpoints
+- (not implemented): Build journal analytics aggregation API (tag-based winrate/expectancy)
+- (not implemented): Build strategy drift comparison API (backtest vs live)
+- (not implemented): Implement user notes and custom tags API
+- T-13-005: Integration test: decision → entry snapshot → label → journal → tags
 
 ## Risks
 - 진입 시점 스냅샷 캡처가 파이프라인 레이턴시 예산(1초)에 영향
@@ -197,10 +197,12 @@ packages/core/journal/ must not import Elysia, CCXT, or Drizzle directly. Data a
 
 ## Progress notes
 - 2026-03-22: EP13 M1-M4 pure computation layer implemented.
-  - T-063: Entry snapshot builder — `buildEntrySnapshot()` (9 tests)
-  - T-064: Market context calculator — `classifyTrend()`, `buildMarketContext()` (11 tests)
-  - T-065: Journal assembler — `assembleJournal()` (8 tests)
-  - T-066: Auto-tagger — `generateTags()` with configurable thresholds (14 tests)
-  - T-067: Integration test — full pipeline snapshot→context→assembler→tagger (7 tests)
+  - T-13-001: Entry snapshot builder — `buildEntrySnapshot()` (9 tests)
+  - T-13-002: Market context calculator — `classifyTrend()`, `buildMarketContext()` (11 tests)
+  - T-13-003: Journal assembler — `assembleJournal()` (8 tests)
+  - T-13-004: Auto-tagger — `generateTags()` with configurable thresholds (14 tests)
+  - T-13-005: Integration test — full pipeline snapshot→context→assembler→tagger (7 tests)
   - Total: 49 tests, 144 assertions, all passing
   - M5 (worker, DB, API) deferred — requires EP08 framework setup
+- 2026-03-23: T-13-006 (journal worker event handler) implemented.
+  - JournalEventHandler: 5 tests pass (assemble+save, auto-tags, error swallow, subscribe, route events)

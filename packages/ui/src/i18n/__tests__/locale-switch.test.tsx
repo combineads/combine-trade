@@ -72,9 +72,9 @@ function renderSSR(
 function CommonStrings() {
 	const t = useTranslations("common");
 	return createElement("div", null, [
-		createElement("span", { "data-testid": "loading", key: "loading" }, t("loading")),
-		createElement("span", { "data-testid": "cancel", key: "cancel" }, t("cancel")),
-		createElement("span", { "data-testid": "save", key: "save" }, t("save")),
+		createElement("span", { "data-testid": "loading", key: "loading" }, t("status.loading")),
+		createElement("span", { "data-testid": "cancel", key: "cancel" }, t("actions.cancel")),
+		createElement("span", { "data-testid": "save", key: "save" }, t("actions.save")),
 		createElement("span", { "data-testid": "direction-long", key: "direction-long" }, t("direction.long")),
 		createElement("span", { "data-testid": "direction-short", key: "direction-short" }, t("direction.short")),
 		createElement("span", { "data-testid": "direction-pass", key: "direction-pass" }, t("direction.pass")),
@@ -246,14 +246,14 @@ describe("no empty string values", () => {
 describe("locale switching — common namespace", () => {
 	it("ko renders Korean loading text", () => {
 		const html = renderSSR(createElement(CommonStrings), "ko", koMessages as Messages);
-		expect(html).toContain("불러오는 중...");
+		expect(html).toContain("로딩 중");
 		expect(html).toContain("취소");
 		expect(html).toContain("저장");
 	});
 
 	it("en renders English loading text", () => {
 		const html = renderSSR(createElement(CommonStrings), "en", enMessages as Messages);
-		expect(html).toContain("Loading...");
+		expect(html).toContain("Loading");
 		expect(html).toContain("Cancel");
 		expect(html).toContain("Save");
 	});
@@ -261,9 +261,9 @@ describe("locale switching — common namespace", () => {
 	it("switching ko → en changes common.loading text", () => {
 		const koHtml = renderSSR(createElement(CommonStrings), "ko", koMessages as Messages);
 		const enHtml = renderSSR(createElement(CommonStrings), "en", enMessages as Messages);
-		expect(koHtml).toContain("불러오는 중...");
-		expect(enHtml).not.toContain("불러오는 중...");
-		expect(enHtml).toContain("Loading...");
+		expect(koHtml).toContain("로딩 중");
+		expect(enHtml).not.toContain("로딩 중");
+		expect(enHtml).toContain("Loading");
 	});
 
 	it("switching en → ko changes common.cancel text", () => {

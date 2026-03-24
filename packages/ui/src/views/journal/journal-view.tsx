@@ -62,14 +62,14 @@ export function JournalView({
 						onClick={() => onPageChange(page - 1)}
 						disabled={page <= 1}
 					>
-						{tCommon("previous")}
+						{tCommon("actions.previous")}
 					</button>
 					<button
 						type="button"
 						onClick={() => onPageChange(page + 1)}
 						disabled={page * pageSize >= total}
 					>
-						{tCommon("next")}
+						{tCommon("actions.next")}
 					</button>
 				</div>
 			)}

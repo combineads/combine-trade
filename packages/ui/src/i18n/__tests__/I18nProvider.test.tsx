@@ -23,9 +23,9 @@ import { useFormatter, useLocale, useTranslations } from "../hooks";
 function CommonTranslationsDisplay() {
 	const t = useTranslations("common");
 	return createElement("div", null, [
-		createElement("span", { "data-testid": "loading", key: "loading" }, t("loading")),
-		createElement("span", { "data-testid": "cancel", key: "cancel" }, t("cancel")),
-		createElement("span", { "data-testid": "save", key: "save" }, t("save")),
+		createElement("span", { "data-testid": "loading", key: "loading" }, t("status.loading")),
+		createElement("span", { "data-testid": "cancel", key: "cancel" }, t("actions.cancel")),
+		createElement("span", { "data-testid": "save", key: "save" }, t("actions.save")),
 	]);
 }
 
@@ -80,9 +80,9 @@ describe("I18nProvider", () => {
 			"ko",
 			koMessages as Record<string, unknown>,
 		);
-		expect(html).toContain(koMessages.common.loading);
-		expect(html).toContain(koMessages.common.cancel);
-		expect(html).toContain(koMessages.common.save);
+		expect(html).toContain(koMessages.common.status.loading);
+		expect(html).toContain(koMessages.common.actions.cancel);
+		expect(html).toContain(koMessages.common.actions.save);
 	});
 
 	it("provides en translations via useTranslations", () => {
@@ -91,27 +91,27 @@ describe("I18nProvider", () => {
 			"en",
 			enMessages as Record<string, unknown>,
 		);
-		expect(html).toContain(enMessages.common.loading);
-		expect(html).toContain(enMessages.common.cancel);
-		expect(html).toContain(enMessages.common.save);
+		expect(html).toContain(enMessages.common.status.loading);
+		expect(html).toContain(enMessages.common.actions.cancel);
+		expect(html).toContain(enMessages.common.actions.save);
 	});
 
-	it("ko loading text is '불러오는 중...'", () => {
+	it("ko loading text is '로딩 중'", () => {
 		const html = renderSSR(
 			createElement(CommonTranslationsDisplay),
 			"ko",
 			koMessages as Record<string, unknown>,
 		);
-		expect(html).toContain("불러오는 중...");
+		expect(html).toContain("로딩 중");
 	});
 
-	it("en loading text is 'Loading...'", () => {
+	it("en loading text is 'Loading'", () => {
 		const html = renderSSR(
 			createElement(CommonTranslationsDisplay),
 			"en",
 			enMessages as Record<string, unknown>,
 		);
-		expect(html).toContain("Loading...");
+		expect(html).toContain("Loading");
 	});
 
 	it("accepts optional timeZone prop without error", () => {
@@ -126,7 +126,7 @@ describe("I18nProvider", () => {
 				createElement(CommonTranslationsDisplay),
 			),
 		);
-		expect(html).toContain("Loading...");
+		expect(html).toContain("Loading");
 	});
 });
 
@@ -150,38 +150,31 @@ describe("useLocale", () => {
 	});
 });
 
-describe("useTranslations nested keys", () => {
-	it("accesses nested translation keys in en", () => {
-		const html = renderSSR(
-			createElement(NestedKeysDisplay),
-			"en",
-			enMessages as Record<string, unknown>,
-		);
-		expect(html).toContain("Active");
-		expect(html).toContain("LONG");
-	});
-
-	it("accesses nested translation keys in ko", () => {
+describe("nested keys via useTranslations", () => {
+	it("resolves common.status.active in ko", () => {
 		const html = renderSSR(
 			createElement(NestedKeysDisplay),
 			"ko",
 			koMessages as Record<string, unknown>,
 		);
 		expect(html).toContain("활성");
+	});
+
+	it("resolves common.direction.long as LONG (domain standard)", () => {
+		const html = renderSSR(
+			createElement(NestedKeysDisplay),
+			"ko",
+			koMessages as Record<string, unknown>,
+		);
 		expect(html).toContain("LONG");
 	});
-});
 
-describe("hooks re-exports", () => {
-	it("useTranslations is a function", () => {
-		expect(typeof useTranslations).toBe("function");
-	});
-
-	it("useLocale is a function", () => {
-		expect(typeof useLocale).toBe("function");
-	});
-
-	it("useFormatter is a function", () => {
-		expect(typeof useFormatter).toBe("function");
+	it("resolves common.status.active in en", () => {
+		const html = renderSSR(
+			createElement(NestedKeysDisplay),
+			"en",
+			enMessages as Record<string, unknown>,
+		);
+		expect(html).toContain("Active");
 	});
 });

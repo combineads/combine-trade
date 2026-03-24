@@ -178,6 +178,14 @@ export {
 // Components — TopBar
 export { TopBar, type TopBarProps } from "./components/top-bar";
 
+// Components — LanguageSwitcher
+export {
+	LanguageSwitcher,
+	LOCALE_LABELS,
+	LOCALE_STORAGE_KEY,
+	type LanguageSwitcherProps,
+} from "./components/LanguageSwitcher";
+
 // Hooks — SSE
 export {
 	useSSE,

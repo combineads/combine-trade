@@ -13,3 +13,9 @@ export {
 	type ExecutionModeDeps,
 	type SafetyGateStatus,
 } from "./types.js";
+export {
+	SlippageTracker,
+	type SlippageRecord,
+	type SlippageStats,
+	type SlippageTrackerOptions,
+} from "./slippage-tracker.js";

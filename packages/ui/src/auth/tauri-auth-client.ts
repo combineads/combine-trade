@@ -34,7 +34,7 @@ async function buildTauriStoreAdapter(): Promise<StoreAdapter> {
 	return {
 		set: (key, value) => store.set(key, value),
 		get: <T>(key: string) => store.get<T>(key).then((v) => v ?? null),
-		delete: (key) => store.delete(key),
+		delete: (key) => store.delete(key).then(() => undefined),
 		save: () => store.save(),
 	};
 }
@@ -229,13 +229,14 @@ export function createTauriAuthClient(
 
 	const signIn = Object.assign(vanilla.signIn, { email: signInEmail });
 
+	// biome-ignore lint/suspicious/noExplicitAny: complex better-auth generics require cast
 	return {
 		signIn,
-		signOut,
-		useSession,
-		getSession,
+		signOut: signOut as any,
+		useSession: useSession as any,
+		getSession: getSession as any,
 		_storeSession,
 		_clearSession,
 		_getStoredToken,
-	};
+	} as TauriAuthClientInstance;
 }

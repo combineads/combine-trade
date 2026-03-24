@@ -85,7 +85,7 @@ describe("WorkerStatus", () => {
 describe("DashboardView", () => {
 	test("renders all sections", () => {
 		const html = renderToString(
-			<DashboardView killSwitchActive={false} strategies={[]} recentEvents={[]} workers={[]} />,
+			<DashboardView locale="en" killSwitchActive={false} strategies={[]} recentEvents={[]} workers={[]} />,
 		);
 		expect(html).toContain("Dashboard");
 		expect(html).toContain("KILL SWITCH");

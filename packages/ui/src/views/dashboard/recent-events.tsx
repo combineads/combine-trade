@@ -1,4 +1,7 @@
+import type { getTranslations } from "../../i18n";
 import { type Direction, DirectionBadge } from "../../components/badge";
+
+type Translator = ReturnType<typeof getTranslations>;
 
 export interface RecentEventItem {
 	id: string;
@@ -10,13 +13,16 @@ export interface RecentEventItem {
 
 export interface RecentEventsProps {
 	events: RecentEventItem[];
+	/** Dashboard namespace translator. Defaults to hardcoded English strings when omitted. */
+	t?: Translator;
 }
 
-export function RecentEvents({ events }: RecentEventsProps) {
+export function RecentEvents({ events, t }: RecentEventsProps) {
 	if (events.length === 0) {
+		const emptyText = t ? t("recentEvents.noEvents") : "No events detected";
 		return (
 			<div style={{ color: "var(--text-muted)", fontSize: 14, padding: 16 }}>
-				No events detected
+				{emptyText}
 			</div>
 		);
 	}

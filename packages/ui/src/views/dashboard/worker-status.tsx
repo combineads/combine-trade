@@ -1,3 +1,7 @@
+import type { getTranslations } from "../../i18n";
+
+type Translator = ReturnType<typeof getTranslations>;
+
 export type WorkerState = "running" | "warning" | "down" | "inactive";
 
 export interface WorkerStatusItem {
@@ -7,6 +11,8 @@ export interface WorkerStatusItem {
 
 export interface WorkerStatusProps {
 	workers: WorkerStatusItem[];
+	/** Dashboard namespace translator. Defaults to raw status string when omitted. */
+	t?: Translator;
 }
 
 const STATUS_COLORS: Record<WorkerState, string> = {
@@ -16,7 +22,12 @@ const STATUS_COLORS: Record<WorkerState, string> = {
 	inactive: "#64748B",
 };
 
-export function WorkerStatus({ workers }: WorkerStatusProps) {
+export function WorkerStatus({ workers, t }: WorkerStatusProps) {
+	const statusLabel = (status: WorkerState): string => {
+		if (!t) return status;
+		return t(`workerStatus.${status}`);
+	};
+
 	return (
 		<div style={{ display: "grid", gap: 8 }}>
 			{workers.map((w) => (
@@ -47,7 +58,7 @@ export function WorkerStatus({ workers }: WorkerStatusProps) {
 							textTransform: "capitalize",
 						}}
 					>
-						{w.status}
+						{statusLabel(w.status)}
 					</span>
 				</div>
 			))}

@@ -1,4 +1,7 @@
+import type { getTranslations } from "../../i18n";
 import { type BadgeStatus, StatusBadge } from "../../components/badge";
+
+type Translator = ReturnType<typeof getTranslations>;
 
 export interface StrategySummaryItem {
 	id: string;
@@ -10,14 +13,19 @@ export interface StrategySummaryItem {
 
 export interface StrategySummaryProps {
 	strategies: StrategySummaryItem[];
+	/** Dashboard namespace translator. Defaults to hardcoded English strings when omitted. */
+	t?: Translator;
 }
 
-export function StrategySummary({ strategies }: StrategySummaryProps) {
+export function StrategySummary({ strategies, t }: StrategySummaryProps) {
 	if (strategies.length === 0) {
+		const emptyText = t ? t("strategies.noStrategies") : "No strategies yet";
 		return (
-			<div style={{ color: "var(--text-muted)", fontSize: 14, padding: 16 }}>No strategies yet</div>
+			<div style={{ color: "var(--text-muted)", fontSize: 14, padding: 16 }}>{emptyText}</div>
 		);
 	}
+
+	const eventsLabel = t ? t("strategies.events") : "events";
 
 	return (
 		<div style={{ display: "grid", gap: 12 }}>
@@ -44,7 +52,9 @@ export function StrategySummary({ strategies }: StrategySummaryProps) {
 						<div style={{ color: s.winrate > 0.5 ? "var(--color-win)" : "var(--text-secondary)" }}>
 							{(s.winrate * 100).toFixed(1)}%
 						</div>
-						<div style={{ color: "var(--text-muted)", fontSize: 12 }}>{s.eventCount} events</div>
+						<div style={{ color: "var(--text-muted)", fontSize: 12 }}>
+							{s.eventCount} {eventsLabel}
+						</div>
 					</div>
 				</div>
 			))}

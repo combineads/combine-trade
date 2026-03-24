@@ -1,11 +1,19 @@
+import type { getTranslations } from "../../i18n";
+
+type Translator = ReturnType<typeof getTranslations>;
+
 export interface KillSwitchCardProps {
 	active: boolean;
 	reason?: string;
 	onActivate?: () => void;
 	onDeactivate?: () => void;
+	/** Dashboard namespace translator. Defaults to hardcoded English strings when omitted. */
+	t?: Translator;
 }
 
-export function KillSwitchCard({ active, reason, onActivate, onDeactivate }: KillSwitchCardProps) {
+export function KillSwitchCard({ active, reason, onActivate, onDeactivate, t }: KillSwitchCardProps) {
+	const label = t ? t("killSwitch.label") : "KILL SWITCH";
+
 	if (active) {
 		return (
 			<div
@@ -25,7 +33,7 @@ export function KillSwitchCard({ active, reason, onActivate, onDeactivate }: Kil
 						marginBottom: 8,
 					}}
 				>
-					KILL SWITCH
+					{label}
 				</div>
 				<div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
 					<span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#FFFFFF" }} />
@@ -39,11 +47,11 @@ export function KillSwitchCard({ active, reason, onActivate, onDeactivate }: Kil
 							borderRadius: 9999,
 						}}
 					>
-						TRIGGERED
+						{t ? t("killSwitch.statusTriggered") : "TRIGGERED"}
 					</span>
 				</div>
 				<div style={{ fontSize: 18, fontWeight: 700, color: "#FFFFFF", marginBottom: 4 }}>
-					ALL TRADING HALTED
+					{t ? t("killSwitch.allTradingHalted") : "ALL TRADING HALTED"}
 				</div>
 				{reason && (
 					<div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginBottom: 16 }}>
@@ -64,7 +72,7 @@ export function KillSwitchCard({ active, reason, onActivate, onDeactivate }: Kil
 						cursor: "pointer",
 					}}
 				>
-					Release Kill Switch
+					{t ? t("killSwitch.releaseButton") : "Release Kill Switch"}
 				</button>
 			</div>
 		);
@@ -88,7 +96,7 @@ export function KillSwitchCard({ active, reason, onActivate, onDeactivate }: Kil
 					marginBottom: 8,
 				}}
 			>
-				KILL SWITCH
+				{label}
 			</div>
 			<div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
 				<span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#22C55E" }} />
@@ -102,13 +110,13 @@ export function KillSwitchCard({ active, reason, onActivate, onDeactivate }: Kil
 						borderRadius: 9999,
 					}}
 				>
-					ARMED
+					{t ? t("killSwitch.statusArmed") : "ARMED"}
 				</span>
 			</div>
 			<div
 				style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}
 			>
-				Trading Active
+				{t ? t("killSwitch.tradingActive") : "Trading Active"}
 			</div>
 			<button
 				type="button"
@@ -124,7 +132,7 @@ export function KillSwitchCard({ active, reason, onActivate, onDeactivate }: Kil
 					cursor: "pointer",
 				}}
 			>
-				Activate Kill Switch
+				{t ? t("killSwitch.activateButton") : "Activate Kill Switch"}
 			</button>
 		</div>
 	);

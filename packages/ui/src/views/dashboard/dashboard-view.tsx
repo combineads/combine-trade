@@ -1,9 +1,12 @@
+import { getTranslations } from "../../i18n";
+import type { Locale } from "../../i18n/glossary";
 import { KillSwitchCard } from "./kill-switch-card";
 import { type RecentEventItem, RecentEvents } from "./recent-events";
 import { StrategySummary, type StrategySummaryItem } from "./strategy-summary";
 import { WorkerStatus, type WorkerStatusItem } from "./worker-status";
 
 export interface DashboardViewProps {
+	locale?: Locale;
 	killSwitchActive: boolean;
 	killSwitchReason?: string;
 	onKillSwitchActivate?: () => void;
@@ -14,6 +17,7 @@ export interface DashboardViewProps {
 }
 
 export function DashboardView({
+	locale = "ko",
 	killSwitchActive,
 	killSwitchReason,
 	onKillSwitchActivate,
@@ -22,10 +26,12 @@ export function DashboardView({
 	recentEvents,
 	workers,
 }: DashboardViewProps) {
+	const t = getTranslations("dashboard", locale);
+
 	return (
 		<div>
 			<h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 24, color: "var(--text-primary)" }}>
-				Dashboard
+				{t("title")}
 			</h1>
 
 			<div
@@ -42,6 +48,7 @@ export function DashboardView({
 						reason={killSwitchReason}
 						onActivate={onKillSwitchActivate}
 						onDeactivate={onKillSwitchDeactivate}
+						t={t}
 					/>
 				</div>
 
@@ -62,9 +69,9 @@ export function DashboardView({
 							marginBottom: 16,
 						}}
 					>
-						Workers
+						{t("sections.workers")}
 					</h2>
-					<WorkerStatus workers={workers} />
+					<WorkerStatus workers={workers} t={t} />
 				</div>
 
 				{/* Strategies */}
@@ -84,9 +91,9 @@ export function DashboardView({
 							marginBottom: 16,
 						}}
 					>
-						Strategies
+						{t("sections.strategies")}
 					</h2>
-					<StrategySummary strategies={strategies} />
+					<StrategySummary strategies={strategies} t={t} />
 				</div>
 
 				{/* Recent Events */}
@@ -106,9 +113,9 @@ export function DashboardView({
 							marginBottom: 16,
 						}}
 					>
-						Recent Events
+						{t("sections.recentEvents")}
 					</h2>
-					<RecentEvents events={recentEvents} />
+					<RecentEvents events={recentEvents} t={t} />
 				</div>
 			</div>
 		</div>

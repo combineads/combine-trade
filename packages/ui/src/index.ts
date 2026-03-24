@@ -260,6 +260,12 @@ export {
 	type BetterAuthClientOptions,
 	type BetterAuthClientInstance,
 } from "./auth/better-auth-client";
+export {
+	createTauriAuthClient,
+	type TauriAuthClientOptions,
+	type TauriAuthClientInstance,
+	type StoreAdapter,
+} from "./auth/tauri-auth-client";
 
 // API Client
 export {

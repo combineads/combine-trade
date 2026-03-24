@@ -143,5 +143,11 @@ export function createApiServer(deps: ApiServerDeps) {
 		.use(backtestRoutes(deps.backtestDeps))
 		.use(journalRoutes(deps.journalDeps))
 		.use(paperRoutes(deps.paperDeps))
-		.use(sseRoutes({ subscribe: deps.sseSubscribe }));
+		.use(
+			sseRoutes({
+				subscribe: deps.sseSubscribe,
+				auth: deps.auth,
+				strategyRepository: deps.strategyRepository,
+			}),
+		);
 }

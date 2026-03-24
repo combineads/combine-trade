@@ -46,8 +46,8 @@ export {
 	type PositionSyncResult,
 } from "./position-monitor.js";
 export {
-	createAuditEvent,
-	recordDeactivation,
-	type KillSwitchAuditEvent,
-	type KillSwitchAuditDeps,
-} from "./kill-switch-audit.js";
+	InfrastructureTriggerMonitor,
+	evaluateInfrastructureTriggers,
+	type InfrastructureHealthState,
+	type InfrastructureTriggerResult,
+} from "./infrastructure-trigger-monitor.js";

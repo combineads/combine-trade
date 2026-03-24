@@ -1,107 +1,59 @@
-# T-22-001 next-intl package installation and basic setup
+# T-22-001 next-intl 패키지 설치 및 기본 설정
 
 ## Goal
-Install `next-intl` in `apps/web` and `apps/desktop`, create Korean/English message files in `packages/ui/src/i18n/messages/`, create a shared i18n config, and wire up the basic next-intl configuration for `apps/web`.
+`next-intl` 패키지를 설치하고, `packages/ui/src/i18n/` 디렉토리 구조와 TypeScript 타입 설정을 완료한다.
 
 ## Why
-EP22 (Internationalization) requires an i18n foundation before any view-level translation work can begin. This task establishes the package installation, message file structure, TypeScript types, and shared config so all subsequent EP22 tasks have a stable base.
+EP22 전체 i18n 작업의 기반이 되는 인프라 태스크. 이 태스크 없이는 나머지 번역 작업 전체가 블록된다.
 
 ## Inputs
-- `docs/exec-plans/22-internationalization.md` § "M1 — i18n 인프라 구축"
-- `apps/web/next.config.ts` — existing Next.js config
-- `apps/desktop/next.config.ts` — existing desktop config (static export)
-- `packages/ui/src/` — existing UI package structure
+- `packages/ui/package.json` — 의존성 추가 대상
+- `packages/ui/tsconfig.json` — TypeScript 경로 설정
+- `docs/exec-plans/22-internationalization.md` — 아키텍처 결정사항
 
 ## Dependencies
-None — first task of EP22.
+없음
 
 ## Expected Outputs
-- `next-intl` installed in `apps/web/package.json` and `apps/desktop/package.json`
-- `packages/ui/src/i18n/messages/ko.json` — Korean translations skeleton (common namespace)
-- `packages/ui/src/i18n/messages/en.json` — English translations skeleton (common namespace)
-- `packages/ui/src/i18n/config.ts` — shared locale config (locales list, defaultLocale)
-- `packages/ui/src/i18n/index.ts` — re-exports for shared i18n config
-- `apps/web/src/i18n/request.ts` — next-intl server-side request config
-- `apps/web/src/i18n/routing.ts` — next-intl routing config
-- TypeScript path types for next-intl message keys
+- `next-intl` 패키지가 `packages/ui`에 설치됨
+- `packages/ui/src/i18n/` 디렉토리 구조 생성
+- `packages/ui/src/i18n/messages/ko.json` 및 `en.json` (빈 skeleton)
+- TypeScript global type 선언으로 번역 키 자동완성 가능
 
 ## Deliverables
-- `next-intl` resolvable in both Next.js apps
-- Shared locale constants accessible via `@combine/ui`
-- Message files with at least a `common` namespace skeleton
-- `bun run typecheck` passes
-- Tests for config and message file structure
+- `packages/ui/package.json`: `next-intl` 의존성 추가
+- `packages/ui/src/i18n/messages/ko.json`: namespace skeleton (common, dashboard, strategies, orders, alerts, risk, settings, auth, backtest, charts, events, journal)
+- `packages/ui/src/i18n/messages/en.json`: 동일 skeleton
+- `packages/ui/src/i18n/types.ts`: `Messages` 타입 선언 (TypeScript 자동완성용)
+- `packages/ui/src/i18n/index.ts`: i18n 설정 export (locales, defaultLocale)
+- `packages/ui/src/i18n/__tests__/messages.test.ts`: ko/en skeleton 구조 일치 테스트
 
 ## Constraints
-- Default locale: `ko`
-- Supported locales: `['ko', 'en']`
-- Message files in `packages/ui/src/i18n/messages/` (shared, used by both apps)
-- TypeScript strict mode — no `any`
-- Follow `@combine/*` package alias convention
-- `apps/desktop` uses static export — do NOT add locale-based routing to desktop yet (T-22-004 handles that)
+- `packages/core`에는 i18n 의존성 추가 금지 (domain isolation)
+- `next-intl` 버전은 Next.js App Router RSC를 지원하는 최신 안정 버전 사용
+- 번역 파일은 `packages/ui/src/i18n/messages/` 에 위치 (결정사항)
 
 ## Steps
-1. Write tests (RED): message file structure, config shape, type exports
-2. Install `next-intl` in `apps/web` and `apps/desktop`
-3. Create `packages/ui/src/i18n/` directory with config, message files, index
-4. Create `apps/web/src/i18n/request.ts` — next-intl `getRequestConfig`
-5. Create `apps/web/src/i18n/routing.ts` — next-intl routing definition
-6. Export i18n config from `packages/ui/src/i18n/index.ts`
-7. Run tests → GREEN
-8. Run `bun run typecheck` → fix any type errors
+1. `packages/ui/` 현재 package.json 읽기
+2. `bun add next-intl` in `packages/ui/`
+3. `packages/ui/src/i18n/` 디렉토리 및 하위 파일 생성
+4. `ko.json`, `en.json` namespace skeleton 작성 (각 namespace는 빈 object `{}`)
+5. `types.ts` — `typeof import('./messages/ko.json')` 기반 `Messages` 타입 작성
+6. `index.ts` — `locales`, `defaultLocale` export
+7. 테스트 작성: ko/en namespace keys 일치 확인
+8. `bun run typecheck` 통과 확인
 
 ## Acceptance Criteria
-- `next-intl` is listed in `apps/web/package.json` dependencies
-- `packages/ui/src/i18n/messages/ko.json` and `en.json` exist with `common` namespace
-- `packages/ui/src/i18n/config.ts` exports `locales`, `defaultLocale`, `Locale` type
-- `apps/web/src/i18n/request.ts` exports a valid `getRequestConfig` function
-- `apps/web/src/i18n/routing.ts` exports `routing`, `Link`, `redirect`, `usePathname`, `useRouter`
-- All tests pass
-- `bun run typecheck` passes
+- `packages/ui` 에서 `import { useTranslations } from 'next-intl'` 가능
+- `ko.json`과 `en.json`에 동일한 최상위 namespace 키 존재
+- `bun run typecheck` 통과
+- `bun test --filter messages` 통과
 
 ## Validation
 ```bash
-bun test --filter i18n
 bun run typecheck
+bun test packages/ui/src/i18n/__tests__/messages.test.ts
 ```
 
 ## Out of Scope
-- Locale-based URL routing middleware (T-22-003)
-- `packages/ui` i18n provider / `useTranslations` wrapper (T-22-002)
-- Desktop locale provider (T-22-004)
-- Any view-level translation (T-22-005 onward)
-
-## Implementation Notes
-
-- **Date**: 2026-03-25
-- **next-intl version**: 4.8.3 (installed in both apps/web and apps/desktop)
-- **Files created**:
-  - `packages/ui/src/i18n/config.ts` — `locales`, `defaultLocale`, `Locale` type, `isValidLocale()`
-  - `packages/ui/src/i18n/messages/ko.json` — Korean common namespace skeleton (20 keys)
-  - `packages/ui/src/i18n/messages/en.json` — English common namespace skeleton (20 keys)
-  - `packages/ui/src/i18n/index.ts` — re-exports from config
-  - `apps/web/src/i18n/routing.ts` — next-intl `defineRouting` with locales/defaultLocale
-  - `apps/web/src/i18n/request.ts` — next-intl `getRequestConfig` server function
-  - `packages/ui/src/i18n/__tests__/i18n-config.test.ts` — 5 config tests
-  - `packages/ui/src/i18n/__tests__/messages.test.ts` — 7 message tests
-- **packages/ui/src/index.ts**: Added i18n exports at top
-- **Approach**:
-  - Shared locale config lives in `packages/ui/src/i18n/` for reuse by both apps
-  - Message files in `packages/ui/src/i18n/messages/` with `common` namespace skeleton
-  - `apps/web` routing uses `defineRouting` from next-intl pointing to shared config
-  - `request.ts` dynamically imports message files by locale with fallback to `defaultLocale`
-  - Desktop locale provider deferred to T-22-004 (static export compatibility)
-- **Validation results**:
-  - `bun test packages/ui/src/i18n/__tests__/`: PASS (12 tests, 0 failures)
-  - `bun run typecheck`: PASS
-  - `bunx biome check packages/ui/src/i18n/ apps/web/src/i18n/`: PASS (0 errors)
-
-## Outputs
-
-- `next-intl@4.8.3` in `apps/web/package.json` and `apps/desktop/package.json`
-- `packages/ui/src/i18n/config.ts` — `locales: ['ko', 'en']`, `defaultLocale: 'ko'`, `Locale` type, `isValidLocale()`
-- `packages/ui/src/i18n/messages/ko.json` — Korean common namespace (loading, error, confirm, cancel, save, close, delete, edit, create, update, search, filter, reset, refresh, back, next, previous, submit, apply, status.*, direction.*, noData, unknown)
-- `packages/ui/src/i18n/messages/en.json` — English common namespace (same keys)
-- `apps/web/src/i18n/routing.ts` — next-intl routing definition
-- `apps/web/src/i18n/request.ts` — next-intl server request config with locale validation
-- `packages/ui/src/index.ts` — exports `locales`, `defaultLocale`, `Locale`, `isValidLocale` from i18n
+Provider 컴포넌트 구현 (T-22-002), 미들웨어 설정 (T-22-003), 실제 번역 문자열 입력 (T-22-005 이후)

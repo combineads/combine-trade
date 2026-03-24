@@ -1,3 +1,6 @@
+// i18n
+export { defaultLocale, isValidLocale, locales, type Locale } from "./i18n/index";
+
 // Theme
 export {
 	ThemeProvider,

@@ -81,3 +81,4 @@ temp/
 *.p12
 *.pfx
 secrets/
+.claude/worktrees/

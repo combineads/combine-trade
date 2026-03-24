@@ -137,6 +137,7 @@
       "version": "0.0.1",
       "dependencies": {
         "lightweight-charts": "^5.1.0",
+        "next-intl": "^4.8.3",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
       },

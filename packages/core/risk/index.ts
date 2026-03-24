@@ -7,6 +7,9 @@ export type {
 	LimitCheckResult,
 	PositionSizeConfig,
 	PositionSizeResult,
+	LiquidationPriceInput,
+	LiquidationPriceResult,
+	LiquidationPriceProvider,
 } from "./types.js";
 export {
 	activate,
@@ -46,44 +49,6 @@ export {
 	type PositionSyncResult,
 } from "./position-monitor.js";
 export {
-	recordOutcome,
-	resetSuspension,
-	isSuspended,
-	ConsecutiveSlNotSuspendedError,
-	type ConsecutiveSlState,
-	type ConsecutiveSlDeps,
-} from "./consecutive-sl-limiter.js";
-export {
-	createAuditEvent,
-	recordDeactivation,
-	type KillSwitchAuditEvent,
-	type KillSwitchAuditDeps,
-} from "./kill-switch-audit.js";
-export {
-	buildActivationMessage,
-	buildDeactivationMessage,
-	KillSwitchNotifier,
-	type KillSwitchNotifierDeps,
-} from "./kill-switch-notifier.js";
-export {
-	evaluateInfrastructureTriggers,
-	InfrastructureTriggerMonitor,
-	type InfrastructureHealthState,
-	type InfrastructureTriggerResult,
-} from "./infrastructure-trigger-monitor.js";
-export {
-	evaluateSandboxEvent,
-	SandboxTriggerMonitor,
-	type SandboxTriggerResult,
-} from "./sandbox-trigger-monitor.js";
-export {
-	shouldResetDaily,
-	shouldResetWeekly,
-	LossLimitResetScheduler,
-	type LossLimitResetDeps,
-} from "./loss-limit-reset.js";
-export {
-	LotSizeValidator,
-	LotSizeViolationError,
-	type ExchangeLotRules,
-} from "./lot-size-validator.js";
+	LiquidationPriceCalculator,
+	LiquidationPriceError,
+} from "./liquidation-price.js";

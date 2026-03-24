@@ -43,3 +43,20 @@ export interface PositionSizeResult {
 	notionalUsd: string;
 	effectiveLeverage: string;
 }
+
+export interface LiquidationPriceInput {
+	side: "LONG" | "SHORT";
+	entryPrice: string;
+	leverage: number;
+	maintenanceMarginRate: string;
+	marginType: "isolated" | "cross";
+}
+
+export interface LiquidationPriceResult {
+	price: string | null;
+	source: "exchange" | "estimate";
+}
+
+export interface LiquidationPriceProvider {
+	fetchLiquidationPrice(input: LiquidationPriceInput): Promise<string | null>;
+}

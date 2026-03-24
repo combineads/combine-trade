@@ -82,3 +82,8 @@ export {
 	LossLimitResetScheduler,
 	type LossLimitResetDeps,
 } from "./loss-limit-reset.js";
+export {
+	LotSizeValidator,
+	LotSizeViolationError,
+	type ExchangeLotRules,
+} from "./lot-size-validator.js";

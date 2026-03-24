@@ -1,3 +1,6 @@
+import { getTranslations, useTranslations } from "../../i18n";
+import type { Locale } from "../../i18n/glossary";
+
 export interface LossLimitData {
 	dailyLimit: number;
 	dailyUsed: number;
@@ -6,6 +9,7 @@ export interface LossLimitData {
 
 export interface LossLimitDisplayProps {
 	data: LossLimitData;
+	locale?: Locale;
 }
 
 function getProgressColor(pct: number): string {
@@ -14,7 +18,9 @@ function getProgressColor(pct: number): string {
 	return "#22C55E";
 }
 
-export function LossLimitDisplay({ data }: LossLimitDisplayProps) {
+export function LossLimitDisplay({ data, locale }: LossLimitDisplayProps) {
+	const tContext = useTranslations("risk");
+	const t = locale ? getTranslations("risk", locale) : tContext;
 	const pct = data.dailyLimit > 0 ? (data.dailyUsed / data.dailyLimit) * 100 : 0;
 	const color = getProgressColor(pct);
 
@@ -37,7 +43,7 @@ export function LossLimitDisplay({ data }: LossLimitDisplayProps) {
 					letterSpacing: "0.05em",
 				}}
 			>
-				Daily Loss Limit
+				{t("lossLimit.label")}
 			</div>
 
 			<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>

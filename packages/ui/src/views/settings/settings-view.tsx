@@ -1,6 +1,14 @@
+"use client";
+
+import { LanguageSwitcher } from "../../components/LanguageSwitcher";
+import { getTranslations, useTranslations } from "../../i18n";
+import type { Locale } from "../../i18n/glossary";
+
 export interface SettingsViewProps {
 	theme?: "dark" | "light";
 	onThemeChange?: (theme: "dark" | "light") => void;
+	onLocaleChange?: (locale: Locale) => void;
+	locale?: Locale;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -27,22 +35,30 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 	);
 }
 
-export function SettingsView({ theme = "dark", onThemeChange }: SettingsViewProps) {
+export function SettingsView({
+	theme = "dark",
+	onThemeChange,
+	onLocaleChange,
+	locale,
+}: SettingsViewProps) {
+	const tContext = useTranslations("settings");
+	const t = locale ? getTranslations("settings", locale) : tContext;
+
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 			<h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
-				Settings
+				{t("pageTitle")}
 			</h1>
 
-			<Section title="Appearance">
+			<Section title={t("sections.appearance")}>
 				<div style={{ display: "flex", gap: 8 }}>
-					{(["dark", "light"] as const).map((t) => {
-						const isActive = t === theme;
+					{(["dark", "light"] as const).map((themeOption) => {
+						const isActive = themeOption === theme;
 						return (
 							<button
-								key={t}
+								key={themeOption}
 								type="button"
-								onClick={() => onThemeChange?.(t)}
+								onClick={() => onThemeChange?.(themeOption)}
 								style={{
 									padding: "8px 20px",
 									fontSize: 13,
@@ -53,25 +69,34 @@ export function SettingsView({ theme = "dark", onThemeChange }: SettingsViewProp
 									backgroundColor: isActive ? "rgba(34,197,94,0.1)" : "transparent",
 									color: isActive ? "#22C55E" : "var(--text-secondary)",
 									cursor: "pointer",
-									textTransform: "capitalize",
 								}}
 							>
-								{t.charAt(0).toUpperCase() + t.slice(1)}
+								{t(themeOption === "dark" ? "appearance.dark" : "appearance.light")}
 							</button>
 						);
 					})}
 				</div>
 			</Section>
 
-			<Section title="General">
+			<Section title={t("sections.language")}>
+				{onLocaleChange ? (
+					<LanguageSwitcher onLocaleChange={onLocaleChange} />
+				) : (
+					<p style={{ color: "var(--text-muted)", fontSize: 13, margin: 0 }}>
+						{t("language")}
+					</p>
+				)}
+			</Section>
+
+			<Section title={t("sections.general")}>
 				<p style={{ color: "var(--text-muted)", fontSize: 13, margin: 0 }}>
-					General settings coming soon.
+					{t("general.comingSoon")}
 				</p>
 			</Section>
 
-			<Section title="Exchange">
+			<Section title={t("sections.exchange")}>
 				<p style={{ color: "var(--text-muted)", fontSize: 13, margin: 0 }}>
-					Exchange configuration managed in Credentials.
+					{t("exchange.managedInCredentials")}
 				</p>
 			</Section>
 		</div>

@@ -1,8 +1,12 @@
+import { getTranslations, useTranslations } from "../../i18n";
+import type { Locale } from "../../i18n/glossary";
+
 export interface KillSwitchControlProps {
 	active: boolean;
 	reason?: string;
 	onActivate?: () => void;
 	onDeactivate?: () => void;
+	locale?: Locale;
 }
 
 export function KillSwitchControl({
@@ -10,7 +14,11 @@ export function KillSwitchControl({
 	reason,
 	onActivate,
 	onDeactivate,
+	locale,
 }: KillSwitchControlProps) {
+	const tContext = useTranslations("risk");
+	const t = locale ? getTranslations("risk", locale) : tContext;
+
 	if (active) {
 		return (
 			<div
@@ -31,7 +39,7 @@ export function KillSwitchControl({
 						letterSpacing: "0.05em",
 					}}
 				>
-					KILL SWITCH
+					{t("killSwitch.label")}
 				</div>
 				<div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
 					<span
@@ -47,11 +55,11 @@ export function KillSwitchControl({
 							borderRadius: 9999,
 						}}
 					>
-						TRIGGERED
+						{t("killSwitch.statusTriggered")}
 					</span>
 				</div>
 				<div style={{ fontSize: 22, fontWeight: 700, color: "#FFFFFF", marginBottom: 8 }}>
-					ALL TRADING HALTED
+					{t("killSwitch.allTradingHalted")}
 				</div>
 				{reason && (
 					<div style={{ fontSize: 14, color: "rgba(255,255,255,0.85)", marginBottom: 16 }}>
@@ -73,9 +81,11 @@ export function KillSwitchControl({
 							cursor: "pointer",
 						}}
 					>
-						Release Kill Switch
+						{t("killSwitch.releaseButton")}
 					</button>
-					<span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Ctrl+Shift+K</span>
+					<span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
+						{t("killSwitch.shortcut")}
+					</span>
 				</div>
 			</div>
 		);
@@ -100,7 +110,7 @@ export function KillSwitchControl({
 					letterSpacing: "0.05em",
 				}}
 			>
-				KILL SWITCH
+				{t("killSwitch.label")}
 			</div>
 			<div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
 				<span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#22C55E" }} />
@@ -114,13 +124,13 @@ export function KillSwitchControl({
 						borderRadius: 9999,
 					}}
 				>
-					ARMED
+					{t("killSwitch.statusArmed")}
 				</span>
 			</div>
 			<div
 				style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}
 			>
-				Trading Active
+				{t("killSwitch.tradingActive")}
 			</div>
 			<div style={{ display: "flex", alignItems: "center", gap: 16 }}>
 				<button
@@ -137,9 +147,11 @@ export function KillSwitchControl({
 						cursor: "pointer",
 					}}
 				>
-					Activate Kill Switch
+					{t("killSwitch.activateButton")}
 				</button>
-				<span style={{ fontSize: 11, color: "var(--text-muted)" }}>Ctrl+Shift+K</span>
+				<span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+					{t("killSwitch.shortcut")}
+				</span>
 			</div>
 		</div>
 	);

@@ -59,7 +59,7 @@ describe("AuditLog", () => {
 	});
 
 	test("renders empty state", () => {
-		const html = renderToString(<AuditLog entries={[]} />);
+		const html = renderToString(<AuditLog entries={[]} locale="en" />);
 		expect(html).toContain("No audit");
 	});
 });
@@ -113,20 +113,20 @@ describe("ConfirmationDialog", () => {
 describe("KillSwitchControl", () => {
 	test("renders active state", () => {
 		const html = renderToString(
-			<KillSwitchControl active={true} reason="Daily loss limit breached" />,
+			<KillSwitchControl active={true} reason="Daily loss limit breached" locale="en" />,
 		);
 		expect(html).toContain("ALL TRADING HALTED");
 		expect(html).toContain("Daily loss limit breached");
 	});
 
 	test("renders inactive state", () => {
-		const html = renderToString(<KillSwitchControl active={false} />);
+		const html = renderToString(<KillSwitchControl active={false} locale="en" />);
 		expect(html).toContain("Trading Active");
 		expect(html).toContain("Activate Kill Switch");
 	});
 
 	test("shows keyboard shortcut hint", () => {
-		const html = renderToString(<KillSwitchControl active={false} />);
+		const html = renderToString(<KillSwitchControl active={false} locale="en" />);
 		expect(html).toContain("Ctrl+Shift+K");
 	});
 });
@@ -147,23 +147,23 @@ describe("RiskManagementView", () => {
 	};
 
 	test("renders heading", () => {
-		const html = renderToString(<RiskManagementView state={state} />);
+		const html = renderToString(<RiskManagementView state={state} locale="en" />);
 		expect(html).toContain("Risk Management");
 	});
 
 	test("renders kill switch control", () => {
-		const html = renderToString(<RiskManagementView state={state} />);
+		const html = renderToString(<RiskManagementView state={state} locale="en" />);
 		expect(html).toContain("Trading Active");
 	});
 
 	test("renders loss limit", () => {
-		const html = renderToString(<RiskManagementView state={state} />);
+		const html = renderToString(<RiskManagementView state={state} locale="en" />);
 		expect(html).toContain("1,200");
 		expect(html).toContain("5,000");
 	});
 
 	test("renders audit log", () => {
-		const html = renderToString(<RiskManagementView state={state} />);
+		const html = renderToString(<RiskManagementView state={state} locale="en" />);
 		expect(html).toContain("kill_switch_tested");
 	});
 });

@@ -1,3 +1,6 @@
+import { getTranslations, useTranslations } from "../../i18n";
+import type { Locale } from "../../i18n/glossary";
+
 export interface AuditEntry {
 	id: string;
 	action: string;
@@ -8,9 +11,13 @@ export interface AuditEntry {
 
 export interface AuditLogProps {
 	entries: AuditEntry[];
+	locale?: Locale;
 }
 
-export function AuditLog({ entries }: AuditLogProps) {
+export function AuditLog({ entries, locale }: AuditLogProps) {
+	const tContext = useTranslations("risk");
+	const t = locale ? getTranslations("risk", locale) : tContext;
+
 	if (entries.length === 0) {
 		return (
 			<div
@@ -21,7 +28,7 @@ export function AuditLog({ entries }: AuditLogProps) {
 					fontSize: 14,
 				}}
 			>
-				No audit events recorded
+				{t("auditLog.empty")}
 			</div>
 		);
 	}
@@ -47,7 +54,7 @@ export function AuditLog({ entries }: AuditLogProps) {
 					borderBottom: "1px solid var(--border-subtle)",
 				}}
 			>
-				Audit Log
+				{t("auditLog.label")}
 			</div>
 			{entries.map((entry, i) => (
 				<div

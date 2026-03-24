@@ -1,4 +1,171 @@
 {
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "direction": {
+      "long": "LONG",
+      "short": "SHORT",
+      "pass": "PASS"
+    }
+  },
+  "orders": {
+    "pageTitle": "Orders",
+    "openOrders": "Open Orders",
+    "orderHistory": "Order History",
+    "noOrders": "No orders found",
+    "columns": {
+      "symbol": "Symbol",
+      "side": "Side",
+      "type": "Type",
+      "status": "Status",
+      "quantity": "Qty",
+      "price": "Price",
+      "filled": "Filled",
+      "strategy": "Strategy",
+      "fee": "Fee",
+      "date": "Date"
+    },
+    "side": {
+      "long": "LONG",
+      "short": "SHORT"
+    },
+    "type": {
+      "market": "Market",
+      "limit": "Limit",
+      "stopMarket": "Stop Market",
+      "stopLimit": "Stop Limit"
+    },
+    "status": {
+      "submitted": "Submitted",
+      "filled": "Filled",
+      "partiallyFilled": "Partially Filled",
+      "cancelled": "Cancelled",
+      "rejected": "Rejected"
+    },
+    "actions": {
+      "cancel": "Cancel Order",
+      "modify": "Modify Order"
+    },
+    "position": {
+      "title": "Position",
+      "avgEntryPrice": "Avg Entry Price",
+      "currentPrice": "Current Price",
+      "unrealizedPnl": "Unrealized PnL",
+      "leverage": "Leverage"
+    }
+  },
+  "alerts": {
+    "pageTitle": "Alerts",
+    "newAlert": "New Alert",
+    "alertRules": "Alert Rules",
+    "condition": "Condition",
+    "channel": "Channel",
+    "webhook": "Webhook",
+    "email": "Email",
+    "slack": "Slack",
+    "alertType": "Alert Type",
+    "priceAlert": "Price Alert",
+    "signalAlert": "Signal Alert",
+    "killSwitchAlert": "Kill Switch Alert",
+    "lossLimitAlert": "Loss Limit Alert",
+    "liquidationAlert": "Liquidation Alert",
+    "severity": {
+      "info": "Info",
+      "warning": "Warning",
+      "critical": "Critical"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "triggered": "Triggered"
+    },
+    "columns": {
+      "symbol": "Symbol",
+      "direction": "Direction",
+      "strategy": "Strategy",
+      "message": "Message",
+      "status": "Status",
+      "date": "Date"
+    },
+    "empty": "No alerts found",
+    "actions": {
+      "acknowledge": "Acknowledge",
+      "dismiss": "Dismiss",
+      "viewDetails": "View Details"
+    }
+  },
+  "risk": {
+    "pageTitle": "Risk Management",
+    "killSwitch": {
+      "label": "KILL SWITCH",
+      "statusArmed": "ARMED",
+      "statusTriggered": "TRIGGERED",
+      "tradingActive": "Trading Active",
+      "allTradingHalted": "ALL TRADING HALTED",
+      "activateButton": "Activate Kill Switch",
+      "releaseButton": "Release Kill Switch",
+      "shortcut": "Ctrl+Shift+K"
+    },
+    "lossLimit": {
+      "label": "Daily Loss Limit",
+      "currentLoss": "Current Loss",
+      "limit": "Limit",
+      "exceeded": "Limit Exceeded",
+      "haltAutoTrade": "Halt Auto Trade",
+      "emergencyLiquidation": "Emergency Liquidation",
+      "setLimit": "Set Limit"
+    },
+    "auditLog": {
+      "label": "Audit Log",
+      "empty": "No audit events recorded",
+      "columns": {
+        "action": "Action",
+        "reason": "Reason",
+        "actor": "Actor",
+        "timestamp": "Timestamp"
+      }
+    },
+    "positionSizing": "Position Sizing",
+    "leverage": "Leverage",
+    "exposure": "Exposure"
+  },
+  "settings": {
+    "pageTitle": "Settings",
+    "sections": {
+      "appearance": "Appearance",
+      "general": "General",
+      "language": "Language",
+      "notifications": "Notifications",
+      "exchange": "Exchange",
+      "security": "Security"
+    },
+    "appearance": {
+      "dark": "Dark",
+      "light": "Light"
+    },
+    "account": "Account",
+    "apiKey": "API Key",
+    "language": "Language",
+    "theme": "Theme",
+    "notificationSettings": "Notification Settings",
+    "security": "Security",
+    "twoFactorAuth": "Two-Factor Authentication",
+    "logout": "Logout",
+    "general": {
+      "comingSoon": "General settings coming soon."
+    },
+    "exchange": {
+      "managedInCredentials": "Exchange configuration managed in Credentials."
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "sections": {

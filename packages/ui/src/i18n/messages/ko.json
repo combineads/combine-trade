@@ -1,4 +1,171 @@
 {
+  "common": {
+    "loading": "불러오는 중...",
+    "error": "오류",
+    "confirm": "확인",
+    "cancel": "취소",
+    "save": "저장",
+    "close": "닫기",
+    "status": {
+      "active": "활성",
+      "inactive": "비활성"
+    },
+    "direction": {
+      "long": "LONG",
+      "short": "SHORT",
+      "pass": "PASS"
+    }
+  },
+  "orders": {
+    "pageTitle": "주문 내역",
+    "openOrders": "미체결 주문",
+    "orderHistory": "체결 내역",
+    "noOrders": "주문 내역이 없습니다",
+    "columns": {
+      "symbol": "심볼",
+      "side": "방향",
+      "type": "유형",
+      "status": "상태",
+      "quantity": "수량",
+      "price": "가격",
+      "filled": "체결량",
+      "strategy": "전략",
+      "fee": "수수료",
+      "date": "체결시간"
+    },
+    "side": {
+      "long": "LONG",
+      "short": "SHORT"
+    },
+    "type": {
+      "market": "시장가",
+      "limit": "지정가",
+      "stopMarket": "스탑 마켓",
+      "stopLimit": "스탑 리밋"
+    },
+    "status": {
+      "submitted": "대기",
+      "filled": "체결",
+      "partiallyFilled": "부분체결",
+      "cancelled": "취소",
+      "rejected": "거부"
+    },
+    "actions": {
+      "cancel": "주문 취소",
+      "modify": "주문 수정"
+    },
+    "position": {
+      "title": "포지션",
+      "avgEntryPrice": "평균 진입가",
+      "currentPrice": "현재가",
+      "unrealizedPnl": "미실현 손익",
+      "leverage": "레버리지"
+    }
+  },
+  "alerts": {
+    "pageTitle": "알림",
+    "newAlert": "새 알림",
+    "alertRules": "알림 규칙",
+    "condition": "조건",
+    "channel": "채널",
+    "webhook": "웹훅",
+    "email": "이메일",
+    "slack": "슬랙",
+    "alertType": "알림 유형",
+    "priceAlert": "가격 알림",
+    "signalAlert": "신호 알림",
+    "killSwitchAlert": "킬 스위치 알림",
+    "lossLimitAlert": "손실 한도 알림",
+    "liquidationAlert": "강제 청산 알림",
+    "severity": {
+      "info": "정보",
+      "warning": "경고",
+      "critical": "위급"
+    },
+    "status": {
+      "active": "활성",
+      "inactive": "비활성",
+      "triggered": "발동됨"
+    },
+    "columns": {
+      "symbol": "심볼",
+      "direction": "방향",
+      "strategy": "전략",
+      "message": "메시지",
+      "status": "상태",
+      "date": "날짜"
+    },
+    "empty": "알림이 없습니다",
+    "actions": {
+      "acknowledge": "확인",
+      "dismiss": "닫기",
+      "viewDetails": "상세 보기"
+    }
+  },
+  "risk": {
+    "pageTitle": "리스크 관리",
+    "killSwitch": {
+      "label": "킬 스위치",
+      "statusArmed": "ARMED",
+      "statusTriggered": "TRIGGERED",
+      "tradingActive": "트레이딩 활성",
+      "allTradingHalted": "전체 트레이딩 중단",
+      "activateButton": "킬 스위치 활성화",
+      "releaseButton": "킬 스위치 해제",
+      "shortcut": "Ctrl+Shift+K"
+    },
+    "lossLimit": {
+      "label": "일일 손실 한도",
+      "currentLoss": "현재 손실",
+      "limit": "한도",
+      "exceeded": "한도 초과",
+      "haltAutoTrade": "자동매매 중단",
+      "emergencyLiquidation": "긴급 청산",
+      "setLimit": "한도 설정"
+    },
+    "auditLog": {
+      "label": "감사 로그",
+      "empty": "기록된 감사 이벤트가 없습니다",
+      "columns": {
+        "action": "작업",
+        "reason": "사유",
+        "actor": "수행자",
+        "timestamp": "시간"
+      }
+    },
+    "positionSizing": "포지션 크기",
+    "leverage": "레버리지",
+    "exposure": "노출"
+  },
+  "settings": {
+    "pageTitle": "설정",
+    "sections": {
+      "appearance": "외관",
+      "general": "일반",
+      "language": "언어",
+      "notifications": "알림 설정",
+      "exchange": "거래소",
+      "security": "보안"
+    },
+    "appearance": {
+      "dark": "다크",
+      "light": "라이트"
+    },
+    "account": "계정",
+    "apiKey": "API 키",
+    "language": "언어",
+    "theme": "테마",
+    "notificationSettings": "알림 설정",
+    "security": "보안",
+    "twoFactorAuth": "2단계 인증",
+    "logout": "로그아웃",
+    "general": {
+      "comingSoon": "일반 설정 준비 중입니다."
+    },
+    "exchange": {
+      "managedInCredentials": "거래소 설정은 자격 증명에서 관리됩니다."
+    }
+  },
   "dashboard": {
     "title": "대시보드",
     "sections": {

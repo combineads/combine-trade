@@ -102,19 +102,19 @@ describe("OrdersView", () => {
 	];
 
 	test("renders orders heading", () => {
-		const html = renderToString(<OrdersView orders={orders} total={1} page={1} pageSize={20} />);
+		const html = renderToString(<OrdersView orders={orders} total={1} page={1} pageSize={20} locale="en" />);
 		expect(html).toContain("Orders");
 	});
 
 	test("renders order data", () => {
-		const html = renderToString(<OrdersView orders={orders} total={1} page={1} pageSize={20} />);
+		const html = renderToString(<OrdersView orders={orders} total={1} page={1} pageSize={20} locale="en" />);
 		expect(html).toContain("ETHUSDT");
 		expect(html).toContain("filled");
 		expect(html).toContain("3200");
 	});
 
 	test("renders empty state", () => {
-		const html = renderToString(<OrdersView orders={[]} total={0} page={1} pageSize={20} />);
+		const html = renderToString(<OrdersView orders={[]} total={0} page={1} pageSize={20} locale="en" />);
 		expect(html).toContain("No orders");
 	});
 });
@@ -133,19 +133,19 @@ describe("AlertsView", () => {
 	];
 
 	test("renders alerts heading", () => {
-		const html = renderToString(<AlertsView alerts={alerts} total={1} page={1} pageSize={20} />);
+		const html = renderToString(<AlertsView alerts={alerts} total={1} page={1} pageSize={20} locale="en" />);
 		expect(html).toContain("Alerts");
 	});
 
 	test("renders alert data", () => {
-		const html = renderToString(<AlertsView alerts={alerts} total={1} page={1} pageSize={20} />);
+		const html = renderToString(<AlertsView alerts={alerts} total={1} page={1} pageSize={20} locale="en" />);
 		expect(html).toContain("BTCUSDT");
 		expect(html).toContain("Entry signal detected");
 		expect(html).toContain("sent");
 	});
 
 	test("renders empty state", () => {
-		const html = renderToString(<AlertsView alerts={[]} total={0} page={1} pageSize={20} />);
+		const html = renderToString(<AlertsView alerts={[]} total={0} page={1} pageSize={20} locale="en" />);
 		expect(html).toContain("No alerts");
 	});
 });

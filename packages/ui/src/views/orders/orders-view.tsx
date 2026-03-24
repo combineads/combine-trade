@@ -1,5 +1,6 @@
 import { type Column, DataTable } from "../../components/data-table";
 import { Pagination } from "../../components/pagination";
+import { useTranslations, type Locale } from "../../i18n";
 
 export interface OrderRow {
 	id: string;
@@ -19,26 +20,29 @@ export interface OrdersViewProps {
 	page: number;
 	pageSize: number;
 	onPageChange?: (page: number) => void;
+	locale?: Locale;
 }
 
-const columns: Column<OrderRow>[] = [
-	{ key: "symbol", header: "Symbol", mono: true },
-	{ key: "side", header: "Side" },
-	{ key: "type", header: "Type" },
-	{ key: "status", header: "Status" },
-	{ key: "quantity", header: "Qty", align: "right", mono: true },
-	{ key: "price", header: "Price", align: "right", mono: true },
-	{ key: "strategyName", header: "Strategy" },
-	{ key: "createdAt", header: "Date" },
-];
+export function OrdersView({ orders, total, page, pageSize, onPageChange, locale }: OrdersViewProps) {
+	const t = useTranslations("orders", locale);
 
-export function OrdersView({ orders, total, page, pageSize, onPageChange }: OrdersViewProps) {
+	const columns: Column<OrderRow>[] = [
+		{ key: "symbol", header: t("columns.symbol"), mono: true },
+		{ key: "side", header: t("columns.side") },
+		{ key: "type", header: t("columns.type") },
+		{ key: "status", header: t("columns.status") },
+		{ key: "quantity", header: t("columns.quantity"), align: "right", mono: true },
+		{ key: "price", header: t("columns.price"), align: "right", mono: true },
+		{ key: "strategyName", header: t("columns.strategy") },
+		{ key: "createdAt", header: t("columns.date") },
+	];
+
 	return (
 		<div>
 			<h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)", marginBottom: 24 }}>
-				Orders
+				{t("pageTitle")}
 			</h1>
-			<DataTable columns={columns} data={orders} rowKey="id" emptyMessage="No orders found" />
+			<DataTable columns={columns} data={orders} rowKey="id" emptyMessage={t("noOrders")} />
 			{total > pageSize && (
 				<div style={{ marginTop: 16 }}>
 					<Pagination

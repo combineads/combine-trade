@@ -187,7 +187,7 @@ describe("StrategyEditorView", () => {
 
 	test("renders save button", () => {
 		const html = renderToString(
-			<StrategyEditorView strategy={sampleStrategy} stats={sampleStats} />,
+			<StrategyEditorView strategy={sampleStrategy} stats={sampleStats} locale="en" />,
 		);
 		expect(html).toContain("Save");
 	});

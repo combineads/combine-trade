@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import en from "../src/i18n/messages/en.json";
 import ko from "../src/i18n/messages/ko.json";
-import { useTranslations } from "../src/i18n";
+import { getTranslations } from "../src/i18n";
+const useTranslations = getTranslations;
 
 // ---------------------------------------------------------------------------
 // Helper: collect all dot-path keys in an object

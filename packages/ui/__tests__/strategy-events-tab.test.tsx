@@ -45,12 +45,12 @@ describe("StrategyEventsTab", () => {
 	});
 
 	test("renders empty state", () => {
-		const html = renderToString(<StrategyEventsTab events={[]} />);
+		const html = renderToString(<StrategyEventsTab events={[]} locale="en" />);
 		expect(html).toContain("No events yet");
 	});
 
 	test("renders loading state", () => {
-		const html = renderToString(<StrategyEventsTab events={[]} loading />);
+		const html = renderToString(<StrategyEventsTab events={[]} loading locale="en" />);
 		expect(html).toContain("Loading");
 	});
 

@@ -47,10 +47,15 @@ export interface I18nContextValue {
 // biome-ignore lint/style/noNonNullAssertion: context is always provided via I18nProvider
 export const I18nContext = createContext<I18nContextValue>(null!);
 
-/** React hook — returns a translator function for the given namespace. */
-export function useTranslations(namespace: string) {
+/** React hook — returns a translator function for the given namespace.
+ *
+ * @param namespace - Top-level namespace key (e.g. 'strategies')
+ * @param localeOverride - Optional locale override. When provided, skips context lookup.
+ *   Useful for server-rendering components or tests that cannot provide a context.
+ */
+export function useTranslations(namespace: string, localeOverride?: Locale) {
 	const ctx = useContext(I18nContext);
-	const locale: Locale = ctx?.locale ?? "ko";
+	const locale: Locale = localeOverride ?? ctx?.locale ?? "ko";
 	return getTranslations(namespace, locale);
 }
 

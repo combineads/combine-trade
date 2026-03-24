@@ -1,7 +1,8 @@
 // i18n
-export { defaultLocale, isValidLocale, locales, type Locale } from "./i18n/index";
-export { I18nProvider, type I18nProviderProps } from "./i18n/index";
-export { useTranslations, useLocale, useFormatter } from "./i18n/index";
+export { defaultLocale, isValidLocale, locales } from "./i18n/config";
+export type { Locale } from "./i18n/glossary";
+export { I18nProvider, type I18nProviderProps } from "./i18n/I18nProvider";
+export { useTranslations, useLocale, useFormatter } from "./i18n/hooks";
 
 // Theme
 export {

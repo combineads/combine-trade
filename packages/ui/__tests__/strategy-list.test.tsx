@@ -50,17 +50,16 @@ describe("StrategyCard", () => {
 });
 
 describe("ModeSelector", () => {
-	const modes: ExecutionMode[] = ["analysis", "alert", "paper-trade", "auto-trade"];
-
-	test("renders all mode options", () => {
-		const html = renderToString(<ModeSelector currentMode="analysis" onModeChange={() => {}} />);
-		for (const mode of modes) {
-			expect(html).toContain(mode);
-		}
+	test("renders all mode options (en labels)", () => {
+		const html = renderToString(<ModeSelector currentMode="analysis" onModeChange={() => {}} locale="en" />);
+		expect(html).toContain("Analysis");
+		expect(html).toContain("Alert");
+		expect(html).toContain("Paper Trade");
+		expect(html).toContain("Auto Trade");
 	});
 
 	test("highlights current mode", () => {
-		const html = renderToString(<ModeSelector currentMode="alert" onModeChange={() => {}} />);
+		const html = renderToString(<ModeSelector currentMode="alert" onModeChange={() => {}} locale="en" />);
 		// The active mode should have primary color
 		expect(html).toContain("#22C55E");
 	});
@@ -82,19 +81,19 @@ describe("StrategyListView", () => {
 				createdAt: "2026-01-01",
 			},
 		];
-		const html = renderToString(<StrategyListView strategies={strategies} />);
+		const html = renderToString(<StrategyListView strategies={strategies} locale="en" />);
 		expect(html).toContain("Momentum");
 		expect(html).toContain("Strategies");
 	});
 
 	test("renders empty state", () => {
-		const html = renderToString(<StrategyListView strategies={[]} />);
+		const html = renderToString(<StrategyListView strategies={[]} locale="en" />);
 		expect(html).toContain("No strategies");
 		expect(html).toContain("Create Strategy");
 	});
 
 	test("renders create button", () => {
-		const html = renderToString(<StrategyListView strategies={[]} />);
+		const html = renderToString(<StrategyListView strategies={[]} locale="en" />);
 		expect(html).toContain("Create Strategy");
 	});
 });

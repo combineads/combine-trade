@@ -1,3 +1,5 @@
+import { useTranslations, type Locale } from "../../i18n";
+
 export type StrategyDirection = "LONG" | "SHORT" | "BOTH";
 
 const TIMEFRAMES = ["1m", "3m", "5m", "15m", "1h", "4h", "1d"] as const;
@@ -13,6 +15,7 @@ export interface StrategyCreateViewProps {
 	onSubmit?: (data: StrategyCreateInput) => void;
 	onCancel?: () => void;
 	isSubmitting?: boolean;
+	locale?: Locale;
 }
 
 function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
@@ -33,11 +36,18 @@ function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?
 	);
 }
 
-export function StrategyCreateView({ onSubmit, onCancel, isSubmitting }: StrategyCreateViewProps) {
+export function StrategyCreateView({
+	onSubmit,
+	onCancel,
+	isSubmitting,
+	locale,
+}: StrategyCreateViewProps) {
+	const t = useTranslations("strategies", locale);
+
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 600 }}>
 			<h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
-				New Strategy
+				{t("createStrategy")}
 			</h1>
 
 			<form
@@ -60,11 +70,11 @@ export function StrategyCreateView({ onSubmit, onCancel, isSubmitting }: Strateg
 			>
 				{/* Name */}
 				<div>
-					<FieldLabel>Strategy name</FieldLabel>
+					<FieldLabel>{t("fields.name")}</FieldLabel>
 					<input
 						name="name"
 						type="text"
-						placeholder="Strategy name"
+						placeholder={t("form.namePlaceholder")}
 						style={{
 							width: "100%",
 							padding: "8px 12px",
@@ -81,7 +91,7 @@ export function StrategyCreateView({ onSubmit, onCancel, isSubmitting }: Strateg
 
 				{/* Direction */}
 				<div>
-					<FieldLabel>Direction</FieldLabel>
+					<FieldLabel>{t("fields.direction")}</FieldLabel>
 					<div style={{ display: "flex", gap: 8 }}>
 						{(["LONG", "SHORT", "BOTH"] as const).map((dir) => (
 							<label
@@ -106,11 +116,11 @@ export function StrategyCreateView({ onSubmit, onCancel, isSubmitting }: Strateg
 
 				{/* Symbols */}
 				<div>
-					<FieldLabel>Symbols</FieldLabel>
+					<FieldLabel>{t("fields.symbols")}</FieldLabel>
 					<input
 						name="symbols"
 						type="text"
-						placeholder="BTC/USDT, ETH/USDT"
+						placeholder={t("form.symbolsPlaceholder")}
 						style={{
 							width: "100%",
 							padding: "8px 12px",
@@ -127,7 +137,7 @@ export function StrategyCreateView({ onSubmit, onCancel, isSubmitting }: Strateg
 
 				{/* Timeframes */}
 				<div>
-					<FieldLabel>Timeframes</FieldLabel>
+					<FieldLabel>{t("fields.timeframes")}</FieldLabel>
 					<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
 						{TIMEFRAMES.map((tf) => (
 							<label
@@ -166,7 +176,7 @@ export function StrategyCreateView({ onSubmit, onCancel, isSubmitting }: Strateg
 							opacity: isSubmitting ? 0.6 : 1,
 						}}
 					>
-						Create Strategy
+						{isSubmitting ? t("form.creating") : t("createStrategy")}
 					</button>
 					<button
 						type="button"
@@ -182,7 +192,7 @@ export function StrategyCreateView({ onSubmit, onCancel, isSubmitting }: Strateg
 							cursor: "pointer",
 						}}
 					>
-						Cancel
+						{t("cancelAction")}
 					</button>
 				</div>
 			</form>

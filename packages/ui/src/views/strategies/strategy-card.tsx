@@ -1,12 +1,16 @@
 import { type BadgeStatus, StatusBadge } from "../../components/badge";
+import { useTranslations, type Locale } from "../../i18n";
 import type { StrategyListItem } from "./strategy-list-view";
 
 export interface StrategyCardProps {
 	strategy: StrategyListItem;
 	onClick?: () => void;
+	locale?: Locale;
 }
 
-export function StrategyCard({ strategy, onClick }: StrategyCardProps) {
+export function StrategyCard({ strategy, onClick, locale }: StrategyCardProps) {
+	const t = useTranslations("strategies", locale);
+
 	return (
 		<button
 			type="button"
@@ -37,7 +41,7 @@ export function StrategyCard({ strategy, onClick }: StrategyCardProps) {
 						{strategy.name}
 					</div>
 					<div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-						v{strategy.version} · {strategy.direction}
+						{t("version.label")} {strategy.version} · {strategy.direction}
 					</div>
 				</div>
 				<StatusBadge status={strategy.status as BadgeStatus} />
@@ -69,7 +73,7 @@ export function StrategyCard({ strategy, onClick }: StrategyCardProps) {
 						{(strategy.winrate * 100).toFixed(1)}%
 					</span>
 					<span style={{ color: "var(--text-muted)", marginLeft: 8 }}>
-						{strategy.eventCount} events
+						{strategy.eventCount} {t("events.tabTitle").toLowerCase()}
 					</span>
 				</div>
 				<span

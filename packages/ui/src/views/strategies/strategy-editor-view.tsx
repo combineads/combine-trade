@@ -1,5 +1,6 @@
 import { type BadgeStatus, StatusBadge } from "../../components/badge";
 import { Button } from "../../components/button";
+import { useTranslations, type Locale } from "../../i18n";
 import { ConfigPanels, type StrategyConfig } from "./config-panels";
 import { StrategyStats, type StrategyStatsData } from "./strategy-stats";
 
@@ -21,9 +22,18 @@ export interface StrategyEditorViewProps {
 	stats: StrategyStatsData;
 	onSave?: (code: string) => void;
 	onBack?: () => void;
+	locale?: Locale;
 }
 
-export function StrategyEditorView({ strategy, stats, onSave, onBack }: StrategyEditorViewProps) {
+export function StrategyEditorView({
+	strategy,
+	stats,
+	onSave,
+	onBack,
+	locale,
+}: StrategyEditorViewProps) {
+	const t = useTranslations("strategies", locale);
+
 	return (
 		<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
 			{/* Header */}
@@ -51,23 +61,25 @@ export function StrategyEditorView({ strategy, stats, onSave, onBack }: Strategy
 								padding: "4px 8px",
 							}}
 						>
-							Back
+							{t("backAction")}
 						</button>
 					)}
 					<h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
 						{strategy.name}
 					</h1>
-					<span style={{ fontSize: 12, color: "var(--text-muted)" }}>v{strategy.version}</span>
+					<span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+						{t("version.label")} {strategy.version}
+					</span>
 					<StatusBadge status={strategy.status as BadgeStatus} />
 				</div>
 				<Button variant="primary" onClick={() => onSave?.(strategy.code)}>
-					Save
+					{t("saveStrategy")}
 				</Button>
 			</div>
 
 			{/* Stats bar */}
 			<div style={{ marginBottom: 12 }}>
-				<StrategyStats stats={stats} />
+				<StrategyStats stats={stats} locale={locale} />
 			</div>
 
 			{/* Split pane: Editor (55%) + Config (45%) */}
@@ -125,8 +137,8 @@ export function StrategyEditorView({ strategy, stats, onSave, onBack }: Strategy
 							backgroundColor: "var(--bg-elevated)",
 						}}
 					>
-						<span>TypeScript</span>
-						<span>UTF-8</span>
+						<span>{t("editor.statusBar.language")}</span>
+						<span>{t("editor.statusBar.encoding")}</span>
 					</div>
 				</div>
 
@@ -155,6 +167,7 @@ export function StrategyEditorView({ strategy, stats, onSave, onBack }: Strategy
 						timeframes={strategy.timeframes}
 						config={strategy.config}
 						mode={strategy.mode}
+						locale={locale}
 					/>
 				</div>
 			</div>

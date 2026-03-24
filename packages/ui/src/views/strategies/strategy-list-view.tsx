@@ -1,4 +1,5 @@
 import { Button } from "../../components/button";
+import { useTranslations, type Locale } from "../../i18n";
 import { StrategyCard } from "./strategy-card";
 
 export interface StrategyListItem {
@@ -18,13 +19,17 @@ export interface StrategyListViewProps {
 	strategies: StrategyListItem[];
 	onCreateClick?: () => void;
 	onStrategyClick?: (id: string) => void;
+	locale?: Locale;
 }
 
 export function StrategyListView({
 	strategies,
 	onCreateClick,
 	onStrategyClick,
+	locale,
 }: StrategyListViewProps) {
+	const t = useTranslations("strategies", locale);
+
 	return (
 		<div>
 			<div
@@ -35,9 +40,11 @@ export function StrategyListView({
 					marginBottom: 24,
 				}}
 			>
-				<h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)" }}>Strategies</h1>
+				<h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)" }}>
+					{t("pageTitle")}
+				</h1>
 				<Button variant="primary" onClick={onCreateClick}>
-					Create Strategy
+					{t("createStrategy")}
 				</Button>
 			</div>
 
@@ -49,12 +56,10 @@ export function StrategyListView({
 						color: "var(--text-muted)",
 					}}
 				>
-					<div style={{ fontSize: 16, marginBottom: 8 }}>No strategies yet</div>
-					<div style={{ fontSize: 13, marginBottom: 16 }}>
-						Create your first trading strategy to get started.
-					</div>
+					<div style={{ fontSize: 16, marginBottom: 8 }}>{t("empty.title")}</div>
+					<div style={{ fontSize: 13, marginBottom: 16 }}>{t("empty.description")}</div>
 					<Button variant="primary" onClick={onCreateClick}>
-						Create Strategy
+						{t("createStrategy")}
 					</Button>
 				</div>
 			) : (
@@ -70,6 +75,7 @@ export function StrategyListView({
 							key={s.id}
 							strategy={s}
 							onClick={onStrategyClick ? () => onStrategyClick(s.id) : undefined}
+							locale={locale}
 						/>
 					))}
 				</div>

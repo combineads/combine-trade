@@ -1,13 +1,26 @@
+import { useTranslations, type Locale } from "../../i18n";
+
 export type ExecutionMode = "analysis" | "alert" | "paper-trade" | "auto-trade";
+
+const MODES: ExecutionMode[] = ["analysis", "alert", "paper-trade", "auto-trade"];
+
+/** Map ExecutionMode to strategies.modes translation key */
+const MODE_KEYS: Record<ExecutionMode, "modes.analysis" | "modes.alert" | "modes.paperTrade" | "modes.autoTrade"> = {
+	analysis: "modes.analysis",
+	alert: "modes.alert",
+	"paper-trade": "modes.paperTrade",
+	"auto-trade": "modes.autoTrade",
+};
 
 export interface ModeSelectorProps {
 	currentMode: ExecutionMode;
 	onModeChange: (mode: ExecutionMode) => void;
+	locale?: Locale;
 }
 
-const MODES: ExecutionMode[] = ["analysis", "alert", "paper-trade", "auto-trade"];
+export function ModeSelector({ currentMode, onModeChange, locale }: ModeSelectorProps) {
+	const t = useTranslations("strategies", locale);
 
-export function ModeSelector({ currentMode, onModeChange }: ModeSelectorProps) {
 	return (
 		<div style={{ display: "flex", gap: 4 }}>
 			{MODES.map((mode) => {
@@ -29,7 +42,7 @@ export function ModeSelector({ currentMode, onModeChange }: ModeSelectorProps) {
 							cursor: "pointer",
 						}}
 					>
-						{mode}
+						{t(MODE_KEYS[mode])}
 					</button>
 				);
 			})}

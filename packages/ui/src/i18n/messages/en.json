@@ -1,32 +1,128 @@
 {
-	"dashboard": {
-		"title": "Dashboard",
-		"sections": {
-			"workers": "Workers",
-			"strategies": "Strategies",
-			"recentEvents": "Recent Events"
-		},
-		"killSwitch": {
-			"label": "KILL SWITCH",
-			"statusArmed": "ARMED",
-			"statusTriggered": "TRIGGERED",
-			"tradingActive": "Trading Active",
-			"allTradingHalted": "ALL TRADING HALTED",
-			"activateButton": "Activate Kill Switch",
-			"releaseButton": "Release Kill Switch"
-		},
-		"workerStatus": {
-			"running": "running",
-			"warning": "warning",
-			"down": "down",
-			"inactive": "inactive"
-		},
-		"strategies": {
-			"noStrategies": "No strategies yet",
-			"events": "events"
-		},
-		"recentEvents": {
-			"noEvents": "No events detected"
-		}
-	}
+  "dashboard": {
+    "title": "Dashboard",
+    "sections": {
+      "workers": "Workers",
+      "strategies": "Strategies",
+      "recentEvents": "Recent Events"
+    },
+    "killSwitch": {
+      "label": "KILL SWITCH",
+      "statusArmed": "ARMED",
+      "statusTriggered": "TRIGGERED",
+      "tradingActive": "Trading Active",
+      "allTradingHalted": "ALL TRADING HALTED",
+      "activateButton": "Activate Kill Switch",
+      "releaseButton": "Release Kill Switch"
+    },
+    "workerStatus": {
+      "running": "running",
+      "warning": "warning",
+      "down": "down",
+      "inactive": "inactive"
+    },
+    "strategies": {
+      "noStrategies": "No strategies yet",
+      "events": "events"
+    },
+    "recentEvents": {
+      "noEvents": "No events detected"
+    }
+  },
+  "strategies": {
+    "pageTitle": "Strategies",
+    "createStrategy": "Create Strategy",
+    "editStrategy": "Edit Strategy",
+    "deleteStrategy": "Delete Strategy",
+    "activateStrategy": "Activate Strategy",
+    "deactivateStrategy": "Deactivate Strategy",
+    "runBacktest": "Run Backtest",
+    "saveStrategy": "Save",
+    "cancelAction": "Cancel",
+    "backAction": "Back",
+    "empty": {
+      "title": "No strategies yet",
+      "description": "Create your first trading strategy to get started."
+    },
+    "fields": {
+      "name": "Strategy name",
+      "description": "Description",
+      "symbol": "Symbol",
+      "symbols": "Symbols",
+      "timeframe": "Timeframe",
+      "timeframes": "Timeframes",
+      "version": "Version",
+      "status": "Status",
+      "direction": "Direction",
+      "mode": "Execution mode"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "draft": "Draft",
+      "backtesting": "Backtesting"
+    },
+    "form": {
+      "namePlaceholder": "Strategy name",
+      "symbolsPlaceholder": "BTC/USDT, ETH/USDT",
+      "creating": "Creating..."
+    },
+    "editor": {
+      "codePanel": "Code editor",
+      "configPanel": "Configuration",
+      "statusBar": {
+        "language": "TypeScript",
+        "encoding": "UTF-8"
+      }
+    },
+    "config": {
+      "basicInfo": "Basic Info",
+      "features": "Features",
+      "searchConfig": "Search Config",
+      "resultConfig": "Result Config",
+      "decisionConfig": "Decision Config",
+      "executionMode": "Execution Mode",
+      "topK": "Top K",
+      "similarityThreshold": "Similarity Threshold",
+      "minSamples": "Min Samples",
+      "takeProfitPct": "Take Profit %",
+      "stopLossPct": "Stop Loss %",
+      "maxHoldBars": "Max Hold Bars",
+      "minWinrate": "Min Winrate",
+      "minExpectancy": "Min Expectancy"
+    },
+    "stats": {
+      "winrate": "Winrate",
+      "expectancy": "Expectancy",
+      "samples": "Samples",
+      "events": "Events",
+      "avgHold": "Avg Hold"
+    },
+    "events": {
+      "tabTitle": "Events",
+      "loading": "Loading events...",
+      "empty": "No events yet for this strategy.",
+      "columns": {
+        "direction": "Direction",
+        "symbol": "Symbol",
+        "entry": "Entry",
+        "exit": "Exit",
+        "pnl": "P&L",
+        "outcome": "Outcome",
+        "time": "Time"
+      }
+    },
+    "version": {
+      "label": "Version",
+      "newVersion": "New Version",
+      "versionHistory": "Version History",
+      "currentVersion": "Current Version"
+    },
+    "modes": {
+      "analysis": "Analysis",
+      "alert": "Alert",
+      "paperTrade": "Paper Trade",
+      "autoTrade": "Auto Trade"
+    }
+  }
 }

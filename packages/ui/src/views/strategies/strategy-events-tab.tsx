@@ -1,3 +1,5 @@
+import { useTranslations, type Locale } from "../../i18n";
+
 export type EventOutcome = "WIN" | "LOSS" | "TIME_EXIT" | "OPEN";
 
 export interface StrategyEvent {
@@ -19,6 +21,7 @@ export interface StrategyEventsTabProps {
 	pageSize?: number;
 	onPageChange?: (page: number) => void;
 	loading?: boolean;
+	locale?: Locale;
 }
 
 function formatDate(ts: number): string {
@@ -38,11 +41,13 @@ const OUTCOME_COLORS: Record<EventOutcome, string> = {
 	OPEN: "#64748B",
 };
 
-export function StrategyEventsTab({ events, loading = false }: StrategyEventsTabProps) {
+export function StrategyEventsTab({ events, loading = false, locale }: StrategyEventsTabProps) {
+	const t = useTranslations("strategies", locale);
+
 	if (loading) {
 		return (
 			<div style={{ padding: 32, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-				Loading events...
+				{t("events.loading")}
 			</div>
 		);
 	}
@@ -50,17 +55,27 @@ export function StrategyEventsTab({ events, loading = false }: StrategyEventsTab
 	if (events.length === 0) {
 		return (
 			<div style={{ padding: 32, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-				No events yet for this strategy.
+				{t("events.empty")}
 			</div>
 		);
 	}
+
+	const columns = [
+		t("events.columns.direction"),
+		t("events.columns.symbol"),
+		t("events.columns.entry"),
+		t("events.columns.exit"),
+		t("events.columns.pnl"),
+		t("events.columns.outcome"),
+		t("events.columns.time"),
+	];
 
 	return (
 		<div>
 			<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
 				<thead>
 					<tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-						{["Direction", "Symbol", "Entry", "Exit", "P&L", "Outcome", "Time"].map((h) => (
+						{columns.map((h) => (
 							<th
 								key={h}
 								style={{

@@ -1,3 +1,5 @@
+import { useTranslations, type Locale } from "../../i18n";
+
 export interface StrategyStatsData {
 	winrate: number;
 	expectancy: number;
@@ -8,6 +10,7 @@ export interface StrategyStatsData {
 
 export interface StrategyStatsProps {
 	stats: StrategyStatsData;
+	locale?: Locale;
 }
 
 function StatItem({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -38,7 +41,8 @@ function StatItem({ label, value, color }: { label: string; value: string; color
 	);
 }
 
-export function StrategyStats({ stats }: StrategyStatsProps) {
+export function StrategyStats({ stats, locale }: StrategyStatsProps) {
+	const t = useTranslations("strategies", locale);
 	const winrateColor = stats.winrate > 0.5 ? "var(--color-win)" : "var(--text-secondary)";
 
 	return (
@@ -52,14 +56,14 @@ export function StrategyStats({ stats }: StrategyStatsProps) {
 			}}
 		>
 			<StatItem
-				label="Winrate"
+				label={t("stats.winrate")}
 				value={`${(stats.winrate * 100).toFixed(1)}%`}
 				color={winrateColor}
 			/>
-			<StatItem label="Expectancy" value={stats.expectancy.toFixed(2)} />
-			<StatItem label="Samples" value={stats.sampleCount.toLocaleString()} />
-			<StatItem label="Events" value={stats.totalEvents.toLocaleString()} />
-			<StatItem label="Avg Hold" value={`${stats.avgHoldBars} bars`} />
+			<StatItem label={t("stats.expectancy")} value={stats.expectancy.toFixed(2)} />
+			<StatItem label={t("stats.samples")} value={stats.sampleCount.toLocaleString()} />
+			<StatItem label={t("stats.events")} value={stats.totalEvents.toLocaleString()} />
+			<StatItem label={t("stats.avgHold")} value={`${stats.avgHoldBars} bars`} />
 		</div>
 	);
 }

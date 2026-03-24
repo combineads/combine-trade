@@ -1,3 +1,5 @@
+import { useTranslations, type Locale } from "../../i18n";
+
 export interface FeatureConfig {
 	name: string;
 	normalization: string;
@@ -34,6 +36,7 @@ export interface ConfigPanelsProps {
 	timeframes: string[];
 	config: StrategyConfig;
 	mode: string;
+	locale?: Locale;
 }
 
 const sectionStyle: React.CSSProperties = {
@@ -82,16 +85,19 @@ export function ConfigPanels({
 	timeframes,
 	config,
 	mode,
+	locale,
 }: ConfigPanelsProps) {
+	const t = useTranslations("strategies", locale);
+
 	return (
 		<div style={{ overflowY: "auto", height: "100%" }}>
 			{/* 1. Basic Info */}
 			<div style={sectionStyle}>
-				<div style={headingStyle}>Basic Info</div>
-				<Field label="Name" value={name} />
-				<Field label="Direction" value={direction} />
+				<div style={headingStyle}>{t("config.basicInfo")}</div>
+				<Field label={t("fields.name")} value={name} />
+				<Field label={t("fields.direction")} value={direction} />
 				<div style={{ marginBottom: 8 }}>
-					<div style={labelStyle}>Symbols</div>
+					<div style={labelStyle}>{t("fields.symbols")}</div>
 					<div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
 						{symbols.map((s) => (
 							<span
@@ -111,11 +117,11 @@ export function ConfigPanels({
 					</div>
 				</div>
 				<div style={{ marginBottom: 8 }}>
-					<div style={labelStyle}>Timeframes</div>
+					<div style={labelStyle}>{t("fields.timeframes")}</div>
 					<div style={{ display: "flex", gap: 4 }}>
-						{timeframes.map((t) => (
-							<span key={t} style={{ ...valueStyle, fontSize: 12 }}>
-								{t}
+						{timeframes.map((tf) => (
+							<span key={tf} style={{ ...valueStyle, fontSize: 12 }}>
+								{tf}
 							</span>
 						))}
 					</div>
@@ -124,7 +130,7 @@ export function ConfigPanels({
 
 			{/* 2. Features & Vectorization */}
 			<div style={sectionStyle}>
-				<div style={headingStyle}>Features</div>
+				<div style={headingStyle}>{t("config.features")}</div>
 				{config.features.map((f) => (
 					<div
 						key={f.name}
@@ -142,30 +148,30 @@ export function ConfigPanels({
 
 			{/* 3. Search Config */}
 			<div style={sectionStyle}>
-				<div style={headingStyle}>Search Config</div>
-				<Field label="Top K" value={config.search.topK} />
-				<Field label="Similarity Threshold" value={config.search.similarityThreshold} />
-				<Field label="Min Samples" value={config.search.minSamples} />
+				<div style={headingStyle}>{t("config.searchConfig")}</div>
+				<Field label={t("config.topK")} value={config.search.topK} />
+				<Field label={t("config.similarityThreshold")} value={config.search.similarityThreshold} />
+				<Field label={t("config.minSamples")} value={config.search.minSamples} />
 			</div>
 
 			{/* 4. Result Config */}
 			<div style={sectionStyle}>
-				<div style={headingStyle}>Result Config</div>
-				<Field label="Take Profit %" value={config.result.takeProfitPct} />
-				<Field label="Stop Loss %" value={config.result.stopLossPct} />
-				<Field label="Max Hold Bars" value={config.result.maxHoldBars} />
+				<div style={headingStyle}>{t("config.resultConfig")}</div>
+				<Field label={t("config.takeProfitPct")} value={config.result.takeProfitPct} />
+				<Field label={t("config.stopLossPct")} value={config.result.stopLossPct} />
+				<Field label={t("config.maxHoldBars")} value={config.result.maxHoldBars} />
 			</div>
 
 			{/* 5. Decision Config */}
 			<div style={sectionStyle}>
-				<div style={headingStyle}>Decision Config</div>
-				<Field label="Min Winrate" value={config.decision.minWinrate} />
-				<Field label="Min Expectancy" value={config.decision.minExpectancy} />
+				<div style={headingStyle}>{t("config.decisionConfig")}</div>
+				<Field label={t("config.minWinrate")} value={config.decision.minWinrate} />
+				<Field label={t("config.minExpectancy")} value={config.decision.minExpectancy} />
 			</div>
 
 			{/* 6. Execution Mode */}
 			<div style={sectionStyle}>
-				<div style={headingStyle}>Execution Mode</div>
+				<div style={headingStyle}>{t("config.executionMode")}</div>
 				<div
 					style={{
 						fontSize: 13,

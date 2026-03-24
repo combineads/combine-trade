@@ -1,32 +1,128 @@
 {
-	"dashboard": {
-		"title": "대시보드",
-		"sections": {
-			"workers": "워커",
-			"strategies": "전략",
-			"recentEvents": "최근 이벤트"
-		},
-		"killSwitch": {
-			"label": "킬 스위치",
-			"statusArmed": "ARMED",
-			"statusTriggered": "TRIGGERED",
-			"tradingActive": "트레이딩 활성",
-			"allTradingHalted": "전체 트레이딩 중단",
-			"activateButton": "킬 스위치 활성화",
-			"releaseButton": "킬 스위치 해제"
-		},
-		"workerStatus": {
-			"running": "실행 중",
-			"warning": "경고",
-			"down": "다운",
-			"inactive": "비활성"
-		},
-		"strategies": {
-			"noStrategies": "전략 없음",
-			"events": "이벤트"
-		},
-		"recentEvents": {
-			"noEvents": "감지된 이벤트 없음"
-		}
-	}
+  "dashboard": {
+    "title": "대시보드",
+    "sections": {
+      "workers": "워커",
+      "strategies": "전략",
+      "recentEvents": "최근 이벤트"
+    },
+    "killSwitch": {
+      "label": "킬 스위치",
+      "statusArmed": "ARMED",
+      "statusTriggered": "TRIGGERED",
+      "tradingActive": "트레이딩 활성",
+      "allTradingHalted": "전체 트레이딩 중단",
+      "activateButton": "킬 스위치 활성화",
+      "releaseButton": "킬 스위치 해제"
+    },
+    "workerStatus": {
+      "running": "실행 중",
+      "warning": "경고",
+      "down": "다운",
+      "inactive": "비활성"
+    },
+    "strategies": {
+      "noStrategies": "전략 없음",
+      "events": "이벤트"
+    },
+    "recentEvents": {
+      "noEvents": "감지된 이벤트 없음"
+    }
+  },
+  "strategies": {
+    "pageTitle": "전략",
+    "createStrategy": "전략 생성",
+    "editStrategy": "전략 편집",
+    "deleteStrategy": "전략 삭제",
+    "activateStrategy": "전략 활성화",
+    "deactivateStrategy": "전략 비활성화",
+    "runBacktest": "백테스트 실행",
+    "saveStrategy": "저장",
+    "cancelAction": "취소",
+    "backAction": "뒤로",
+    "empty": {
+      "title": "전략이 없습니다",
+      "description": "첫 번째 트레이딩 전략을 만들어 시작하세요."
+    },
+    "fields": {
+      "name": "전략 이름",
+      "description": "설명",
+      "symbol": "심볼",
+      "symbols": "심볼",
+      "timeframe": "시간프레임",
+      "timeframes": "시간프레임",
+      "version": "버전",
+      "status": "상태",
+      "direction": "방향",
+      "mode": "실행 모드"
+    },
+    "status": {
+      "active": "활성",
+      "inactive": "비활성",
+      "draft": "초안",
+      "backtesting": "백테스팅"
+    },
+    "form": {
+      "namePlaceholder": "전략 이름",
+      "symbolsPlaceholder": "BTC/USDT, ETH/USDT",
+      "creating": "생성 중..."
+    },
+    "editor": {
+      "codePanel": "코드 에디터",
+      "configPanel": "설정",
+      "statusBar": {
+        "language": "TypeScript",
+        "encoding": "UTF-8"
+      }
+    },
+    "config": {
+      "basicInfo": "기본 정보",
+      "features": "피처",
+      "searchConfig": "검색 설정",
+      "resultConfig": "결과 설정",
+      "decisionConfig": "결정 설정",
+      "executionMode": "실행 모드",
+      "topK": "Top K",
+      "similarityThreshold": "유사도 임계값",
+      "minSamples": "최소 샘플",
+      "takeProfitPct": "익절 %",
+      "stopLossPct": "손절 %",
+      "maxHoldBars": "최대 보유 봉",
+      "minWinrate": "최소 승률",
+      "minExpectancy": "최소 기댓값"
+    },
+    "stats": {
+      "winrate": "승률",
+      "expectancy": "기댓값",
+      "samples": "샘플",
+      "events": "이벤트",
+      "avgHold": "평균 보유"
+    },
+    "events": {
+      "tabTitle": "이벤트",
+      "loading": "이벤트 로딩 중...",
+      "empty": "이 전략에 아직 이벤트가 없습니다.",
+      "columns": {
+        "direction": "방향",
+        "symbol": "심볼",
+        "entry": "진입가",
+        "exit": "청산가",
+        "pnl": "손익",
+        "outcome": "결과",
+        "time": "시간"
+      }
+    },
+    "version": {
+      "label": "버전",
+      "newVersion": "새 버전",
+      "versionHistory": "버전 이력",
+      "currentVersion": "현재 버전"
+    },
+    "modes": {
+      "analysis": "분석",
+      "alert": "알림",
+      "paperTrade": "모의 거래",
+      "autoTrade": "자동 거래"
+    }
+  }
 }

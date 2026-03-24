@@ -46,15 +46,10 @@ export {
 	type PositionSyncResult,
 } from "./position-monitor.js";
 export {
-	createAuditEvent,
-	recordDeactivation,
-	type KillSwitchAuditEvent,
-	type KillSwitchAuditDeps,
-} from "./kill-switch-audit.js";
-export {
-	KillSwitchNotifier,
-	buildActivationMessage,
-	buildDeactivationMessage,
-	type KillSwitchNotifierDeps,
-	type SlackBlock,
-} from "./kill-switch-notifier.js";
+	recordOutcome,
+	resetSuspension,
+	isSuspended,
+	ConsecutiveSlNotSuspendedError,
+	type ConsecutiveSlState,
+	type ConsecutiveSlDeps,
+} from "./consecutive-sl-limiter.js";

@@ -13,22 +13,22 @@ describe("message files", () => {
 
 	it("ko.json common namespace has required keys", () => {
 		const common = koMessages.common;
-		expect(common).toHaveProperty("loading");
+		expect(common).toHaveProperty("nav");
+		expect(common).toHaveProperty("actions");
+		expect(common).toHaveProperty("status");
+		expect(common).toHaveProperty("trading");
 		expect(common).toHaveProperty("error");
 		expect(common).toHaveProperty("confirm");
-		expect(common).toHaveProperty("cancel");
-		expect(common).toHaveProperty("save");
-		expect(common).toHaveProperty("close");
 	});
 
 	it("en.json common namespace has required keys", () => {
 		const common = enMessages.common;
-		expect(common).toHaveProperty("loading");
+		expect(common).toHaveProperty("nav");
+		expect(common).toHaveProperty("actions");
+		expect(common).toHaveProperty("status");
+		expect(common).toHaveProperty("trading");
 		expect(common).toHaveProperty("error");
 		expect(common).toHaveProperty("confirm");
-		expect(common).toHaveProperty("cancel");
-		expect(common).toHaveProperty("save");
-		expect(common).toHaveProperty("close");
 	});
 
 	it("ko and en have same top-level namespace keys", () => {

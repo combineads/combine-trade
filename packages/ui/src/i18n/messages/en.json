@@ -1,102 +1,564 @@
 {
-	"common": {
-		"loading": "Loading...",
-		"error": "An error occurred",
-		"confirm": "Confirm",
-		"cancel": "Cancel",
-		"save": "Save",
-		"close": "Close",
-		"delete": "Delete",
-		"edit": "Edit",
-		"create": "Create",
-		"update": "Update",
-		"search": "Search",
-		"filter": "Filter",
-		"reset": "Reset",
-		"refresh": "Refresh",
-		"back": "Back",
-		"next": "Next",
-		"previous": "Previous",
-		"submit": "Submit",
-		"apply": "Apply",
-		"status": {
-			"active": "Active",
-			"inactive": "Inactive",
-			"running": "Running",
-			"stopped": "Stopped",
-			"error": "Error",
-			"pending": "Pending"
-		},
-		"direction": {
-			"long": "LONG",
-			"short": "SHORT",
-			"pass": "PASS"
-		},
-		"noData": "No data available",
-		"unknown": "Unknown"
-	},
-	"journal": {
-		"pageTitle": "Trade Journal",
-		"list": "Journal List",
-		"empty": "No journal entries",
-		"filters": {
-			"dateRange": "Date Range",
-			"strategy": "Strategy Filter",
-			"symbol": "Symbol Filter",
-			"side": "Side Filter",
-			"searchPlaceholder": "Search by symbol, strategy name..."
-		},
-		"entry": {
-			"tradeDate": "Trade Date",
-			"symbol": "Symbol",
-			"side": "Side",
-			"entryPrice": "Entry Price",
-			"exitPrice": "Exit Price",
-			"pnl": "PnL",
-			"duration": "Duration",
-			"entryReason": "Entry Reason",
-			"exitReason": "Exit Reason",
-			"notes": "Notes",
-			"tags": "Tags",
-			"tradeSummary": "Trade Summary"
-		},
-		"analysis": {
-			"title": "Analysis",
-			"mfe": "Maximum Favorable Excursion (MFE)",
-			"mae": "Maximum Adverse Excursion (MAE)",
-			"riskReward": "Risk/Reward Ratio",
-			"edgeRatio": "Edge Ratio"
-		},
-		"stats": {
-			"title": "Statistics",
-			"periodPnl": "PnL by Period",
-			"strategyPerformance": "Performance by Strategy",
-			"totalTrades": "Total Trades",
-			"winRate": "Win Rate",
-			"avgPnl": "Average PnL",
-			"totalPnl": "Total PnL"
-		},
-		"comparison": {
-			"title": "Comparison",
-			"backtest": "Backtest",
-			"live": "Live",
-			"backtestVsLive": "Backtest vs Live",
-			"backtestPnl": "Backtest PnL",
-			"livePnl": "Live PnL",
-			"backtestWinRate": "Backtest Win Rate",
-			"liveWinRate": "Live Win Rate"
-		},
-		"export": "Export",
-		"columns": {
-			"date": "Date",
-			"symbol": "Symbol",
-			"side": "Side",
-			"entryPrice": "Entry Price",
-			"exitPrice": "Exit Price",
-			"pnl": "PnL",
-			"duration": "Duration",
-			"strategy": "Strategy",
-			"tags": "Tags"
-		}
-	}
+  "common": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "strategies": "Strategies",
+      "orders": "Orders",
+      "alerts": "Alerts",
+      "settings": "Settings",
+      "journal": "Journal",
+      "backtest": "Backtest",
+      "charts": "Charts",
+      "events": "Events",
+      "risk": "Risk"
+    },
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "create": "Create",
+      "close": "Close",
+      "confirm": "Confirm",
+      "reset": "Reset",
+      "refresh": "Refresh",
+      "submit": "Submit",
+      "apply": "Apply",
+      "search": "Search",
+      "filter": "Filter",
+      "back": "Back",
+      "next": "Next",
+      "previous": "Previous",
+      "update": "Update",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "start": "Start",
+      "stop": "Stop",
+      "retry": "Retry",
+      "export": "Export",
+      "import": "Import",
+      "copy": "Copy"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending",
+      "running": "Running",
+      "stopped": "Stopped",
+      "error": "Error",
+      "success": "Success",
+      "warning": "Warning",
+      "loading": "Loading",
+      "connected": "Connected",
+      "disconnected": "Disconnected"
+    },
+    "trading": {
+      "long": "LONG",
+      "short": "SHORT",
+      "pass": "PASS",
+      "strategy": "Strategy",
+      "position": "Position",
+      "order": "Order",
+      "balance": "Balance",
+      "symbol": "Symbol",
+      "pnl": "PnL",
+      "stopLoss": "Stop Loss",
+      "takeProfit": "Take Profit",
+      "killSwitch": "Kill Switch",
+      "paperTrading": "Paper Trading",
+      "leverage": "Leverage",
+      "margin": "Margin",
+      "liquidation": "Liquidation",
+      "candle": "Candle",
+      "timeframe": "Timeframe"
+    },
+    "error": {
+      "generic": "An error occurred",
+      "network": "Network error occurred",
+      "notFound": "Not found",
+      "unauthorized": "Authentication required",
+      "serverError": "Server error occurred",
+      "invalidCredentials": "Invalid credentials",
+      "sessionExpired": "Session expired",
+      "loadFailed": "Failed to load data"
+    },
+    "confirm": {
+      "delete": {
+        "title": "Confirm Delete",
+        "message": "Are you sure you want to delete? This action cannot be undone.",
+        "confirm": "Delete",
+        "cancel": "Cancel"
+      },
+      "killSwitch": {
+        "activate": {
+          "title": "Activate Kill Switch",
+          "message": "Activating the kill switch will immediately halt all automated trading.",
+          "confirm": "Activate",
+          "cancel": "Cancel"
+        },
+        "deactivate": {
+          "title": "Deactivate Kill Switch",
+          "message": "Deactivating the kill switch will resume automated trading.",
+          "confirm": "Deactivate",
+          "cancel": "Cancel"
+        }
+      }
+    },
+    "empty": {
+      "generic": "No data available",
+      "noData": "No data to display",
+      "noResults": "No results found",
+      "noStrategies": "No strategies registered",
+      "noOrders": "No order history",
+      "noAlerts": "No alerts"
+    },
+    "form": {
+      "name": "Name",
+      "description": "Description",
+      "email": "Email",
+      "password": "Password"
+    },
+    "notification": {
+      "killSwitchActive": "Kill Switch Active — All trading is halted"
+    },
+    "direction": {
+      "long": "LONG",
+      "short": "SHORT",
+      "pass": "PASS"
+    }
+  },
+  "orders": {
+    "pageTitle": "Orders",
+    "openOrders": "Open Orders",
+    "orderHistory": "Order History",
+    "noOrders": "No orders found",
+    "columns": {
+      "symbol": "Symbol",
+      "side": "Side",
+      "type": "Type",
+      "status": "Status",
+      "quantity": "Qty",
+      "price": "Price",
+      "filled": "Filled",
+      "strategy": "Strategy",
+      "fee": "Fee",
+      "date": "Date"
+    },
+    "side": {
+      "long": "LONG",
+      "short": "SHORT"
+    },
+    "type": {
+      "market": "Market",
+      "limit": "Limit",
+      "stopMarket": "Stop Market",
+      "stopLimit": "Stop Limit"
+    },
+    "status": {
+      "submitted": "Submitted",
+      "filled": "Filled",
+      "partiallyFilled": "Partially Filled",
+      "cancelled": "Cancelled",
+      "rejected": "Rejected"
+    },
+    "actions": {
+      "cancel": "Cancel Order",
+      "modify": "Modify Order"
+    },
+    "position": {
+      "title": "Position",
+      "avgEntryPrice": "Avg Entry Price",
+      "currentPrice": "Current Price",
+      "unrealizedPnl": "Unrealized PnL",
+      "leverage": "Leverage"
+    }
+  },
+  "alerts": {
+    "pageTitle": "Alerts",
+    "newAlert": "New Alert",
+    "alertRules": "Alert Rules",
+    "condition": "Condition",
+    "channel": "Channel",
+    "webhook": "Webhook",
+    "email": "Email",
+    "slack": "Slack",
+    "alertType": "Alert Type",
+    "priceAlert": "Price Alert",
+    "signalAlert": "Signal Alert",
+    "killSwitchAlert": "Kill Switch Alert",
+    "lossLimitAlert": "Loss Limit Alert",
+    "liquidationAlert": "Liquidation Alert",
+    "severity": {
+      "info": "Info",
+      "warning": "Warning",
+      "critical": "Critical"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "triggered": "Triggered"
+    },
+    "columns": {
+      "symbol": "Symbol",
+      "direction": "Direction",
+      "strategy": "Strategy",
+      "message": "Message",
+      "status": "Status",
+      "date": "Date"
+    },
+    "empty": "No alerts found",
+    "actions": {
+      "acknowledge": "Acknowledge",
+      "dismiss": "Dismiss",
+      "viewDetails": "View Details"
+    }
+  },
+  "risk": {
+    "pageTitle": "Risk Management",
+    "killSwitch": {
+      "label": "KILL SWITCH",
+      "statusArmed": "ARMED",
+      "statusTriggered": "TRIGGERED",
+      "tradingActive": "Trading Active",
+      "allTradingHalted": "ALL TRADING HALTED",
+      "activateButton": "Activate Kill Switch",
+      "releaseButton": "Release Kill Switch",
+      "shortcut": "Ctrl+Shift+K"
+    },
+    "lossLimit": {
+      "label": "Daily Loss Limit",
+      "currentLoss": "Current Loss",
+      "limit": "Limit",
+      "exceeded": "Limit Exceeded",
+      "haltAutoTrade": "Halt Auto Trade",
+      "emergencyLiquidation": "Emergency Liquidation",
+      "setLimit": "Set Limit"
+    },
+    "auditLog": {
+      "label": "Audit Log",
+      "empty": "No audit events recorded",
+      "columns": {
+        "action": "Action",
+        "reason": "Reason",
+        "actor": "Actor",
+        "timestamp": "Timestamp"
+      }
+    },
+    "positionSizing": "Position Sizing",
+    "leverage": "Leverage",
+    "exposure": "Exposure"
+  },
+  "settings": {
+    "pageTitle": "Settings",
+    "sections": {
+      "appearance": "Appearance",
+      "general": "General",
+      "language": "Language",
+      "notifications": "Notifications",
+      "exchange": "Exchange",
+      "security": "Security"
+    },
+    "appearance": {
+      "dark": "Dark",
+      "light": "Light"
+    },
+    "account": "Account",
+    "apiKey": "API Key",
+    "language": "Language",
+    "theme": "Theme",
+    "notificationSettings": "Notification Settings",
+    "security": "Security",
+    "twoFactorAuth": "Two-Factor Authentication",
+    "logout": "Logout",
+    "general": {
+      "comingSoon": "General settings coming soon."
+    },
+    "exchange": {
+      "managedInCredentials": "Exchange configuration managed in Credentials."
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "sections": {
+      "workers": "Workers",
+      "strategies": "Strategies",
+      "recentEvents": "Recent Events"
+    },
+    "killSwitch": {
+      "label": "KILL SWITCH",
+      "statusArmed": "ARMED",
+      "statusTriggered": "TRIGGERED",
+      "tradingActive": "Trading Active",
+      "allTradingHalted": "ALL TRADING HALTED",
+      "activateButton": "Activate Kill Switch",
+      "releaseButton": "Release Kill Switch"
+    },
+    "workerStatus": {
+      "running": "running",
+      "warning": "warning",
+      "down": "down",
+      "inactive": "inactive"
+    },
+    "strategies": {
+      "noStrategies": "No strategies yet",
+      "events": "events"
+    },
+    "recentEvents": {
+      "noEvents": "No events detected"
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "signingIn": "Signing in...",
+    "signIn": "Sign In",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "keepLoggedIn": "Keep me logged in",
+    "loginFailed": "Login failed",
+    "sessionExpired": "Session expired",
+    "loginAgain": "Sign in again",
+    "unauthorized": "Unauthorized",
+    "encryptedCredentials": "AES-256-GCM encrypted credentials"
+  },
+  "backtest": {
+    "pageTitle": "Backtest",
+    "runBacktest": "Run Backtest",
+    "running": "Running backtest...",
+    "runToSeeResults": "Run a backtest to see results",
+    "strategy": "Strategy",
+    "noStrategies": "No strategies",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "period": "Period",
+    "results": "Results",
+    "stats": {
+      "totalTrades": "Total Trades",
+      "winRate": "Win Rate",
+      "expectancy": "Expectancy",
+      "profitFactor": "Profit Factor",
+      "maxDrawdown": "Max Drawdown",
+      "sharpeRatio": "Sharpe Ratio",
+      "avgHold": "Avg Hold",
+      "bars": "bars",
+      "equityCurve": "Equity Curve",
+      "pnlDistribution": "P&L Distribution",
+      "noData": "No data"
+    },
+    "status": {
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
+  "events": {
+    "pageTitle": "Events",
+    "eventLog": "Event Log",
+    "noEvents": "No events found",
+    "eventType": "Event Type",
+    "timestamp": "Timestamp",
+    "columns": {
+      "symbol": "Symbol",
+      "direction": "Direction",
+      "strategy": "Strategy",
+      "winrate": "Winrate",
+      "decision": "Decision",
+      "date": "Date"
+    },
+    "types": {
+      "pipeline": "Pipeline",
+      "decision": "Decision",
+      "alert": "Alert",
+      "system": "System",
+      "signal": "Signal",
+      "vector": "Vector"
+    },
+    "fields": {
+      "signal": "Signal",
+      "vector": "Vector",
+      "similarity": "Similarity"
+    }
+  },
+  "charts": {
+    "pageTitle": "Charts",
+    "candlestick": "Candlestick",
+    "indicators": "Indicators",
+    "overlays": "Overlays",
+    "fullscreen": "Fullscreen",
+    "timeframes": {
+      "1m": "1m",
+      "3m": "3m",
+      "5m": "5m",
+      "15m": "15m",
+      "1h": "1h",
+      "4h": "4h",
+      "1d": "1d"
+    },
+    "chartTypes": {
+      "candlestick": "Candlestick",
+      "line": "Line",
+      "area": "Area"
+    }
+  },
+  "strategies": {
+    "pageTitle": "Strategies",
+    "createStrategy": "Create Strategy",
+    "editStrategy": "Edit Strategy",
+    "deleteStrategy": "Delete Strategy",
+    "activateStrategy": "Activate Strategy",
+    "deactivateStrategy": "Deactivate Strategy",
+    "runBacktest": "Run Backtest",
+    "saveStrategy": "Save",
+    "cancelAction": "Cancel",
+    "backAction": "Back",
+    "empty": {
+      "title": "No strategies yet",
+      "description": "Create your first trading strategy to get started."
+    },
+    "fields": {
+      "name": "Strategy name",
+      "description": "Description",
+      "symbol": "Symbol",
+      "symbols": "Symbols",
+      "timeframe": "Timeframe",
+      "timeframes": "Timeframes",
+      "version": "Version",
+      "status": "Status",
+      "direction": "Direction",
+      "mode": "Execution mode"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "draft": "Draft",
+      "backtesting": "Backtesting"
+    },
+    "form": {
+      "namePlaceholder": "Strategy name",
+      "symbolsPlaceholder": "BTC/USDT, ETH/USDT",
+      "creating": "Creating..."
+    },
+    "editor": {
+      "codePanel": "Code editor",
+      "configPanel": "Configuration",
+      "statusBar": {
+        "language": "TypeScript",
+        "encoding": "UTF-8"
+      }
+    },
+    "config": {
+      "basicInfo": "Basic Info",
+      "features": "Features",
+      "searchConfig": "Search Config",
+      "resultConfig": "Result Config",
+      "decisionConfig": "Decision Config",
+      "executionMode": "Execution Mode",
+      "topK": "Top K",
+      "similarityThreshold": "Similarity Threshold",
+      "minSamples": "Min Samples",
+      "takeProfitPct": "Take Profit %",
+      "stopLossPct": "Stop Loss %",
+      "maxHoldBars": "Max Hold Bars",
+      "minWinrate": "Min Winrate",
+      "minExpectancy": "Min Expectancy"
+    },
+    "stats": {
+      "winrate": "Winrate",
+      "expectancy": "Expectancy",
+      "samples": "Samples",
+      "events": "Events",
+      "avgHold": "Avg Hold"
+    },
+    "events": {
+      "tabTitle": "Events",
+      "loading": "Loading events...",
+      "empty": "No events yet for this strategy.",
+      "columns": {
+        "direction": "Direction",
+        "symbol": "Symbol",
+        "entry": "Entry",
+        "exit": "Exit",
+        "pnl": "P&L",
+        "outcome": "Outcome",
+        "time": "Time"
+      }
+    },
+    "version": {
+      "label": "Version",
+      "newVersion": "New Version",
+      "versionHistory": "Version History",
+      "currentVersion": "Current Version"
+    },
+    "modes": {
+      "analysis": "Analysis",
+      "alert": "Alert",
+      "paperTrade": "Paper Trade",
+      "autoTrade": "Auto Trade"
+    }
+  },
+  "journal": {
+    "pageTitle": "Trade Journal",
+    "list": "Journal List",
+    "empty": "No journal entries",
+    "filters": {
+      "dateRange": "Date Range",
+      "strategy": "Strategy Filter",
+      "symbol": "Symbol Filter",
+      "side": "Side Filter",
+      "searchPlaceholder": "Search by symbol, strategy name..."
+    },
+    "entry": {
+      "tradeDate": "Trade Date",
+      "symbol": "Symbol",
+      "side": "Side",
+      "entryPrice": "Entry Price",
+      "exitPrice": "Exit Price",
+      "pnl": "PnL",
+      "duration": "Duration",
+      "entryReason": "Entry Reason",
+      "exitReason": "Exit Reason",
+      "notes": "Notes",
+      "tags": "Tags",
+      "tradeSummary": "Trade Summary"
+    },
+    "analysis": {
+      "title": "Analysis",
+      "mfe": "Maximum Favorable Excursion (MFE)",
+      "mae": "Maximum Adverse Excursion (MAE)",
+      "riskReward": "Risk/Reward Ratio",
+      "edgeRatio": "Edge Ratio"
+    },
+    "stats": {
+      "title": "Statistics",
+      "periodPnl": "PnL by Period",
+      "strategyPerformance": "Performance by Strategy",
+      "totalTrades": "Total Trades",
+      "winRate": "Win Rate",
+      "avgPnl": "Average PnL",
+      "totalPnl": "Total PnL"
+    },
+    "comparison": {
+      "title": "Comparison",
+      "backtest": "Backtest",
+      "live": "Live",
+      "backtestVsLive": "Backtest vs Live",
+      "backtestPnl": "Backtest PnL",
+      "livePnl": "Live PnL",
+      "backtestWinRate": "Backtest Win Rate",
+      "liveWinRate": "Live Win Rate"
+    },
+    "export": "Export",
+    "columns": {
+      "date": "Date",
+      "symbol": "Symbol",
+      "side": "Side",
+      "entryPrice": "Entry Price",
+      "exitPrice": "Exit Price",
+      "pnl": "PnL",
+      "duration": "Duration",
+      "strategy": "Strategy",
+      "tags": "Tags"
+    }
+  }
 }

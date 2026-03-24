@@ -1,77 +1,95 @@
 # T-18-011 SSE auth validation
 
 ## Goal
-Add session authentication and user-scoped event filtering to the `/api/v1/stream` SSE endpoint. The endpoint must reject unauthenticated connections (401), filter events to only the authenticated user's strategies, and send an `auth_expired` event followed by stream closure when a periodic re-validation detects a dead session.
+Add better-auth session validation to the SSE endpoint (`/api/v1/sse`) so that unauthenticated connections are rejected with 401, expired tokens during an active stream cause connection closure with a retry hint, and events are filtered to only those belonging to the authenticated user's strategies.
 
 ## Why
-The SSE stream endpoint was left unauthenticated in the initial implementation. Any unauthenticated client could connect and receive all events broadcast on the bus, including decision and order events belonging to other users. This task closes that gap as the final piece of EP18 auth coverage.
+EP18 M6 — the SSE endpoint currently streams real-time pipeline events without any authentication check, allowing any unauthenticated client to receive decision, alert, and order events for all users. This violates the multi-user data isolation invariant introduced in EP18 M3–M4.
 
 ## Inputs
-- `apps/api/src/routes/sse.ts` — SSE route (unauthenticated)
-- `apps/api/src/server.ts` — `AuthLike` interface, server wiring
-- `packages/core/strategy/repository.ts` — `StrategyRepository.findActive(userId)`
+- `apps/api/src/routes/sse.ts` (or equivalent) — current SSE route registered in T-08-006
+- `packages/shared/auth/better-auth.ts` — `auth` instance with `auth.api.getSession({ headers })` (T-18-001)
+- `apps/api/src/server.ts` — better-auth Elysia plugin applied (T-18-002)
+- `db/schema/strategies.ts` — `user_id` column added (T-18-004); strategies scoped by user
+- EP18 M6 spec: SSE session validation, 401 on invalid session, connection closure on expiry, user-scoped filtering
 
 ## Dependencies
-- T-18-002 (better-auth plugin in server)
-- T-18-005 (repository user isolation)
-- T-18-006 (route session extraction pattern)
+- T-18-001 (better-auth setup — `auth.api.getSession` available)
+- T-18-002 (replace server auth middleware — better-auth plugin on server)
+- T-08-006 (api-wiring-sse — SSE route exists and is the target of this change)
+
+## Expected Outputs
+- Updated SSE route handler: validate better-auth session from `Authorization: Bearer <token>` header or `combine-trade.session_token` cookie before upgrading to SSE stream
+- Invalid / missing session → HTTP 401 response (connection never upgraded)
+- Session validation extracted into reusable `requireSession(request: Request): Promise<Session>` helper in `apps/api/src/lib/auth-helpers.ts`
+- Token expiry detected during active stream: close the SSE connection and send a final `event: auth_expired\ndata: {"retryAfter":0}\n\n` frame before closing
+- User-scoped event filtering: SSE handler only forwards events where `event.strategyId` belongs to the authenticated user (query `strategies` table with `user_id` filter)
+- Periodic session re-validation every 60 seconds on active connections (configurable interval)
 
 ## Deliverables
+- `apps/api/src/routes/sse.ts` (modified — add session validation and user-scoped filtering)
+- `apps/api/src/lib/auth-helpers.ts` (new — `requireSession` helper)
+- `apps/api/src/__tests__/sse-auth.test.ts` (new)
 
-### `apps/api/src/lib/auth-helpers.ts` (new)
-Exports `requireSession(request, auth)` — thin wrapper around `auth.api.getSession({ headers: request.headers })`. Passes all request headers to better-auth so Bearer and cookie resolution happens inside better-auth's own logic.
+## Constraints
+- Session check must happen before any SSE upgrade (before writing `Content-Type: text/event-stream`)
+- Use `auth.api.getSession({ headers: request.headers })` — do not re-implement JWT parsing
+- Bearer token takes precedence over cookie if both are present
+- User-scoped filtering: load the user's strategy IDs once at connection time; re-load on periodic re-validation
+- Periodic re-validation: if session is no longer valid, close the stream gracefully (send `auth_expired` event first)
+- Re-validation interval: 60 seconds default, configurable via `SSE_AUTH_REVALIDATION_INTERVAL_S` env var
+- Must not break existing SSE event format for authenticated clients
+- No direct Drizzle calls inside the SSE route — use the strategy repository (injected dep)
+- Elysia route handler must remain within the `apps/api` package
 
-### `apps/api/src/routes/sse.ts` (modified)
-- `SseRouteDeps` extended with `auth: AuthLike`, `strategyRepository: StrategyRepository`, and optional `revalidateIntervalMs` (default 60 000 ms) and `triggerRevalidate` test hook.
-- Route handler calls `requireSession` before creating the stream; returns 401 JSON response on failure.
-- `shouldForwardEvent(event, userStrategyIds)` — filters events with a `strategyId` field to only user-owned strategies; all other events pass through.
-- Periodic re-validation via `setInterval(revalidate, revalidateIntervalMs)`. On session expiry: sends `auth_expired` event, stops timers, unsubscribes, closes the stream.
-- `triggerRevalidate` hook written into `deps` after stream starts so tests can force an immediate re-validation cycle.
+## Steps
+1. Write failing tests in `apps/api/src/__tests__/sse-auth.test.ts` (RED):
 
-### `apps/api/__tests__/sse-auth.test.ts` (new)
-14 tests covering:
-- `requireSession`: valid Bearer, no auth, null session, Bearer > cookie precedence, cookie fallback
-- Connection rejection: no session, empty Bearer, null session, valid Bearer, cookie
-- Event filtering: user's strategy forwarded, other user's strategy filtered, non-strategy events always forwarded
-- `auth_expired` event on re-validation failure
+   **Test A — No session header → 401**
+   - Request to `/api/v1/sse` with no auth → response status 401, no SSE stream opened
 
-### `apps/api/__tests__/sse.test.ts` (updated)
-Updated existing 4 tests to pass `auth` and `strategyRepository` in deps (now required). Added 1 new test confirming 401 without auth.
+   **Test B — Invalid bearer token → 401**
+   - Request with `Authorization: Bearer invalid` → `auth.api.getSession` returns null → 401
 
-### `apps/api/src/server.ts` (updated)
-`sseRoutes` call now passes `auth` and `strategyRepository` from server deps.
+   **Test C — Valid bearer token → SSE connection opened**
+   - Mock `auth.api.getSession` returning a valid session → response status 200 with `Content-Type: text/event-stream`
+
+   **Test D — Valid cookie session → SSE connection opened**
+   - Mock session from cookie → 200 + text/event-stream
+
+   **Test E — Event for authenticated user's strategy is forwarded**
+   - Session userId = "user-1"; strategy "strat-a" belongs to "user-1"; event for "strat-a" → forwarded to stream
+
+   **Test F — Event for another user's strategy is filtered out**
+   - Session userId = "user-1"; event for "strat-b" (belongs to "user-2") → NOT forwarded
+
+   **Test G — Periodic re-validation: expired session closes stream**
+   - Active connection; advance fake timer past re-validation interval; mock `getSession` returns null → `auth_expired` event sent, connection closed
+
+   **Test H — requireSession helper extracts Bearer token**
+   - `requireSession` with `Authorization: Bearer tok` header → calls `getSession` with that header
+
+2. Implement `apps/api/src/lib/auth-helpers.ts` (GREEN)
+3. Modify `apps/api/src/routes/sse.ts` to add session gate, user-scoped filter, periodic re-validation (GREEN)
+4. Refactor: extract strategy-ID-set reload into a named function; add JSDoc to `requireSession`
 
 ## Acceptance Criteria
-- `GET /api/v1/stream` without credentials returns 401
-- `GET /api/v1/stream` with valid Bearer token returns 200 text/event-stream
-- Events with `strategyId` belonging to another user are not forwarded
-- Non-strategy events (orders, alerts, heartbeats) are always forwarded
-- `auth_expired` SSE event is sent when re-validation detects no session
-- `bun run typecheck` passes
-- All tests pass
+- All 8 tests pass
+- Unauthenticated requests receive 401 before SSE upgrade
+- Authenticated requests receive `Content-Type: text/event-stream`
+- Events belonging to other users' strategies are not emitted to the stream
+- Expired / revoked sessions during active streams result in `auth_expired` event followed by connection close
+- `requireSession` usable by other route handlers (exported from `auth-helpers.ts`)
+- Zero TypeScript errors, zero lint warnings
 
 ## Validation
 ```bash
-bun test --filter "sse-auth"   # 14 pass
-bun test --filter "sse"        # 30 pass (including updated sse.test.ts)
-bun test                       # full suite, 0 fail
-bun run typecheck              # 0 errors
+bun test --filter "sse-auth" && bun run typecheck
 ```
 
-## Implementation Notes
-
-### requireSession design
-`requireSession` is a thin one-liner: it passes the full `request.headers` to `auth.api.getSession()`. No manual Bearer parsing — better-auth handles resolution order (Bearer > cookie) internally.
-
-### Event filtering
-`shouldForwardEvent` checks if `event.data` has a string `strategyId`. If yes, the ID must be in the user's active strategy set (loaded at connection time, refreshed on each re-validation). Events without `strategyId` (orders, alerts, heartbeats, auth_expired) always pass through.
-
-### triggerRevalidate test hook
-The revalidate function is assigned to `deps.triggerRevalidate` inside `ReadableStream.start()`. Since `start()` runs when the first read happens, the test reads the initial heartbeat first, then calls `deps.triggerRevalidate()` to force a re-validation cycle synchronously.
-
-### Validation results
-```
-bun run typecheck  → 0 errors
-bun test           → 1656 pass, 0 fail (full suite)
-biome check        → 0 errors (modified files)
-```
+## Out of Scope
+- WebSocket authentication (separate transport)
+- Per-event-type permission checks (all authenticated users have access to their own events)
+- SSE reconnection handling on the client side
+- Rate limiting on SSE connections (separate concern)
+- Migrating SSE to a different transport protocol

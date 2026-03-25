@@ -84,13 +84,15 @@ Combine Trade is a strategy-defined vectorization trading system. Strategies are
 │   │   │   ├── middleware/     # AOP middleware (tx, logging)
 │   │   │   └── container.ts   # IoC container setup
 │   │   └── index.ts
-│   └── web/                    # Next.js web UI (SSR/SSG)
-│       ├── app/                # App Router pages (Server Components + Client)
-│       ├── src/
-│       │   └── middleware.ts   # Auth routing middleware
-│       └── next.config.ts
-│   # Note: apps/desktop (Tauri) is architecturally designed but not yet scaffolded.
-│   # See "Tauri + Next.js integration architecture" section below for the design.
+│   ├── web/                    # Next.js web UI (SSR/SSG)
+│   │   ├── app/                # App Router pages (Server Components + Client)
+│   │   ├── src/
+│   │   │   └── middleware.ts   # Auth routing middleware
+│   │   └── next.config.ts
+│   └── desktop/                # Tauri desktop app (Next.js Static Export + Rust)
+│       ├── app/                # 'use client' pages (static export)
+│       ├── src-tauri/          # Rust native (system tray, app icons, CSP)
+│       └── next.config.ts      # output: 'export'
 ├── packages/
 │   ├── core/                   # Domain logic (no Elysia, CCXT, Drizzle, or Slack)
 │   │   ├── strategy/           # Strategy sandbox, API, execution (V8 isolates)
@@ -103,6 +105,7 @@ Combine Trade is a strategy-defined vectorization trading system. Strategies are
 │   │   ├── risk/               # Kill switch, daily loss limit, position sizing rules
 │   │   ├── fee/                # Fee calculation (maker/taker, funding)
 │   │   ├── macro/              # Macro-economic context (calendar events, news)
+│   │   ├── drift/              # Pattern drift detection (live vs backtest comparison)
 │   │   └── supervisor/         # Worker supervisor utilities
 │   ├── exchange/               # Exchange adapter layer (CCXT)
 │   │   ├── binance/
@@ -119,6 +122,8 @@ Combine Trade is a strategy-defined vectorization trading system. Strategies are
 │   │       ├── hooks/          # Shared hooks (useSSE, candle data, ...)
 │   │       ├── stores/         # Zustand state stores
 │   │       ├── auth/           # Auth context + session management
+│   │       ├── i18n/           # Internationalization (ko/en)
+│   │       ├── platform/       # Platform adapter (web/Tauri detection)
 │   │       ├── lib/            # Web-specific utilities
 │   │       └── theme/          # Design tokens and theme config
 │   └── shared/                 # Shared infrastructure
@@ -152,7 +157,8 @@ Combine Trade is a strategy-defined vectorization trading system. Strategies are
 │   ├── integration/
 │   └── e2e/
 ├── scripts/
-│   ├── bench.ts                # Benchmarking
+│   ├── bench.ts                # Pipeline latency benchmarking
+│   ├── generate-icons.ts       # Icon/favicon generation script
 │   └── supervisor.ts           # Worker process supervisor
 └── docs/
 ```
@@ -163,7 +169,7 @@ Combine Trade is a strategy-defined vectorization trading system. Strategies are
 ```
 apps/api         → packages (core/exchange/candle/...) → packages/shared
 apps/web         → packages/ui → packages/shared
-apps/desktop     → packages/ui → packages/shared  (planned, not yet scaffolded)
+apps/desktop     → packages/ui → packages/shared
 workers          → packages (core/exchange/candle/...) → packages/shared
 ```
 - `packages/ui/` is consumed by `apps/web/` and `apps/desktop/` only. Never by `apps/api/`, workers, or backend packages.

@@ -60,7 +60,9 @@
 combine-trade/
 ├── apps/
 │   ├── api/                    # Elysia REST API 서버 (포트 3000)
-│   └── web/                    # Next.js 웹 UI (SSR/SSG)
+│   ├── web/                    # Next.js 웹 UI (SSR/SSG, 포트 3001)
+│   └── desktop/                # Tauri 데스크톱 앱 (Next.js Static Export + Rust)
+│       └── src-tauri/          # Rust 네이티브 레이어 (트레이 아이콘, 앱 아이콘)
 ├── packages/
 │   ├── core/
 │   │   ├── strategy/           # 전략 샌드박스 (V8 isolates)
@@ -72,13 +74,20 @@ combine-trade/
 │   │   ├── risk/               # 킬스위치 + 손실 한도 + 포지션 사이징
 │   │   ├── fee/                # 수수료 계산
 │   │   ├── macro/              # 거시경제 컨텍스트
+│   │   ├── drift/              # 패턴 드리프트 감지
 │   │   └── supervisor/         # 워커 수퍼바이저 유틸리티
 │   ├── exchange/               # CCXT 거래소 어댑터 (Binance, OKX)
 │   ├── candle/                 # 캔들 수집 + 연속성 검증
 │   ├── backtest/               # 백테스트 엔진
 │   ├── alert/                  # Slack 알람
 │   ├── execution/              # 주문 실행 (real + paper)
-│   ├── ui/                     # 공통 React 컴포넌트
+│   ├── ui/                     # 공통 React 컴포넌트·뷰·훅·플랫폼 어댑터
+│   │   ├── components/         # 버튼, 카드, 테이블, 차트, Logo, Lockup 등
+│   │   ├── views/              # 대시보드, 전략, 차트, 백테스트, 주문, 저널 등
+│   │   ├── hooks/              # useSSE, usePlatform 등
+│   │   ├── stores/             # Zustand 상태 관리
+│   │   ├── i18n/               # 다국어 (ko/en)
+│   │   └── platform/           # 웹/데스크톱 플랫폼 어댑터
 │   └── shared/                 # 공통 타입, IoC, AOP, 암호화, 이벤트 버스
 ├── workers/
 │   ├── candle-collector/       # 실시간 캔들 수집 (거래소 WebSocket)
@@ -96,7 +105,9 @@ combine-trade/
 │   ├── migrations/       # 마이그레이션 파일
 │   └── seed/             # 개발용 시드 데이터
 ├── scripts/
-│   └── supervisor.ts     # 워커 프로세스 수퍼바이저
+│   ├── supervisor.ts     # 워커 프로세스 수퍼바이저
+│   ├── generate-icons.ts # 아이콘/파비콘 생성 스크립트
+│   └── bench.ts          # 파이프라인 레이턴시 벤치마크
 ├── tests/
 ├── docker-compose.yml    # PostgreSQL + pgvector
 └── .env.example
@@ -195,6 +206,7 @@ bun install          # 의존성 설치
 bun run dev          # API 서버(3000) + 웹 UI(3001) 동시 시작
 bun run dev:api      # API 서버만 시작 (port 3000)
 bun run dev:web      # 웹 UI만 시작 (port 3001)
+bun run dev:desktop  # 데스크톱 앱 (Next.js Static + Tauri)
 bun test             # 전체 테스트 실행
 bun run lint         # 코드 린트 (Biome)
 bun run typecheck    # 타입 체크 (tsc --noEmit)
@@ -617,6 +629,21 @@ bun run db:migrate
 | User | `combine` |
 | Password | `combine` |
 | Max connections | 30 |
+
+---
+
+## 주요 기능
+
+- **전략 시스템**: TypeScript 전략 작성 → DB 저장 → V8 isolate 샌드박스 실행
+- **벡터화 파이프라인**: 이벤트 피처 → [0,1] 정규화 → pgvector 저장 → L2 유사 검색
+- **통계 의사결정**: 30+ 유사 샘플, 55%+ 승률, 양수 기대수익 → LONG/SHORT 신호
+- **4단계 실행 모드**: 분석 → 알람 → 모의매매 → 자동매매 (readiness ≥ 70 필요)
+- **리스크 관리**: 킬스위치 (<1초 전파), 일일 손실 한도, 포지션 사이징
+- **트레이드 저널**: 자동 생성, 매크로 컨텍스트 연동, 드리프트 감지
+- **백테스트**: 3년치 과거 데이터 리플레이 + 벡터 축적
+- **데스크톱 앱**: Tauri + Next.js Static Export (웹과 코드 공유)
+- **다국어 UI**: 한국어/영어 지원 (i18n)
+- **브랜딩**: 파비콘, OpenGraph, 트레이 아이콘, Logo/Lockup 컴포넌트
 
 ---
 

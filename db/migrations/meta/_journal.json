@@ -43,6 +43,13 @@
       "when": 1774519200000,
       "tag": "0005_migrate_users_to_better_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774413956410,
+      "tag": "0006_trade_journals_macro_retrospective",
+      "breakpoints": true
     }
   ]
 }

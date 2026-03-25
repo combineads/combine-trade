@@ -40,6 +40,9 @@ export const tradeJournals = pgTable("trade_journals", {
 	userNotes: text("user_notes"),
 	notes: text("notes"),
 	tags: text("tags").array(),
+	entryMacroContext: jsonb("entry_macro_context"),
+	retrospectiveReport: text("retrospective_report"),
+	retrospectiveGeneratedAt: timestamp("retrospective_generated_at", { withTimezone: true }),
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

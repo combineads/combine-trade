@@ -203,3 +203,4 @@ packages/core/journal/ must not import Elysia, CCXT, or Drizzle directly. Data a
   - M5 (worker, DB, API) deferred — requires EP08 framework setup
 - 2026-03-23: T-13-006 (journal worker event handler) implemented.
   - JournalEventHandler: 5 tests pass (assemble+save, auto-tags, error swallow, subscribe, route events)
+- 2026-03-25: All tasks complete. T-13-001 through T-13-011 in done/. Epic fully implemented.

@@ -295,3 +295,4 @@
 ## Progress notes
 
 - 2026-03-23: 에픽 생성. 10-auth를 대체하는 새 에픽.
+- 2026-03-25: All tasks complete. T-18-001 through T-18-011 in done/. Epic fully implemented.

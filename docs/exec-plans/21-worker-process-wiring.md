@@ -244,3 +244,4 @@ The most complex workers — require sandbox executor and exchange adapter wirin
 ## Progress notes
 
 - 2026-03-24: 에픽 생성. 모든 도메인 로직(collector.ts, evaluator.ts, handler.ts 등)은 EP01-EP17에서 구현 완료. 누락된 것은 각 워커의 프로세스 부트스트랩(DB 연결, 이벤트 버스 구독, 의존성 주입, graceful shutdown)뿐. EP19의 `db/index.ts` Drizzle 인스턴스와 `packages/shared/event-bus/` PgEventSubscriber/Publisher를 재사용.
+- 2026-03-25: All tasks complete. T-21-001 through T-21-011 in done/. Epic fully implemented.

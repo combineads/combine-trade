@@ -229,3 +229,4 @@
   - T-14-005: Integration test — full pipeline matcher→balance→comparator→readiness (6 tests)
   - Total: 62 tests, all passing
   - M3 (mode integration), M5 (API) deferred — requires EP06/EP08 framework setup
+- 2026-03-25: All tasks complete. T-14-001 through T-14-012 in done/. Epic fully implemented.

@@ -146,6 +146,7 @@ Until EP09 (risk management) is complete, the following hard caps apply:
 - T-06-012: Add per-strategy execution mode configuration + symbol-level order serialization queue (advisory locks)
 - T-06-004: Build alert-worker + slippage threshold alert (abnormal slippage → WARNING + Slack)
 - T-06-005: Integration test: decision → alert + order execution
+- T-06-014: Slippage tracking
 
 ## Risks
 - 거래소 주문 API 응답 지연으로 1초 레이턴시 예산 초과 가능
@@ -166,3 +167,4 @@ Until EP09 (risk management) is complete, the following hard caps apply:
 - 2026-03-22: Tasks generated — T-06-001 (formatter), T-06-002 (mode service), T-06-003 (order builder), T-06-004 (alert handler), T-06-005 (integration).
 - 2026-03-22: M1 (formatter), M2 partial (alert handler), M3 partial (order builder), M5 (mode service) completed. 396 tests passing. Full workers and DB schemas deferred to future tasks.
 - 2026-03-22: M2-M4 completed. T-06-006 (Binance adapter order methods), T-06-007 (Slack webhook), T-06-008 (execution worker handler), T-06-009 (order tracker), T-06-010 (alert worker event bus), T-06-011 (execution worker event bus). 1008 tests passing. EP06 fully implemented.
+- All tasks T-06-001 through T-06-014 completed and moved to docs/tasks/done/.

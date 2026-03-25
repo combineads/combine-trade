@@ -124,6 +124,7 @@ Note: 이 에픽은 08-api-ui와 병렬 또는 직후에 진행. API 엔드포�
 - T-18-011: Implement SSE connection authentication (superseded by EP18)
 - T-18-007: Build Next.js login page and auth flow + token storage and auto-refresh (superseded by EP18)
 - T-18-010: Build Tauri login screen and secure token storage (superseded by EP18)
+- T-10-003: Exchange credential encryption service
 - T-10-009: Implement exchange API key encryption service (AES-256-GCM)
 - T-10-004: Build exchange credential CRUD API with masking
 - T-18-008: Integration test: login → token → API access → refresh → logout (superseded by EP18)
@@ -147,4 +148,4 @@ Note: 이 에픽은 08-api-ui와 병렬 또는 직후에 진행. API 엔드포�
 | 2026-03-21 | 단일 사용자지만 인증 필수 | 네트워크 노출 가능성 + 실제 자금 보호 |
 
 ## Progress notes
-- Pending implementation.
+- All tasks T-10-001 through T-10-011 completed and moved to docs/tasks/done/. EP10 is deprecated and superseded by EP18 (better-auth-multiuser); EP18 tasks cover auth client flows and SSE authentication.

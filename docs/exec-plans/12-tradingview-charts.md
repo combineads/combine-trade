@@ -198,3 +198,4 @@ TradingView 차트 라이브러리(Lightweight Charts / Advanced Charts)와 위�
 
 ## Progress notes
 - Pending implementation.
+- 2026-03-25: All tasks complete. T-12-001 through T-12-020 in done/. Epic fully implemented.

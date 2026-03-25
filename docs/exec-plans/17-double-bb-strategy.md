@@ -296,3 +296,4 @@
 ## Progress notes
 
 - 2026-03-22: Plan created from user request. Reference: combine-trade-app/docs/exec-plans/03-strategy-engine.md (M1-M4 complete, M5 partial in old project). Implementation pending.
+- 2026-03-25: All tasks complete. T-17-001 through T-17-013 in done/. Epic fully implemented.

@@ -397,3 +397,4 @@
 
 - 2026-03-22: Epic drafted. saveticker.com API 두 엔드포인트 모두 공개 접근 확인 완료.
 - 2026-03-22: M7 추가 — LLM 2단계 의사결정 (15분봉 이상). kNN Stage 1 + LLM Stage 2 아키텍처.
+- 2026-03-25: All tasks complete. T-16-001 through T-16-020 in done/. Epic fully implemented.

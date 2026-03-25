@@ -178,3 +178,4 @@ All existing web views become available on desktop through thin `'use client'` w
 ## Progress notes
 
 - 2026-03-24: 에픽 생성. EP00–EP19 모두 완료. `apps/desktop/`이 완전히 미스캐폴딩 상태. `packages/ui/platform/` 미구현. 이 에픽이 데스크탑 앱의 첫 구현 단계.
+- 2026-03-25: All tasks complete. T-20-001 through T-20-008 in done/. Epic fully implemented.

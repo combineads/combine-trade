@@ -158,22 +158,39 @@ Elysia API 서버와 Tauri 데스크탑/모바일 앱, Next.js 웹 인터페이�
   ```
 
 ## Task candidates
-- T-08-008: Scaffold Elysia API server with IoC + AOP middleware
-- T-08-002: Implement strategy CRUD API endpoints
-- T-08-004: Implement candle/event/alert/order query endpoints
-- T-08-005: Implement backtest trigger endpoint
-- T-08-028: Implement execution mode change endpoint
-- T-08-006: Implement SSE real-time streaming endpoint
-- T-08-011: Scaffold Next.js web project with routing
-- T-08-014: Implement Dashboard page (pipeline status overview)
-- T-08-015: Implement Strategy list page
-- T-08-016: Implement Strategy detail and editor page
-- T-08-026: Add TypeScript autocomplete for Strategy API in Monaco
-- T-08-020: Implement Backtest UI (params → progress → results)
-- T-08-017: Implement Events, Alerts, Orders pages
-- T-20-001: Scaffold Tauri desktop project wrapping Next.js
-- T-20-002: Add system tray, native notifications, auto-start
-- T-08-013: Implement API client layer (Eden treaty or fetch wrapper)
+- T-08-001: api-error-handling
+- T-08-002: strategy-crud-routes
+- T-08-003: events-statistics-routes
+- T-08-004: candles-alerts-orders-routes
+- T-08-005: backtest-route
+- T-08-006: api-wiring-sse
+- T-08-007: drizzle-strategy-repository
+- T-08-008: api-server-bootstrap
+- T-08-009: api-event-candle-order-query
+- T-08-010: scaffold-packages-ui
+- T-08-011: scaffold-apps-web
+- T-08-012: ui-base-components
+- T-08-013: api-client-hooks
+- T-08-014: dashboard-page
+- T-08-015: strategy-list-page
+- T-08-016: strategy-editor-detail
+- T-08-017: monitoring-pages
+- T-08-018: risk-management-page
+- T-08-019: login-auth-flow
+- T-08-020: credential-routes-wiring
+- T-08-021: settings-page
+- T-08-022: strategy-create-form
+- T-08-023: notification-banner
+- T-08-024: topbar-kill-switch
+- T-08-025: sse-event-hook
+- T-08-026: strategy-detail-events
+- T-08-027: paper-trading-badge
+- T-08-028: wire-remaining-api-routes
+- T-08-029: global-auth-middleware
+- T-08-030: journal-api-routes
+- T-08-031: paper-trading-api-routes
+- T-08-032: dashboard-realtime-hooks
+- T-08-033: web-app-auth-integration
 
 ## Risks
 - Monaco Editor 번들 사이즈가 크고 Tauri에서 성능 이슈 가능
@@ -199,3 +216,4 @@ Elysia API 서버와 Tauri 데스크탑/모바일 앱, Next.js 웹 인터페이�
 - 2026-03-22: M1 (API server) — Complete. Strategy CRUD, candle/event/alert/order query, backtest trigger, execution mode, SSE, auth, kill switch routes all implemented and tested.
 - 2026-03-22: M2 (SSE streaming) — Complete. SSE endpoint with subscriber management.
 - 2026-03-22: M3 tasks generated — T-08-010 (packages/ui scaffold), T-08-011 (apps/web scaffold), T-08-012 (base components), T-08-013 (API client hooks), T-08-014 (dashboard), T-08-015 (strategy list), T-08-016 (strategy editor), T-08-017 (monitoring pages), T-08-018 (risk management), T-08-019 (login/auth flow).
+- 2026-03-25: All 33 tasks (T-08-001 through T-08-033) complete. EP08 fully done.

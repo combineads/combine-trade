@@ -286,3 +286,4 @@ Establish a robust CI/CD pipeline and deployment strategy for Combine Trade — 
 ## Progress notes
 
 - 2026-03-21: EP15 created. No implementation yet. Pending EP00-M2 (monorepo scaffold) and EP07-M4 (Docker Compose) completion before M3 and M4 can begin.
+- 2026-03-25: All tasks complete. T-15-001 through T-15-011 in done/. Epic fully implemented.

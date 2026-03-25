@@ -159,9 +159,7 @@ bun run build
 | T-22-012 | Alerts/Risk/Settings 뷰 번역 | alerts, risk, settings namespace 번역 |
 | T-22-013 | Auth/Backtest/Events/Charts 뷰 번역 | auth, backtest, events, charts namespace 번역 |
 | T-22-014 | Journal 뷰 번역 (journal namespace) | 트레이드 저널 뷰 번역 |
-| T-22-015 | Desktop 앱 i18n 통합 | desktop static export 환경에서 i18n 동작 확인 |
-| T-22-016 | 번역 누락 감지 스크립트 | i18n-check.ts — 누락 키 검출, CI 연동 |
-| T-22-017 | i18n E2E 테스트 | 주요 시나리오에서 ko↔en 전환 E2E 검증 |
+| T-22-015 | Desktop 앱 i18n 통합, 누락 감지 스크립트, E2E 검증 | desktop static export 환경 i18n, i18n-check.ts, locale-switch 통합 테스트 (T-22-016/017 통합) |
 
 ## Risks
 
@@ -185,3 +183,6 @@ bun run build
 ## Progress notes
 
 - 2026-03-24: Epic created. 현재 i18n 라이브러리 없음. 모든 UI 문자열이 하드코딩 상태.
+- 2026-03-25: M1–M5 전체 구현 완료. T-22-001 ~ T-22-015 done. T-22-016/017은 T-22-015에 통합.
+  - next-intl 설치 및 설정, I18nProvider, locale 미들웨어, 전체 뷰 번역(11개 namespace), LanguageSwitcher, 포맷터, glossary, desktop 통합, i18n-check 스크립트, locale-switch 통합 테스트 완성.
+  - ko.json/en.json 키 100% 일치 검증 통과. 총 15개 태스크 완료.

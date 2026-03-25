@@ -225,3 +225,4 @@ Note: These services accept injected `*DbDeps` interfaces (not `db` directly). G
 
 - 2026-03-23: 에픽 생성. EP18(T-18-001~T-18-008)의 코드 구현은 완료됐으나 `db/index.ts`가 없고 `apps/api/src/index.ts`가 전부 stub 상태. 이 에픽이 실제 서비스 동작의 마지막 연결 단계.
 - 2026-03-23: 태스크 생성 완료 (T-19-001~T-19-013, 13개). T-19-001 → T-19-002 → T-19-003 → T-19-004 → T-19-005 → [T-19-006~T-19-011 병렬] → T-19-012 → T-19-013(remove-stubs-and-dead-code)
+- 2026-03-25: All tasks complete. T-19-001 through T-19-013 in done/. Epic fully implemented.

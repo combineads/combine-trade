@@ -152,3 +152,4 @@
 ## Progress notes
 - 2026-03-22: Tasks generated T-03-001 through T-03-008 (8 tasks). Includes decision engine (EP04-M3) as T-03-006 since it's required by vector worker (EP03-M5). Deferred: HNSW tuning benchmark, schema migration utility, orphan table cleanup.
 - 2026-03-22: All tasks implemented (T-03-001–T-03-008). 283 tests passing. Typecheck clean. Lint clean.
+- 2026-03-25: All tasks complete. T-03-001 through T-03-009 in done/. Epic fully implemented.

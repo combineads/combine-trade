@@ -117,6 +117,7 @@ Note: 이벤트 버스 인프라(LISTEN/NOTIFY 추상화)는 00-project-bootstra
 - T-07-003: Add missed event recovery on worker restart + periodic catch-up polling for missed NOTIFY events (60s interval)
 - T-07-005: E2E pipeline integration test (candle → decision → action) + vector search timeout graceful degradation
 - T-07-004: Build metrics collection service (latency, errors, worker status)
+- T-07-007: Backpressure queue
 - T-07-008: Implement metrics DB flush for history
 - T-21-013: Create Docker Compose for full system stack
 - T-07-009: Pipeline latency benchmark (target: < 1s p99 envelope)
@@ -145,3 +146,4 @@ Note: 이벤트 버스 인프라(LISTEN/NOTIFY 추상화)는 00-project-bootstra
 - 2026-03-22: Pipeline infrastructure modules completed. M1 supervisor, M4 Docker deferred. 431 tests passing.
 - 2026-03-22: M1 (worker supervisor) completed. T-07-006: WorkerSupervisor with exponential backoff restart, graceful shutdown. 1008 tests passing. M4 Docker deferred (user runs locally).
 - 2026-03-25: Task files renamed to T-07-NNN scheme (T-07-001→T-07-001, T-07-002→T-07-002, T-07-003→T-07-003, T-07-004→T-07-004, T-07-005→T-07-005, T-07-006→T-07-006).
+- All tasks T-07-001 through T-07-009 completed and moved to docs/tasks/done/.

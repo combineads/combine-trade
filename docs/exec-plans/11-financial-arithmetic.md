@@ -136,3 +136,4 @@ packages/shared/decimal/ must not call exchange APIs directly. Precision metadat
 - 2026-03-22: Tasks generated — T-11-001 (decimal wrapper), T-11-002 (precision validator), T-11-003 (fee calculator), T-11-004 (funding rate), T-11-005 (integration test).
 - 2026-03-22: M1 (decimal precision) and M2 (fee engine) core logic completed. M3 (funding rate collection) and M4 (PnL pipeline integration) deferred (require DB/exchange). 542 tests passing.
 - 2026-03-25: Task files migrated from T-NNN to T-11-NNN naming. T-11-006 (funding collector, EP11 M3), T-11-007 (funding collector with accumulation), T-11-008 (PnL integration, EP11 M4) added from backlog.
+- 2026-03-25: All tasks complete. T-11-001 through T-11-008 in done/. Epic fully implemented.

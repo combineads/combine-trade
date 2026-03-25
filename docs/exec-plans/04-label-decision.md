@@ -134,3 +134,4 @@
 ## Progress notes
 - 2026-03-22: Tasks generated — T-04-001 (labeler), T-04-002 (label worker), T-04-003 (integration test). Decision engine covered by T-03-006 in EP03.
 - 2026-03-22: All tasks completed. T-04-001 labeler (Decimal.js, MFE/MAE tracking), T-04-002 label worker (scanner + health), T-04-003 integration test (7 scenarios). 307 tests passing.
+- 2026-03-25: All tasks complete. T-04-001 through T-04-003 in done/. Epic fully implemented.

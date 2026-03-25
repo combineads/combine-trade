@@ -146,21 +146,30 @@
   ```
 
 ## Task candidates
-- T-09-009: Implement symbol-level advisory lock for order serialization + concurrency test: simultaneous orders for same symbol
-- T-09-003: Implement fixed-fraction position sizer + pessimistic balance locking for position sizing
-- T-09-008: Implement manual kill switch (API endpoint + state management + scope hierarchy) + kill_switch_events audit table with positions snapshot + Slack notification (all trigger types)
-- T-09-011: Implement financial auto-triggers (balance deviation, untracked position, order rejection counter) + infrastructure auto-triggers (exchange API, DB, worker health) with grace period + position check
-- T-02-006: Implement sandbox auto-triggers (OOM, timeout, crash counter) — integration with EP02 sandbox errors
-- T-09-016: Implement data integrity auto-triggers (candle gap, vector search timeout)
-- T-09-002: Implement daily realized loss tracking service
-- T-09-007: Implement daily/weekly loss limit enforcement + consecutive SL limit enforcement + loss limit auto-reset (daily/weekly)
-- T-09-020: Implement exchange lot size validation
-- T-09-021: Implement total exposure limit check
-- T-09-010: Implement position sync service (exchange → DB)
-- T-09-012: Implement external position detection + position monitoring API for UI
-- T-09-022: Implement liquidation price tracking (exchange API + fallback estimation)
-- T-09-023: Implement liquidation proximity warning (N% threshold → Slack alert)
-- T-09-005: Integration test: loss limit → auto-trade suspension → Slack alert
+- T-09-001: kill-switch-state-machine
+- T-09-002: loss-limit-tracker
+- T-09-003: position-sizer
+- T-09-004: risk-gate
+- T-09-005: risk-management-integration-test
+- T-09-006: kill-switch-db-service
+- T-09-007: loss-tracker-db-service
+- T-09-008: kill-switch-api-route
+- T-09-009: advisory-lock-concurrency
+- T-09-010: position-sync-service
+- T-09-011: kill-switch-auto-triggers
+- T-09-012: position-monitoring-service
+- T-09-013: kill-switch-audit-table
+- T-09-014: kill-switch-slack-notification
+- T-09-015: infrastructure-auto-triggers
+- T-09-016: data-integrity-auto-triggers
+- T-09-017: sandbox-auto-triggers
+- T-09-018: consecutive-sl-limit
+- T-09-019: loss-limit-auto-reset
+- T-09-020: exchange-lot-size-validation
+- T-09-021: total-exposure-limit
+- T-09-022: liquidation-price-tracker
+- T-09-023: liquidation-proximity-warning
+- T-09-024: pessimistic-balance-locking
 
 ## Risks
 - 거래소 잔고 조회 지연으로 포지션 사이징 계산 시점의 잔고가 부정확할 수 있음
@@ -179,3 +188,4 @@
 ## Progress notes
 - 2026-03-22: Tasks generated — T-09-001 (kill switch), T-09-002 (loss tracker), T-09-003 (position sizer), T-09-004 (risk gate), T-09-005 (integration test).
 - 2026-03-22: Core risk modules completed. M1-M3 pure logic implemented. M0/M4 deferred (require DB/exchange integration). 487 tests passing.
+- 2026-03-25: All 24 tasks (T-09-001 through T-09-024) complete. EP09 fully done.

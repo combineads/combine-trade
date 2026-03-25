@@ -175,6 +175,7 @@
 - T-01-009: Implement rate limit auto-throttle with exponential backoff
 - T-01-006: Implement 1m → 3m/5m/15m/1h candle aggregation engine + aggregated candle NOTIFY on higher-timeframe close
 - T-01-015: Test: aggregation correctness (OHLCV math verification)
+- T-01-011: Candle pipeline integration test
 
 ## Risks
 - CCXT WebSocket API 안정성이 거래소별로 다를 수 있음
@@ -203,4 +204,4 @@
 | 2026-03-22 | 새 심볼 추가 시 자동 백필 트리거 | 운영 중 심볼 추가 시 수동 개입 없이 히스토리 확보 |
 
 ## Progress notes
-- Pending implementation.
+- All tasks T-01-001 through T-01-015 completed and moved to docs/tasks/done/.

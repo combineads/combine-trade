@@ -194,3 +194,4 @@ T-00-001 (scaffold) ──┬── T-00-002 (Docker) ──┬── T-00-003 (
 ## Progress notes
 - 2026-03-21: M1 complete — harness docs generated and tailored to project
 - 2026-03-22: Tasks generated — 11 tasks (T-00-001 through T-00-011) covering M2–M7. M8 (backup) deferred.
+- 2026-03-25: All tasks complete. T-00-001 through T-00-011 in done/. Epic fully implemented.

@@ -135,6 +135,7 @@
 - T-05-003: Integrate label judgment into replay loop (forward scan)
 - T-05-004: Implement backtest statistics aggregation and JSON report generator + cold start period tracking + slippage estimation statistics + post-backtest HNSW REINDEX trigger
 - T-05-006: Implement look-ahead bias prevention (time boundary filter in vector search)
+- T-05-007: Post-backtest HNSW REINDEX
 - T-05-008: Implement re-vectorization workflow for version changes
 - T-05-005: Integration test: full 3-year backtest end-to-end + partial state recovery/cleanup utility for failed backtests
 - T-05-009: Performance benchmark: measure and optimize backtest latency
@@ -159,3 +160,4 @@
 ## Progress notes
 - 2026-03-22: Tasks generated — T-05-001 (CSV parser), T-05-002 (engine), T-05-003 (labeler), T-05-004 (report), T-05-005 (integration).
 - 2026-03-22: M1 partial (CSV parser), M2 (replay engine + labeler), M3 (statistics report) completed. 353 tests passing. M1 Binance Vision download, M4 re-vectorization deferred to future tasks.
+- All tasks T-05-001 through T-05-009 completed and moved to docs/tasks/done/.

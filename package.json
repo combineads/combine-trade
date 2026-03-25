@@ -27,7 +27,7 @@
 		"drizzle-kit": "^0.31.10",
 		"js-yaml": "^4.1.1",
 		"sharp": "^0.34.5",
-		"typescript": "^5.7.0"
+		"typescript": "^6.0.2"
 	},
 	"dependencies": {
 		"better-auth": "^1.5.6",

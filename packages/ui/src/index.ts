@@ -125,6 +125,14 @@ export {
 	type EquityCurvePoint,
 	type EquityCurveChartProps,
 } from "./views/charts/equity-curve-chart";
+export {
+	RadarChart,
+	normalizeValue,
+	computePolygonPoints,
+	type RadarChartProps,
+	type RadarMetric,
+	type RadarSeries,
+} from "./views/charts/radar-chart";
 
 // Views — Backtest
 export {
@@ -228,22 +236,6 @@ export {
 	type ChartStrategyEvent,
 	type StrategyEventOverlayProps,
 } from "./views/charts/strategy-event-overlay";
-
-// Views — Charts (TradingView widgets)
-export {
-	TimelineWidget,
-	type TimelineWidgetProps,
-} from "./views/charts/timeline-widget";
-export {
-	EconomicCalendarWidget,
-	type EconomicCalendarWidgetProps,
-} from "./views/charts/economic-calendar-widget";
-
-// Hooks — TradingView Widget
-export {
-	useTradingViewWidget,
-	type UseTradingViewWidgetOptions,
-} from "./hooks/use-tradingview-widget";
 
 // Hooks — Dashboard Real-time
 export {

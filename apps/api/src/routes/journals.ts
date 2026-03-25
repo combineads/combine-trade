@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 import { NotFoundError } from "../lib/errors.js";
 import { ok, paginated } from "../lib/response.js";
+import { type JournalNoteTagDeps, journalNoteTagRoutes } from "./journals/notes-tags.js";
 
 const MAX_PAGE_SIZE = 100;
 
@@ -37,6 +38,7 @@ export interface JournalRouteDeps {
 	getJournal: (id: string) => Promise<{ journal: unknown; entrySnapshot: unknown } | null>;
 	searchJournals: (filter: JournalSearchFilter) => Promise<{ data: unknown[]; total: number }>;
 	getJournalAnalytics: (filter: JournalAnalyticsFilter) => Promise<JournalAnalytics>;
+	noteTagDeps: JournalNoteTagDeps;
 }
 
 export function journalRoutes(deps: JournalRouteDeps) {
@@ -115,5 +117,6 @@ export function journalRoutes(deps: JournalRouteDeps) {
 			{
 				params: t.Object({ id: t.String() }),
 			},
-		);
+		)
+		.use(journalNoteTagRoutes(deps.noteTagDeps));
 }

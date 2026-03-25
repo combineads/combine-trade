@@ -1,13 +1,9 @@
-import {
-	VectorRepository,
-	VectorTableManager,
-	normalizeFeatures,
-} from "@combine/core/vector";
+import { VectorRepository, VectorTableManager, normalizeFeatures } from "@combine/core/vector";
 import type { EventLabel } from "@combine/core/vector/statistics.js";
 import type { FeatureInput, SearchResponse } from "@combine/core/vector/types.js";
 import { eq, inArray } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import type postgres from "postgres";
 import { decisions } from "../../../db/schema/decisions.js";
 import { eventLabels } from "../../../db/schema/event-labels.js";
 import { strategies } from "../../../db/schema/strategies.js";
@@ -76,11 +72,7 @@ export function createVectorDeps(
 
 		/** Load a strategy by ID from the strategies table */
 		async loadStrategy(strategyId: string) {
-			const rows = await db
-				.select()
-				.from(strategies)
-				.where(eq(strategies.id, strategyId))
-				.limit(1);
+			const rows = await db.select().from(strategies).where(eq(strategies.id, strategyId)).limit(1);
 
 			const row = rows[0];
 			if (!row) {
@@ -92,6 +84,8 @@ export function createVectorDeps(
 				version: row.version,
 				direction: row.direction as "long" | "short",
 				decisionConfig: row.decisionConfig as Record<string, unknown>,
+				useLlmFilter: row.useLlmFilter,
+				timeframe: row.timeframe,
 			};
 		},
 
@@ -101,11 +95,7 @@ export function createVectorDeps(
 		},
 
 		/** Ensure the dynamic vector table exists for the given strategy+version+dimension */
-		async ensureTable(
-			strategyId: string,
-			version: number,
-			dimension: number,
-		): Promise<string> {
+		async ensureTable(strategyId: string, version: number, dimension: number): Promise<string> {
 			return tableManager.ensureTable(strategyId, version, dimension);
 		},
 

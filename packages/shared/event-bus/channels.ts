@@ -22,6 +22,11 @@ export interface DecisionCompletedPayload {
 	decisionId: string;
 }
 
+export interface DecisionPendingLlmPayload {
+	decisionId: string;
+	strategyId: string;
+}
+
 export interface LabelReadyPayload {
 	strategyEventId: string;
 	labelId: string;
@@ -107,4 +112,5 @@ export const Channels = {
 	paperPositionOpened: createChannel<PaperPositionOpenedPayload>("paper_position_opened"),
 	paperPositionClosed: createChannel<PaperPositionClosedPayload>("paper_position_closed"),
 	paperBalanceUpdated: createChannel<PaperBalanceUpdatedPayload>("paper_balance_updated"),
+	decisionPendingLlm: createChannel<DecisionPendingLlmPayload>("decision_pending_llm"),
 } as const;

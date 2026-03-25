@@ -2,6 +2,7 @@ export { Channels } from "./channels.js";
 export type {
 	CandleClosedPayload,
 	DecisionCompletedPayload,
+	DecisionPendingLlmPayload,
 	JournalReadyPayload,
 	KillSwitchActivatedPayload,
 	LabelReadyPayload,

@@ -5,6 +5,7 @@ import { type EventLabel, computeStatistics } from "@combine/core/vector/statist
 import { createLogger } from "@combine/shared";
 import { Channels } from "@combine/shared/event-bus/channels.js";
 import type { EventPublisher } from "@combine/shared/event-bus/types.js";
+import { isLlmEligibleTimeframe } from "./llm-routing.js";
 
 const logger = createLogger("vector-worker");
 
@@ -31,6 +32,8 @@ export interface VectorHandlerDeps {
 		version: number;
 		direction: "long" | "short";
 		decisionConfig: Record<string, unknown>;
+		useLlmFilter: boolean;
+		timeframe: string;
 	}>;
 	normalizeFeatures: (features: FeatureInput[]) => number[];
 	ensureTable: (strategyId: string, version: number, dimension: number) => Promise<string>;
@@ -145,17 +148,31 @@ export class VectorEventHandler {
 			reason: decisionResult.reason,
 		});
 
-		// 9. Publish decision_completed
-		await this.deps.publisher.publish(Channels.decisionCompleted, {
-			decisionId,
-			strategyId,
-			symbol: event.symbol,
-			direction: decisionResult.decision,
-		});
+		// 9. Route to LLM filter or publish decision_completed directly
+		const routeToLlm = strategy.useLlmFilter && isLlmEligibleTimeframe(strategy.timeframe);
 
-		logger.info(
-			{ eventId, strategyId, decision: decisionResult.decision, reason: decisionResult.reason },
-			"Decision completed",
-		);
+		if (routeToLlm) {
+			await this.deps.publisher.publish(Channels.decisionPendingLlm, {
+				decisionId,
+				strategyId,
+			});
+
+			logger.info(
+				{ eventId, strategyId, decisionId, decision: decisionResult.decision },
+				"Decision routed to LLM filter",
+			);
+		} else {
+			await this.deps.publisher.publish(Channels.decisionCompleted, {
+				decisionId,
+				strategyId,
+				symbol: event.symbol,
+				direction: decisionResult.decision,
+			});
+
+			logger.info(
+				{ eventId, strategyId, decision: decisionResult.decision, reason: decisionResult.reason },
+				"Decision completed",
+			);
+		}
 	}
 }

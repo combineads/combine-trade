@@ -1,7 +1,11 @@
 import { Elysia, t } from "elysia";
-import { NotFoundError } from "../lib/errors.js";
+import { NotFoundError, ValidationError } from "../lib/errors.js";
+import type {
+	AnalyticsGroup,
+	GroupByDimension,
+	JournalAnalyticsGroupFilter,
+} from "../lib/journal-analytics.js";
 import { ok, paginated } from "../lib/response.js";
-import { type JournalNoteTagDeps, journalNoteTagRoutes } from "./journals/notes-tags.js";
 
 const MAX_PAGE_SIZE = 100;
 
@@ -38,7 +42,7 @@ export interface JournalRouteDeps {
 	getJournal: (id: string) => Promise<{ journal: unknown; entrySnapshot: unknown } | null>;
 	searchJournals: (filter: JournalSearchFilter) => Promise<{ data: unknown[]; total: number }>;
 	getJournalAnalytics: (filter: JournalAnalyticsFilter) => Promise<JournalAnalytics>;
-	noteTagDeps: JournalNoteTagDeps;
+	getJournalAnalyticsGroups: (filter: JournalAnalyticsGroupFilter) => Promise<AnalyticsGroup[]>;
 }
 
 export function journalRoutes(deps: JournalRouteDeps) {
@@ -108,6 +112,39 @@ export function journalRoutes(deps: JournalRouteDeps) {
 			},
 		)
 		.get(
+			"/api/v1/journals/analytics-groups",
+			async ({ query, request }) => {
+				const groupBy = query.groupBy as GroupByDimension;
+				const validGroupBy: GroupByDimension[] = ["tag", "symbol", "strategy", "timeframe"];
+				if (!validGroupBy.includes(groupBy)) {
+					throw new ValidationError(`groupBy must be one of: ${validGroupBy.join(", ")}`);
+				}
+
+				// Resolve userId from X-User-Id header (injected by auth middleware in production)
+				const userId = request.headers.get("x-user-id") ?? "";
+
+				const groups = await deps.getJournalAnalyticsGroups({
+					groupBy,
+					from: query.from,
+					to: query.to,
+					strategyId: query.strategyId,
+					symbol: query.symbol,
+					userId,
+				});
+
+				return ok({ groups });
+			},
+			{
+				query: t.Object({
+					groupBy: t.Optional(t.String()),
+					from: t.Optional(t.String()),
+					to: t.Optional(t.String()),
+					strategyId: t.Optional(t.String()),
+					symbol: t.Optional(t.String()),
+				}),
+			},
+		)
+		.get(
 			"/api/v1/journals/:id",
 			async ({ params }) => {
 				const result = await deps.getJournal(params.id);
@@ -117,6 +154,5 @@ export function journalRoutes(deps: JournalRouteDeps) {
 			{
 				params: t.Object({ id: t.String() }),
 			},
-		)
-		.use(journalNoteTagRoutes(deps.noteTagDeps));
+		);
 }

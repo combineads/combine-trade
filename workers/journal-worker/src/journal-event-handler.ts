@@ -1,6 +1,5 @@
 import type { TradeJournal } from "@combine/core/journal";
-import type { Channel, JournalReadyPayload } from "@combine/shared/event-bus";
-import { Channels } from "@combine/shared/event-bus";
+import type { MacroContext } from "@combine/core/macro/types.js";
 
 export interface LabelReadyEvent {
 	type: "label_ready";
@@ -30,20 +29,38 @@ export interface EventBus {
 	subscribe(eventType: string, handler: (event: unknown) => Promise<void>): EventBusSubscription;
 }
 
-/** Minimal publisher interface for emitting journal_ready notifications */
-export interface JournalReadyPublisher {
-	publish(channel: Channel<JournalReadyPayload>, payload: JournalReadyPayload): Promise<void>;
-}
-
 export type ExecutionMode = "analysis" | "alert" | "paper" | "live";
 export type LoadExecutionMode = () => Promise<ExecutionMode>;
+
+/** Injectable interface for macro context enrichment. */
+export interface MacroContextProvider {
+	enrich(entryTime: Date): Promise<MacroContext>;
+}
+
+/** Injectable interface for macro tag generation. */
+export interface MacroTagProvider {
+	generateTags(context: MacroContext): string[];
+}
+
+/**
+ * Merge two tag arrays, deduplicating by string equality (case-sensitive).
+ * Pure function — does not mutate either input.
+ */
+export function mergeTags(existing: string[], incoming: string[]): string[] {
+	const deduped = new Set<string>(existing);
+	for (const tag of incoming) {
+		deduped.add(tag);
+	}
+	return [...deduped];
+}
 
 export class JournalEventHandler {
 	constructor(
 		private eventBus: EventBus,
 		private storage: JournalStorage,
 		private loadExecutionMode?: LoadExecutionMode,
-		private publisher?: JournalReadyPublisher,
+		private macroContextProvider?: MacroContextProvider,
+		private macroTagProvider?: MacroTagProvider,
 	) {}
 
 	start(): EventBusSubscription {
@@ -55,6 +72,24 @@ export class JournalEventHandler {
 	async handleLabelReady(event: LabelReadyEvent): Promise<void> {
 		try {
 			const mode = this.loadExecutionMode ? await this.loadExecutionMode() : undefined;
+
+			// Macro enrichment — graceful degradation on failure
+			let entryMacroContext: MacroContext | null = null;
+			let macroTags: string[] = [];
+
+			if (this.macroContextProvider && this.macroTagProvider) {
+				try {
+					const entryTime = new Date(event.entryTime * 1000);
+					entryMacroContext = await this.macroContextProvider.enrich(entryTime);
+					macroTags = this.macroTagProvider.generateTags(entryMacroContext);
+				} catch {
+					// Context-enricher failure: log warning, continue with null context
+					console.warn("[journal-worker] macro context enrichment failed, continuing with null");
+					entryMacroContext = null;
+					macroTags = [];
+				}
+			}
+
 			const journal: TradeJournal = {
 				id: crypto.randomUUID(),
 				eventId: event.tradeId,
@@ -95,17 +130,13 @@ export class JournalEventHandler {
 				},
 				exitMarketContext: null,
 				backtestComparison: null,
-				autoTags: [],
+				entryMacroContext,
+				autoTags: mergeTags([], macroTags),
 				isPaper: mode === "paper",
 				createdAt: new Date(),
 			};
 
 			await this.storage.save(journal);
-
-			// NOTIFY journal_ready after the DB write has committed
-			if (this.publisher) {
-				await this.publisher.publish(Channels.journalReady, { journalId: journal.id });
-			}
 		} catch {
 			// Worker must not crash on single event failure — log and continue
 		}

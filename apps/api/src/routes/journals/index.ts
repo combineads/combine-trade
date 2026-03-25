@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 import { journalDetailRoute } from "./detail.js";
+import { type DriftComparisonDeps, driftComparisonRoute } from "./drift.js";
 import { journalListRoute } from "./list.js";
 import { journalSearchRoute } from "./search.js";
 import type {
@@ -11,6 +12,7 @@ import type {
 } from "./types.js";
 
 export type { JournalSide, JournalOutcome } from "./types.js";
+export type { DriftComparisonDeps, DriftComparison } from "./drift.js";
 
 /**
  * Dependency interface for journal v2 routes.
@@ -43,13 +45,17 @@ export interface JournalV2RouteDeps {
  * Elysia plugin that mounts journal v2 routes.
  *
  * Routes registered:
- *   GET /api/v1/journals          — paginated list with filters
- *   GET /api/v1/journals/search   — text search (registered before /:id to avoid conflict)
- *   GET /api/v1/journals/:id      — journal detail
+ *   GET /api/v1/journals                      — paginated list with filters
+ *   GET /api/v1/journals/search               — text search (registered before /:id to avoid conflict)
+ *   GET /api/v1/journals/drift/:strategyId    — strategy drift comparison
+ *   GET /api/v1/journals/:id                  — journal detail
  */
-export function journalV2Routes(deps: JournalV2RouteDeps) {
-	return new Elysia()
-		.use(journalListRoute(deps))
-		.use(journalSearchRoute(deps))
-		.use(journalDetailRoute(deps));
+export function journalV2Routes(deps: JournalV2RouteDeps, driftDeps?: DriftComparisonDeps) {
+	const app = new Elysia().use(journalListRoute(deps)).use(journalSearchRoute(deps));
+
+	if (driftDeps) {
+		app.use(driftComparisonRoute(driftDeps));
+	}
+
+	return app.use(journalDetailRoute(deps));
 }

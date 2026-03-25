@@ -12,5 +12,5 @@
 
   <!-- Wordmark -->
   <text x="124" y="70" font-family="Inter, Geist Sans, system-ui, -apple-system, sans-serif" font-size="38" font-weight="600" fill="#16A34A">Combine</text>
-  <text x="297" y="70" font-family="Inter, Geist Sans, system-ui, -apple-system, sans-serif" font-size="38" font-weight="400" fill="#1E293B">Trade</text>
+  <text x="297" y="70" font-family="Inter, Geist Sans, system-ui, -apple-system, sans-serif" font-size="38" font-weight="600" fill="#1E293B">Trade</text>
 </svg>

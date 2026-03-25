@@ -229,6 +229,23 @@ export {
 	type StrategyEventOverlayProps,
 } from "./views/charts/strategy-event-overlay";
 
+// Views — Charts (TradingView widgets)
+export {
+	TickerTapeWidget,
+	MarketOverviewWidget,
+	type TradingViewTheme,
+	type TickerTapeSymbol,
+	type TickerTapeWidgetProps,
+	type MarketOverviewTab,
+	type MarketOverviewWidgetProps,
+} from "./views/charts/ticker-tape-widget";
+
+// Hooks — TradingView Widget
+export {
+	useTradingViewWidget,
+	type UseTradingViewWidgetOptions,
+} from "./hooks/use-tradingview-widget";
+
 // Hooks — Dashboard Real-time
 export {
 	usePortfolioStatus,
@@ -242,14 +259,6 @@ export {
 	type StrategyPerformanceStats,
 	type UseStrategyPerformanceResult,
 } from "./hooks/use-strategy-performance";
-
-// Hooks — Chart Theme
-export {
-	useChartTheme,
-	CHART_THEMES,
-	toLightweightChartsOptions,
-	type ChartTheme,
-} from "./hooks/use-chart-theme";
 
 // Views — Auth
 export { LoginView, type LoginViewProps } from "./views/auth/login-view";

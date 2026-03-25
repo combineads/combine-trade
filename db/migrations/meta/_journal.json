@@ -54,8 +54,15 @@
     {
       "idx": 7,
       "version": "7",
-      "when": 1742900400000,
-      "tag": "0007_add_use_llm_filter_to_strategies",
+      "when": 1774865600000,
+      "tag": "0007_add_is_paper_to_trade_journals",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1774952000000,
+      "tag": "0008_decisions_llm_columns",
       "breakpoints": true
     }
   ]

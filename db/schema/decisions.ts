@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { jsonb, pgTable, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { strategies } from "./strategies.js";
 import { strategyEvents } from "./strategy-events.js";
 
@@ -26,4 +26,14 @@ export const decisions = pgTable("decisions", {
 	decisionReason: text("decision_reason").notNull(),
 	executionMode: text("execution_mode").notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+
+	// LLM evaluation fields
+	// Populated only when strategies.use_llm_filter is enabled (T-16-017).
+	// kNN-only decisions leave all five columns NULL.
+	llmAction: text("llm_action"),
+	llmReason: text("llm_reason"),
+	// REAL in DB (single-precision float); application layer uses Decimal.js for comparisons
+	llmConfidence: real("llm_confidence"),
+	llmRiskFactors: jsonb("llm_risk_factors"),
+	llmEvaluatedAt: timestamp("llm_evaluated_at", { withTimezone: true }),
 });

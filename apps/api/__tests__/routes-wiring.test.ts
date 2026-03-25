@@ -91,6 +91,11 @@ function createStubDeps(): ApiServerDeps {
 			searchJournals: async () => ({ data: [], total: 0 }),
 			getJournalAnalytics: async () => ({ tagStats: [], overallWinrate: 0, overallExpectancy: 0 }),
 		},
+		journalV2Deps: {
+			listJournals: async () => ({ data: [], total: 0 }),
+			getJournal: async () => null,
+			searchJournals: async () => ({ data: [], total: 0 }),
+		},
 		paperDeps: {
 			getPaperStatus: async () => ({
 				balance: "0",

@@ -269,8 +269,8 @@
 | T-18-005 | repository-user-isolation | StrategyRepository, OrderRepository, KillSwitchRepository, LossLimitRepository 모든 메서드에 userId 파라미터 추가; 쿼리에 user_id 필터 적용 |
 | T-18-006 | route-session-extraction | 모든 API 라우트에서 better-auth 세션 추출 후 userId를 repo에 전달 |
 | T-18-007 | nextjs-auth-client | Next.js better-auth client 설정; 로그인 페이지; 세션 미들웨어; useAuth hook |
-| (not implemented) | tauri-auth-client | Tauri better-auth vanilla client; LoginView 공통 컴포넌트; Keychain 세션 저장 |
-| (not implemented) | sse-auth | SSE 엔드포인트 better-auth 세션 검증 적용 |
+| T-18-010 | tauri-auth-client | Tauri better-auth vanilla client; LoginView 공통 컴포넌트; Keychain 세션 저장 |
+| T-18-011 | sse-auth | SSE 엔드포인트 better-auth 세션 검증 적용 |
 | T-18-008 | admin-seed-script-and-integration-tests | 초기 관리자 계정 시드 스크립트 + 전체 인증 플로우 통합 테스트: 로그인 → API → 로그아웃 → 재접근 거부; user isolation 테스트 |
 
 ## Risks

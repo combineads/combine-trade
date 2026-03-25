@@ -146,28 +146,20 @@
   ```
 
 ## Task candidates
-- T-09-009: Implement symbol-level advisory lock for order serialization
-- (not implemented): Implement pessimistic balance locking for position sizing
-- (not implemented): Concurrency test: simultaneous orders for same symbol
-- T-09-008: Implement manual kill switch (API endpoint + state management + scope hierarchy)
-- T-09-011: Implement financial auto-triggers (balance deviation, untracked position, order rejection counter)
-- (not implemented): Implement infrastructure auto-triggers (exchange API, DB, worker health) with grace period + position check
-- (not implemented): Implement sandbox auto-triggers (OOM, timeout, crash counter) — integration with EP02 sandbox errors
-- (not implemented): Implement data integrity auto-triggers (candle gap, vector search timeout)
-- (not implemented): Implement kill_switch_events audit table with positions snapshot
-- (not implemented): Implement kill switch Slack notification (all trigger types)
+- T-09-009: Implement symbol-level advisory lock for order serialization + concurrency test: simultaneous orders for same symbol
+- T-09-003: Implement fixed-fraction position sizer + pessimistic balance locking for position sizing
+- T-09-008: Implement manual kill switch (API endpoint + state management + scope hierarchy) + kill_switch_events audit table with positions snapshot + Slack notification (all trigger types)
+- T-09-011: Implement financial auto-triggers (balance deviation, untracked position, order rejection counter) + infrastructure auto-triggers (exchange API, DB, worker health) with grace period + position check
+- T-02-006: Implement sandbox auto-triggers (OOM, timeout, crash counter) — integration with EP02 sandbox errors
+- T-09-016: Implement data integrity auto-triggers (candle gap, vector search timeout)
 - T-09-002: Implement daily realized loss tracking service
-- T-09-007: Implement daily/weekly loss limit enforcement
-- (not implemented): Implement consecutive SL limit enforcement
-- (not implemented): Implement loss limit auto-reset (daily/weekly)
-- T-09-003: Implement fixed-fraction position sizer
-- (not implemented): Implement exchange lot size validation
-- (not implemented): Implement total exposure limit check
+- T-09-007: Implement daily/weekly loss limit enforcement + consecutive SL limit enforcement + loss limit auto-reset (daily/weekly)
+- T-09-020: Implement exchange lot size validation
+- T-09-021: Implement total exposure limit check
 - T-09-010: Implement position sync service (exchange → DB)
-- T-09-012: Implement external position detection
-- T-09-012: Implement position monitoring API for UI
-- (not implemented): Implement liquidation price tracking (exchange API + fallback estimation)
-- (not implemented): Implement liquidation proximity warning (N% threshold → Slack alert)
+- T-09-012: Implement external position detection + position monitoring API for UI
+- T-09-022: Implement liquidation price tracking (exchange API + fallback estimation)
+- T-09-023: Implement liquidation proximity warning (N% threshold → Slack alert)
 - T-09-005: Integration test: loss limit → auto-trade suspension → Slack alert
 
 ## Risks

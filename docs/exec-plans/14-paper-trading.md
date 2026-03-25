@@ -187,22 +187,18 @@
   ```
 
 ## Task candidates
-- (not implemented): Design paper_balances, paper_positions, paper_orders DB schema
-- T-14-001: Implement paper order matcher (market order simulation with slippage + SL/TP candle-by-candle check)
+- T-14-001: Implement paper order matcher (market order simulation with slippage + SL/TP candle-by-candle check) + paper_balances/paper_positions/paper_orders DB schema
 - T-14-002: Implement paper balance tracker and position manager (initial balance, PnL tracking, reset, unrealized PnL)
-- T-14-006: Add 'paper' execution mode integration (mode management service wiring)
-- (not implemented): Route execution-worker to paper matcher when mode=paper
-- (not implemented): Add "[모의매매]" tag to Slack alerts in paper mode
-- (not implemented): Ensure trade journal marks paper trades (is_paper flag)
+- T-14-006: Add 'paper' execution mode integration (mode management service wiring) + route execution-worker to paper matcher when mode=paper
+- T-14-007: Add "[모의매매]" tag to Slack alerts in paper mode + ensure trade journal marks paper trades (is_paper flag)
 - T-14-003: Implement paper vs backtest comparator (z-test, Sharpe √365, drawdown, expectancy)
 - T-14-004: Implement readiness score calculator (0-100, 4 categories: backtest 35 + paper 35 + risk 20 + manual 10, win rate z-test, gate enforcement, reset conditions)
-- (not implemented): Implement readiness gate enforcement (API: reject mode change if score < 70)
-- (not implemented): Implement readiness score reset conditions (loss limit breach, kill switch, code change)
-- (not implemented): Build paper trading status/orders/performance API endpoints
-- (not implemented): Build paper reset API with run history preservation
-- (not implemented): Add paper events to SSE stream
+- T-14-008: Implement readiness gate enforcement (API: reject mode change if score < 70) + readiness score reset conditions (loss limit breach, kill switch, code change)
+- T-14-009: Build paper trading status/orders/performance API endpoints
+- T-14-010: Build paper reset API with run history preservation
+- T-14-011: Add paper events to SSE stream
 - T-14-005: Integration test: full pipeline in paper mode (matcher → balance → comparator → readiness)
-- (not implemented): Safety test: verify zero real exchange calls in paper mode
+- T-14-012: Safety test: verify zero real exchange calls in paper mode
 
 ## Risks
 - 가상 체결가(다음 캔들 open + 슬리피지)가 실제 체결가와 차이가 클 수 있음

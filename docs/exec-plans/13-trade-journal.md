@@ -157,21 +157,18 @@
 packages/core/journal/ must not import Elysia, CCXT, or Drizzle directly. Data access through repository interfaces injected by journal-worker.
 
 ## Task candidates
-- (not implemented): Design trade_journals + entry_snapshots DB schema and migration
-- T-13-001: Implement entry snapshot builder (decision context + similar patterns)
-- (not implemented): Hook entry snapshot capture into vector-worker pipeline (async, non-blocking)
+- T-13-001: Implement entry snapshot builder (decision context + similar patterns) + trade_journals/entry_snapshots DB schema
+- T-03-007: Hook entry snapshot capture into vector-worker pipeline (async, non-blocking)
 - T-13-002: Implement market context calculator (multi-TF trend, volatility, volume, funding)
-- T-13-003: Implement journal assembler (combine entry snapshot + label + exit context)
+- T-13-003: Implement journal assembler (combine entry snapshot + label + exit context) + backtest vs live comparison calculator + pattern match post-verification (top-k actual outcome ratio)
 - T-13-006: Build journal-worker event handler (LISTEN label_ready → assemble journal)
-- (not implemented): Implement backtest vs live comparison calculator
-- (not implemented): Implement MFE/MAE timing analysis (peak bar identification)
-- (not implemented): Implement pattern match post-verification (top-k actual outcome ratio)
+- T-04-001: Implement MFE/MAE timing analysis (peak bar identification)
 - T-13-004: Implement auto-tagger (market state tags + trade result tags)
-- (not implemented): Implement pattern_drift detection with statistical significance check
-- (not implemented): Build journal list/detail/search API endpoints
-- (not implemented): Build journal analytics aggregation API (tag-based winrate/expectancy)
-- (not implemented): Build strategy drift comparison API (backtest vs live)
-- (not implemented): Implement user notes and custom tags API
+- T-13-007: Implement pattern_drift detection with statistical significance check
+- T-13-008: Build journal list/detail/search API endpoints
+- T-13-009: Build journal analytics aggregation API (tag-based winrate/expectancy)
+- T-13-010: Build strategy drift comparison API (backtest vs live)
+- T-13-011: Implement user notes and custom tags API
 - T-13-005: Integration test: decision → entry snapshot → label → journal → tags
 
 ## Risks

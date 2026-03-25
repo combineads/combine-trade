@@ -161,26 +161,20 @@
   ```
 
 ## Task candidates
-- (not implemented): Define exchange adapter full interface (OHLCV + order methods)
-- T-01-001: Implement Binance Futures adapter with CCXT
-- (not implemented): Implement OKX Futures adapter with CCXT
-- T-01-002: Create candle domain model and DrizzleORM repository
-- (not implemented): Implement candle upsert with idempotency and is_closed logic
+- T-01-001: Define exchange adapter full interface (OHLCV + order methods) + Implement Binance Futures adapter with CCXT
+- T-01-008: Implement OKX Futures adapter with CCXT
+- T-01-002: Create candle domain model and DrizzleORM repository + candle upsert with idempotency and is_closed logic
 - T-01-003: Implement candle continuity validation service
 - T-01-004: Implement REST-based gap repair service
-- T-01-005: Build candle-collector worker with WS + gap-aware startup recovery (3-tier backfill)
-- (not implemented): Implement new symbol addition workflow (detect → backfill → start WS)
-- (not implemented): Add NOTIFY candle_closed on candle confirmation (via shared event bus)
-- (not implemented): Implement WS reconnect with exponential backoff
-- (not implemented): Add multi-symbol concurrent collection
-- (not implemented): Add multi-exchange parallel collection
-- (not implemented): Integration test: full candle ingestion pipeline
-- (not implemented): Implement OHLCV data quality validator (outlier detection, timestamp alignment)
-- (not implemented): Implement exchange-specific rate limiter (token bucket, per-exchange profiles)
-- (not implemented): Implement rate limit auto-throttle with exponential backoff
-- T-01-006: Implement 1m → 3m/5m/15m/1h candle aggregation engine
-- (not implemented): Implement aggregated candle NOTIFY on higher-timeframe close
-- (not implemented): Test: aggregation correctness (OHLCV math verification)
+- T-01-005: Build candle-collector worker with WS + gap-aware startup recovery (3-tier backfill) + symbol addition workflow + NOTIFY candle_closed + WS reconnect with exponential backoff
+- T-01-012: Add multi-symbol concurrent collection
+- T-01-013: Add multi-exchange parallel collection
+- T-01-014: Integration test: full candle ingestion pipeline
+- T-01-010: Implement OHLCV data quality validator (outlier detection, timestamp alignment)
+- T-01-007: Implement exchange-specific rate limiter (token bucket, per-exchange profiles)
+- T-01-009: Implement rate limit auto-throttle with exponential backoff
+- T-01-006: Implement 1m → 3m/5m/15m/1h candle aggregation engine + aggregated candle NOTIFY on higher-timeframe close
+- T-01-015: Test: aggregation correctness (OHLCV math verification)
 
 ## Risks
 - CCXT WebSocket API 안정성이 거래소별로 다를 수 있음

@@ -130,21 +130,14 @@
   ```
 
 ## Task candidates
-- T-05-001: Implement historical candle bulk downloader with Binance Vision CSV archive (monthly + daily) as primary source, REST API fallback, CHECKSUM verification
-- (not implemented): Add download resume logic (skip existing ranges)
-- T-05-002: Implement backtest replay engine (sequential candle processing) with strategy sandbox integration
+- T-05-001: Implement historical candle bulk downloader with Binance Vision CSV archive (monthly + daily) as primary source, REST API fallback, CHECKSUM verification + download resume logic (skip existing ranges)
+- T-05-002: Implement backtest replay engine (sequential candle processing) with strategy sandbox integration + checkpoint system (save/resume every 1000 events) + optimize replay performance (target: < 5min for 3yr)
 - T-05-003: Integrate label judgment into replay loop (forward scan)
-- (not implemented): Implement checkpoint system (save/resume every 1000 events)
-- (not implemented): Optimize replay performance (target: < 5min for 3yr)
-- T-05-004: Implement backtest statistics aggregation and JSON report generator
-- (not implemented): Implement re-vectorization workflow for version changes
-- (not implemented): Implement look-ahead bias prevention (time boundary filter in vector search)
-- (not implemented): Implement cold start period tracking and reporting
-- (not implemented): Implement slippage estimation statistics (entry price vs next candle open)
-- T-05-005: Integration test: full 3-year backtest end-to-end
-- (not implemented): Performance benchmark: measure and optimize backtest latency
-- (not implemented): Implement post-backtest HNSW REINDEX trigger
-- (not implemented): Implement partial state recovery/cleanup utility for failed backtests
+- T-05-004: Implement backtest statistics aggregation and JSON report generator + cold start period tracking + slippage estimation statistics + post-backtest HNSW REINDEX trigger
+- T-05-006: Implement look-ahead bias prevention (time boundary filter in vector search)
+- T-05-008: Implement re-vectorization workflow for version changes
+- T-05-005: Integration test: full 3-year backtest end-to-end + partial state recovery/cleanup utility for failed backtests
+- T-05-009: Performance benchmark: measure and optimize backtest latency
 
 ## Risks
 - 3년치 1분봉 데이터 볼륨 (~158만건/심볼) 메모리 관리 필요

@@ -111,21 +111,15 @@ Note: 이벤트 버스 인프라(LISTEN/NOTIFY 추상화)는 00-project-bootstra
   ```
 
 ## Task candidates
-- T-07-006: Build worker process supervisor with auto-restart
-- (not implemented): Implement graceful shutdown handler (SIGTERM)
-- (not implemented): Add worker health check heartbeat (30s)
-- T-07-001: Implement correlation ID propagation across pipeline
-- T-07-001: Add per-stage latency timing logs
-- T-07-002: Implement dead-letter handling for failed events
-- (not implemented): Implement backpressure queue management
-- T-07-003: Add missed event recovery on worker restart
-- T-07-003: Implement periodic catch-up polling for missed NOTIFY events (60s interval)
-- (not implemented): Implement vector search timeout graceful degradation
+- T-07-006: Build worker process supervisor with auto-restart + graceful shutdown handler (SIGTERM) + worker health check heartbeat (30s)
+- T-07-001: Implement correlation ID propagation across pipeline + per-stage latency timing logs
+- T-07-002: Implement dead-letter handling for failed events + backpressure queue management
+- T-07-003: Add missed event recovery on worker restart + periodic catch-up polling for missed NOTIFY events (60s interval)
+- T-07-005: E2E pipeline integration test (candle → decision → action) + vector search timeout graceful degradation
 - T-07-004: Build metrics collection service (latency, errors, worker status)
-- (not implemented): Implement metrics DB flush for history
-- (not implemented): Create Docker Compose for full system stack
-- T-07-005: E2E pipeline integration test (candle → decision → action)
-- (not implemented): Pipeline latency benchmark (target: < 1s p99 envelope)
+- T-07-008: Implement metrics DB flush for history
+- T-21-013: Create Docker Compose for full system stack
+- T-07-009: Pipeline latency benchmark (target: < 1s p99 envelope)
 
 ## Risks
 - PostgreSQL LISTEN/NOTIFY의 메시지 유실 가능성 (트랜잭션 롤백 시)

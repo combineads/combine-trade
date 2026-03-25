@@ -254,7 +254,7 @@
 ## Task candidates
 
 - T-17-007: Sandbox executor 확장 — strategy.indicator_config 기반 커스텀 지표 pre-compute (BB source/period/stddev, MA custom periods)
-- (not implemented): strategies.timeframe text → timeframes text[] 스키마 마이그레이션 + strategy-worker findActiveStrategies 쿼리 수정
+- T-17-001: strategies.timeframe text → timeframes text[] 스키마 마이그레이션 + strategy-worker findActiveStrategies 쿼리 수정
 - T-17-001: Sandbox에 context.direction/timeframe/symbol 주입 + 전략 스크립트에서 접근 API 제공
 - T-17-002: BB20/BB4 기반 Double-BB 패턴 탐지 로직 (trend/reversal/breakout × bullish/bearish) + fixture 테스트
 - T-17-003: 캔들 패턴 에비던스 (hammer/doji/engulfing/strong-body) + MA 에비던스 (slope/ordering/reaction) 로직 + 테스트

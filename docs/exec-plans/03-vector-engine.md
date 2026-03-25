@@ -122,16 +122,12 @@
 ## Task candidates
 - T-03-001: Implement percent, sigmoid, boolean, rolling-percentile, and min-max normalizers
 - T-03-002: Build normalization orchestrator (strategy config → pipeline)
-- T-03-003: Implement dynamic vector table creation with pgvector + HNSW
-- (not implemented): Implement vector table existence cache
+- T-03-003: Implement dynamic vector table creation with pgvector + HNSW + vector table existence cache + table count guard (max 1,000)
 - T-03-004: Build vector repository (store + L2 search) with similarity threshold filtering (√d × 0.3) and strategy+version+symbol isolation
 - T-03-005: Implement pattern statistics calculator (winrate, expectancy)
-- T-03-007: Build vector-worker with LISTEN → normalize → store → search → stats → decision(inline) → NOTIFY decision_completed
-- (not implemented): Add vector write idempotency (unique event_id per table)
-- T-03-008: Integration test: event → vector → search → statistics pipeline
-- (not implemented): Performance test: L2 search < 100ms for top_k=50
-- (not implemented): Implement dynamic vector table schema migration utility (dimension change)
-- (not implemented): Vector table count guard — enforce max 1,000 dynamic vector tables per deployment, reject creation beyond limit with ERR_USER_TABLE_LIMIT error
+- T-03-007: Build vector-worker with LISTEN → normalize → store → search → stats → decision(inline) → NOTIFY decision_completed + vector write idempotency (unique event_id per table)
+- T-03-008: Integration test: event → vector → search → statistics pipeline + Performance test: L2 search < 100ms for top_k=50
+- T-03-009: Implement dynamic vector table schema migration utility (dimension change)
 
 ## Risks
 - pgvector HNSW 인덱스 빌드 시간이 대량 벡터 삽입 시 느릴 수 있음

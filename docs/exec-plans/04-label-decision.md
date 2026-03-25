@@ -101,11 +101,9 @@
 ## Task candidates
 - T-04-001: Labeler engine — TP/SL price calculator, forward candle scanner, WIN/LOSS/TIME_EXIT judgment, simultaneous TP+SL handling, pnl_pct/mfe_pct/mae_pct/hold_bars calculation
 - T-04-002: Label-worker — periodic scan, conditional labeling, candle gap detection guard
-- T-03-006: Decision engine — configurable thresholds, Wilson score CI calculation, confidence tier classification (Low/Medium/High/Very High), custom decision_config override
-- (not implemented): Implement optional confidence tier filtering (strategy config: min_confidence_tier)
-- T-04-003: Integration test: label → stats refresh → decision output (including CI + tier)
-- (not implemented): Edge case tests: zero samples, exactly 30 samples, 55% boundary, CI boundary tests
-- (not implemented): Add simultaneous TP/SL hit ratio tracking to backtest report
+- T-03-006: Decision engine — configurable thresholds, Wilson score CI calculation, confidence tier classification (Low/Medium/High/Very High), custom decision_config override + optional confidence tier filtering
+- T-04-003: Integration test: label → stats refresh → decision output (including CI + tier) + edge case tests (zero samples, 30 samples, 55% boundary, CI boundary)
+- T-05-004: Add simultaneous TP/SL hit ratio tracking to backtest report
 
 ## Risks
 - 라벨링 시 forward 캔들이 충분하지 않은 경우 (최근 이벤트) 처리

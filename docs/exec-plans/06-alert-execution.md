@@ -136,19 +136,16 @@ Until EP09 (risk management) is complete, the following hard caps apply:
 - T-06-001: Implement alert message formatter (strategy, stats, prices)
 - T-06-004: Build alert-worker with LISTEN → decide → alert → send
 - T-06-010: Implement alert delivery state tracking (pending/sent/failed)
-- (not implemented): Add alert deduplication (unique event_id)
+- T-06-013: Add alert deduplication (unique event_id)
 - T-06-006: Extend exchange adapter with createOrder, cancelOrder, fetchOrder
 - T-06-003: Implement order builder (market, limit, SL/TP)
 - T-06-008: Implement order executor with validation and client_order_id
-- T-06-011: Build execution-worker with decision → order → track
-- T-06-009: Implement order status tracking (polling exchange)
+- T-06-011: Build execution-worker with decision → order → track + partial fill handling and status tracking
+- T-06-009: Implement order status tracking (polling exchange) + slippage tracking (expected price vs actual fill price)
 - T-06-002: Implement execution mode service (analysis/alert/auto-trade)
-- T-06-012: Add per-strategy execution mode configuration
+- T-06-012: Add per-strategy execution mode configuration + symbol-level order serialization queue (advisory locks)
+- T-06-004: Build alert-worker + slippage threshold alert (abnormal slippage → WARNING + Slack)
 - T-06-005: Integration test: decision → alert + order execution
-- (not implemented): Implement slippage tracking (expected price vs actual fill price)
-- (not implemented): Add slippage threshold alert (abnormal slippage → WARNING + Slack)
-- (not implemented): Implement partial fill handling and status tracking
-- (not implemented): Implement symbol-level order serialization queue (advisory locks)
 
 ## Risks
 - 거래소 주문 API 응답 지연으로 1초 레이턴시 예산 초과 가능

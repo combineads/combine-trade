@@ -117,19 +117,18 @@ Note: 이 에픽은 08-api-ui와 병렬 또는 직후에 진행. API 엔드포�
 - T-10-001: Create users table schema and initial admin seed
 - T-10-006: Implement password hashing (Argon2id)
 - T-10-005: Implement JWT access/refresh token service
-- (not implemented): Implement refresh token storage and revocation
+- T-18-003: Implement refresh token storage and revocation (superseded by EP18 better-auth)
 - T-10-007: Build Elysia authentication middleware
 - T-10-008: Implement login/refresh/logout API endpoints
 - T-10-002: Add authentication exception for public routes (health, login)
-- (not implemented): Implement SSE connection authentication
-- (not implemented): Build Next.js login page and auth flow
-- (not implemented): Implement Next.js token storage and auto-refresh
-- (not implemented): Build Tauri login screen and secure token storage
+- T-18-011: Implement SSE connection authentication (superseded by EP18)
+- T-18-007: Build Next.js login page and auth flow + token storage and auto-refresh (superseded by EP18)
+- T-18-010: Build Tauri login screen and secure token storage (superseded by EP18)
 - T-10-009: Implement exchange API key encryption service (AES-256-GCM)
 - T-10-004: Build exchange credential CRUD API with masking
-- (not implemented): Integration test: login → token → API access → refresh → logout
-- (not implemented): Implement master key rotation CLI utility
-- (not implemented): Test: master key rotation with zero data loss verification
+- T-18-008: Integration test: login → token → API access → refresh → logout (superseded by EP18)
+- T-10-010: Implement master key rotation CLI utility
+- T-10-011: Test: master key rotation with zero data loss verification
 
 ## Risks
 - JWT secret key 관리: 환경변수 유출 시 모든 토큰 위조 가능

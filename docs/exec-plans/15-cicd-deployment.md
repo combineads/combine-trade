@@ -245,7 +245,7 @@ Establish a robust CI/CD pipeline and deployment strategy for Combine Trade — 
 - T-15-008: Implement deploy script with pre-flight checks, graceful shutdown, and post-deploy health verification
 - T-15-009: Implement rollback script with deploy-history.json tracking
 - T-15-010: Write release workflow (semver tagging, changelog generation, image push) and conventional commit PR lint workflow
-- (not implemented): Document staging soak-test procedure and promotion gate in runbook
+- T-15-011: Document staging soak-test procedure and promotion gate in runbook
 
 ## Risks and rollback
 

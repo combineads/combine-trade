@@ -23,6 +23,8 @@ import type { OrderRouteDeps } from "./routes/orders.js";
 import { orderRoutes } from "./routes/orders.js";
 import type { PaperRouteDeps } from "./routes/paper.js";
 import { paperRoutes } from "./routes/paper.js";
+import type { TradingModeRouteDeps, ReadinessRouteDeps } from "./routes/trading/index.js";
+import { tradingModeRoutes, readinessRoutes } from "./routes/trading/index.js";
 import type { SseEvent } from "./routes/sse.js";
 import { sseRoutes } from "./routes/sse.js";
 import { strategyRoutes } from "./routes/strategies.js";
@@ -57,6 +59,8 @@ export interface ApiServerDeps {
 	backtestDeps: BacktestRouteDeps;
 	journalDeps: JournalRouteDeps;
 	paperDeps: PaperRouteDeps;
+	tradingModeDeps: TradingModeRouteDeps;
+	readinessDeps: ReadinessRouteDeps;
 }
 
 const PUBLIC_PATH = "/api/v1/health";
@@ -143,6 +147,8 @@ export function createApiServer(deps: ApiServerDeps) {
 		.use(backtestRoutes(deps.backtestDeps))
 		.use(journalRoutes(deps.journalDeps))
 		.use(paperRoutes(deps.paperDeps))
+		.use(tradingModeRoutes(deps.tradingModeDeps))
+		.use(readinessRoutes(deps.readinessDeps))
 		.use(
 			sseRoutes({
 				subscribe: deps.sseSubscribe,

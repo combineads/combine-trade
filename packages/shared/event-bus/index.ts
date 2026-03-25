@@ -5,6 +5,8 @@ export type {
 	JournalReadyPayload,
 	KillSwitchActivatedPayload,
 	LabelReadyPayload,
+	LossLimitBreachedPayload,
+	StrategyCodeChangedPayload,
 	StrategyEventCreatedPayload,
 } from "./channels.js";
 export { PgEventPublisher } from "./publisher.js";

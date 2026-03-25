@@ -6,6 +6,7 @@ import type {
 	StrategyEventRepository,
 	StrategyExecutor,
 } from "@combine/core/strategy";
+import { WarmupTracker, calculateWarmupPeriod } from "@combine/core/strategy/warmup.js";
 import type { Timeframe } from "@combine/shared";
 import { createLogger } from "@combine/shared";
 import { Channels } from "@combine/shared/event-bus/channels.js";
@@ -19,6 +20,8 @@ export interface StrategyEvaluatorDeps {
 	candleRepo: CandleRepository;
 	publisher: EventPublisher;
 	findActiveStrategies: (symbol: string, timeframe: Timeframe) => Promise<Strategy[]>;
+	/** Optional: inject a shared WarmupTracker (for testing). Defaults to a new instance. */
+	warmupTracker?: WarmupTracker;
 }
 
 export interface EvaluationResult {
@@ -26,18 +29,32 @@ export interface EvaluationResult {
 	strategyName: string;
 	success: boolean;
 	eventsCreated: number;
+	/** True if the result was suppressed due to warm-up period. */
+	suppressed: boolean;
 	error?: string;
+}
+
+/**
+ * Builds the warm-up tracking key for a strategy+symbol+timeframe scope.
+ * Format: `{strategyId}:{strategyVersion}:{symbol}:{timeframe}`
+ */
+function warmupKey(strategy: Strategy, symbol: string, timeframe: Timeframe): string {
+	return `${strategy.id}:${strategy.version}:${symbol}:${timeframe}`;
 }
 
 /**
  * Evaluates all active strategies for a given candle close event.
  * Each strategy is evaluated independently — one failure doesn't block others.
+ * Events are suppressed during the warm-up period (max indicator lookback bars).
  */
 export class StrategyEvaluator {
 	private _lastEvaluationTime: Date | null = null;
 	private _activeCount = 0;
+	private readonly warmupTracker: WarmupTracker;
 
-	constructor(private readonly deps: StrategyEvaluatorDeps) {}
+	constructor(private readonly deps: StrategyEvaluatorDeps) {
+		this.warmupTracker = deps.warmupTracker ?? new WarmupTracker();
+	}
 
 	get lastEvaluationTime(): Date | null {
 		return this._lastEvaluationTime;
@@ -90,6 +107,7 @@ export class StrategyEvaluator {
 					strategyId: strategy.id,
 					strategyName: strategy.name,
 					success: false,
+					suppressed: false,
 					eventsCreated: 0,
 					error: errorMsg,
 				});
@@ -108,6 +126,41 @@ export class StrategyEvaluator {
 		openTime: Date,
 		candles: CandleData,
 	): Promise<EvaluationResult> {
+		const key = warmupKey(strategy, symbol, timeframe);
+		const warmupPeriod = calculateWarmupPeriod(strategy.code);
+
+		// Increment candle count before checking completion
+		const candleCount = this.warmupTracker.increment(key);
+
+		if (!this.warmupTracker.isComplete(key, warmupPeriod)) {
+			logger.info(
+				{
+					strategyId: strategy.id,
+					strategyName: strategy.name,
+					symbol,
+					timeframe,
+					candleCount,
+					warmupPeriod,
+				},
+				`Warm-up in progress (${candleCount}/${warmupPeriod} bars)`,
+			);
+			return {
+				strategyId: strategy.id,
+				strategyName: strategy.name,
+				success: true,
+				suppressed: true,
+				eventsCreated: 0,
+			};
+		}
+
+		// Log once when warm-up completes (first bar that passes the boundary)
+		if (candleCount === warmupPeriod + 1 && warmupPeriod > 0) {
+			logger.info(
+				{ strategyId: strategy.id, strategyName: strategy.name, symbol, timeframe, warmupPeriod },
+				"Warm-up complete — strategy evaluation active",
+			);
+		}
+
 		const sandboxResult = await this.deps.executor.execute({
 			code: strategy.code,
 			symbol,
@@ -150,6 +203,7 @@ export class StrategyEvaluator {
 			strategyId: strategy.id,
 			strategyName: strategy.name,
 			success: true,
+			suppressed: false,
 			eventsCreated,
 		};
 	}

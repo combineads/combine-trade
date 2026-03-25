@@ -18,3 +18,4 @@ export {
 	type Strategy,
 	type UpdateStrategyInput,
 } from "./types.js";
+export { WarmupTracker, calculateWarmupPeriod } from "./warmup.js";

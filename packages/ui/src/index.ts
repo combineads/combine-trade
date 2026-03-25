@@ -125,8 +125,21 @@ export {
 	type EquityCurvePoint,
 	type EquityCurveChartProps,
 } from "./views/charts/equity-curve-chart";
+export {
+	PositionPnlChart,
+	type PositionPnlChartProps,
+	DailyPnlChart,
+	type DailyPnlBar,
+	type DailyPnlChartProps,
+} from "./views/charts/position-pnl-chart";
 
 // Views — Backtest
+export {
+	BacktestComparisonChart,
+	type VersionEquityPoint,
+	type VersionEquitySeries,
+	type BacktestComparisonChartProps,
+} from "./views/backtest/backtest-comparison-chart";
 export {
 	TradeStats,
 	type TradeStatsData,
@@ -156,17 +169,6 @@ export {
 // Components — Chart
 export { ChartContainer, type ChartContainerProps } from "./components/chart-container";
 export { ClientOnly, type ClientOnlyProps } from "./components/client-only";
-export {
-	GaugeChart,
-	gaugeSectors,
-	valueToAngle,
-	valueToZone,
-	type GaugeChartProps,
-	type GaugePercentile,
-	type GaugeZone,
-	type GaugeSector,
-	type LatencyMetrics,
-} from "./components/chart/GaugeChart";
 
 // Views — Settings
 export { SettingsView, type SettingsViewProps } from "./views/settings/settings-view";

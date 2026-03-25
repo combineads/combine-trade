@@ -2,8 +2,19 @@ import type { StrategyRepository } from "@combine/core/strategy/repository.js";
 import { Elysia } from "elysia";
 import { requireSession } from "../lib/auth-helpers.js";
 import type { AuthLike } from "../server.js";
+import { shouldForwardPaperEvent } from "./sse/paper-filter.js";
 
-export type SseEventType = "decision" | "alert" | "order" | "candle" | "heartbeat" | "auth_expired";
+export type SseEventType =
+	| "decision"
+	| "alert"
+	| "order"
+	| "candle"
+	| "heartbeat"
+	| "auth_expired"
+	| "paper_order_filled"
+	| "paper_position_opened"
+	| "paper_position_closed"
+	| "paper_balance_updated";
 
 export interface SseEvent {
 	type: SseEventType;
@@ -63,6 +74,10 @@ export function sseRoutes(deps: SseRouteDeps) {
 
 		const userId = session.user.id;
 
+		// Read optional strategyId filter from query param (for paper event filtering)
+		const url = new URL(request.url);
+		const clientStrategyId = url.searchParams.get("strategyId") ?? "";
+
 		// Load the user's active strategy IDs for event filtering
 		const activeStrategies = await deps.strategyRepository.findActive(userId);
 		const userStrategyIds = new Set(activeStrategies.map((s) => s.id));
@@ -83,8 +98,13 @@ export function sseRoutes(deps: SseRouteDeps) {
 				// Send initial heartbeat
 				send({ type: "heartbeat", data: { time: new Date().toISOString() } });
 
-				// Subscribe — filter events by user strategy ownership
+				// Subscribe — filter events by user strategy ownership and paper event isolation
 				const unsubscribe = deps.subscribe((event) => {
+					// Paper events: must match both userId and strategyId — fire-and-forget, no blocking
+					if (!shouldForwardPaperEvent(event, userId, clientStrategyId)) {
+						return;
+					}
+					// Non-paper events: check strategy ownership as before
 					if (shouldForwardEvent(event, userStrategyIds)) {
 						send(event);
 					}

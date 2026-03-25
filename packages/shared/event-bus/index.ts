@@ -6,6 +6,10 @@ export type {
 	KillSwitchActivatedPayload,
 	LabelReadyPayload,
 	LossLimitBreachedPayload,
+	PaperBalanceUpdatedPayload,
+	PaperOrderFilledPayload,
+	PaperPositionClosedPayload,
+	PaperPositionOpenedPayload,
 	StrategyCodeChangedPayload,
 	StrategyEventCreatedPayload,
 } from "./channels.js";

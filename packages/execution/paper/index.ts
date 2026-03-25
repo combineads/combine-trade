@@ -10,6 +10,13 @@ export {
 } from "./balance.js";
 export { expectancyDelta, maxDrawdown, sharpeRatio, zTestWinRate } from "./comparator.js";
 export { calculateReadinessScore, type ReadinessInput, type ReadinessScore } from "./readiness.js";
+export {
+	PaperEventPublisher,
+	type PaperOrderFilledPayload as PaperOrderFilledEvent,
+	type PaperPositionOpenedPayload as PaperPositionOpenedEvent,
+	type PaperPositionClosedPayload as PaperPositionClosedEvent,
+	type PaperBalanceUpdatedPayload as PaperBalanceUpdatedEvent,
+} from "./publisher.js";
 export type {
 	PaperBalance,
 	PaperCandle,

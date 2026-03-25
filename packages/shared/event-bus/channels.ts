@@ -51,6 +51,48 @@ export interface StrategyCodeChangedPayload {
 	newVersion: number;
 }
 
+export interface PaperOrderFilledPayload {
+	strategyId: string;
+	userId: string;
+	orderId: string;
+	symbol: string;
+	side: "LONG" | "SHORT";
+	size: string;
+	price: string;
+	pnl: string;
+	filledAt: string; // ISO timestamp
+}
+
+export interface PaperPositionOpenedPayload {
+	strategyId: string;
+	userId: string;
+	symbol: string;
+	side: "LONG" | "SHORT";
+	size: string;
+	entryPrice: string;
+	openedAt: string; // ISO timestamp
+}
+
+export interface PaperPositionClosedPayload {
+	strategyId: string;
+	userId: string;
+	symbol: string;
+	side: "LONG" | "SHORT";
+	size: string;
+	entryPrice: string;
+	exitPrice: string;
+	pnl: string;
+	closedAt: string; // ISO timestamp
+}
+
+export interface PaperBalanceUpdatedPayload {
+	strategyId: string;
+	userId: string;
+	available: string;
+	reserved: string;
+	total: string;
+}
+
 /** Typed channel definitions for the pipeline event bus */
 export const Channels = {
 	candleClosed: createChannel<CandleClosedPayload>("candle_closed"),
@@ -61,4 +103,8 @@ export const Channels = {
 	journalReady: createChannel<JournalReadyPayload>("journal_ready"),
 	lossLimitBreached: createChannel<LossLimitBreachedPayload>("loss_limit_breached"),
 	strategyCodeChanged: createChannel<StrategyCodeChangedPayload>("strategy_code_changed"),
+	paperOrderFilled: createChannel<PaperOrderFilledPayload>("paper_order_filled"),
+	paperPositionOpened: createChannel<PaperPositionOpenedPayload>("paper_position_opened"),
+	paperPositionClosed: createChannel<PaperPositionClosedPayload>("paper_position_closed"),
+	paperBalanceUpdated: createChannel<PaperBalanceUpdatedPayload>("paper_balance_updated"),
 } as const;

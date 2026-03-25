@@ -1,9 +1,9 @@
-import { Channels, PgEventSubscriber } from "@combine/shared/event-bus";
+import { Channels, PgEventPublisher, PgEventSubscriber } from "@combine/shared/event-bus";
+import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { createJournalStorage } from "./db.js";
 import { JournalEventHandler } from "./journal-event-handler.js";
 import type { EventBus, EventBusSubscription } from "./journal-event-handler.js";
-import { createJournalStorage } from "./db.js";
-import { drizzle } from "drizzle-orm/postgres-js";
 
 // 1. Validate DATABASE_URL
 const databaseUrl = process.env.DATABASE_URL;
@@ -40,14 +40,8 @@ await subscriber.connect((connectionString) => {
 
 // 4. Adapt PgEventSubscriber to JournalEventHandler's EventBus interface
 const eventBus: EventBus = {
-	subscribe(
-		eventType: string,
-		handler: (event: unknown) => Promise<void>,
-	): EventBusSubscription {
-		const channel =
-			eventType === "label_ready"
-				? Channels.labelReady
-				: { name: eventType };
+	subscribe(eventType: string, handler: (event: unknown) => Promise<void>): EventBusSubscription {
+		const channel = eventType === "label_ready" ? Channels.labelReady : { name: eventType };
 
 		const subscription = subscriber.subscribe(channel as typeof Channels.labelReady, handler);
 		return {
@@ -58,18 +52,28 @@ const eventBus: EventBus = {
 	},
 };
 
-// 5. Create storage and start handler
+// 5. Create PgEventPublisher for journal_ready notifications
+const publisher = new PgEventPublisher({ connectionString: databaseUrl });
+await publisher.connect((connectionString) => {
+	const client = postgres(connectionString, { max: 1 });
+	return {
+		unsafe: (query: string) => client.unsafe(query),
+	};
+});
+
+// 6. Create storage and start handler
 const storage = createJournalStorage(db);
-const handler = new JournalEventHandler(eventBus, storage);
+const handler = new JournalEventHandler(eventBus, storage, undefined, publisher);
 const subscription = handler.start();
 
 console.log("Journal worker started");
 
-// 6. Graceful shutdown on SIGTERM/SIGINT
+// 7. Graceful shutdown on SIGTERM/SIGINT
 async function shutdown(signal: string): Promise<void> {
 	console.log(`Received ${signal}, shutting down...`);
 	subscription.unsubscribe();
 	await subscriber.close();
+	await publisher.close();
 	await pool.end();
 	process.exit(0);
 }

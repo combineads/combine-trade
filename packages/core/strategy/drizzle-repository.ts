@@ -27,6 +27,7 @@ export interface StrategyRow {
 	executionMode: string;
 	apiVersion: string | null;
 	status: string;
+	useLlmFilter: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 	deletedAt: Date | null;
@@ -69,6 +70,7 @@ function mapRowToStrategy(row: StrategyRow): Strategy {
 		executionMode: row.executionMode as Strategy["executionMode"],
 		apiVersion: row.apiVersion,
 		status: row.status as Strategy["status"],
+		useLlmFilter: row.useLlmFilter,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
 		deletedAt: row.deletedAt,
@@ -145,6 +147,7 @@ export class DrizzleStrategyRepository implements StrategyRepository {
 			executionMode: (input.executionMode ??
 				existing.executionMode) as CreateStrategyInput["executionMode"],
 			apiVersion: input.apiVersion ?? existing.apiVersion ?? undefined,
+			useLlmFilter: input.useLlmFilter ?? existing.useLlmFilter,
 		};
 
 		// The deps.create implementation should handle version incrementing

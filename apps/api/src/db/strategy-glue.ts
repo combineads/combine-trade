@@ -1,14 +1,8 @@
+import type { StrategyDbDeps, StrategyRow } from "@combine/core/strategy/drizzle-repository.js";
+import type { CreateStrategyInput, UpdateStrategyInput } from "@combine/core/strategy/types.js";
 import { and, eq, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../../../../db/schema/index.js";
-import type {
-	StrategyDbDeps,
-	StrategyRow,
-} from "@combine/core/strategy/drizzle-repository.js";
-import type {
-	CreateStrategyInput,
-	UpdateStrategyInput,
-} from "@combine/core/strategy/types.js";
 
 type Db = PostgresJsDatabase<typeof schema>;
 
@@ -30,6 +24,7 @@ function mapRow(row: typeof schema.strategies.$inferSelect): StrategyRow {
 		executionMode: row.executionMode,
 		apiVersion: row.apiVersion,
 		status: row.status,
+		useLlmFilter: row.useLlmFilter,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
 		deletedAt: row.deletedAt,
@@ -110,6 +105,7 @@ export function createStrategyDbDeps(db: Db): StrategyDbDeps {
 					executionMode: input.executionMode ?? "analysis",
 					apiVersion: input.apiVersion ?? null,
 					status: "draft",
+					useLlmFilter: input.useLlmFilter ?? false,
 				})
 				.returning();
 			const row = rows[0];
@@ -139,6 +135,7 @@ export function createStrategyDbDeps(db: Db): StrategyDbDeps {
 					...(input.decisionConfig !== undefined && { decisionConfig: input.decisionConfig }),
 					...(input.executionMode !== undefined && { executionMode: input.executionMode }),
 					...(input.apiVersion !== undefined && { apiVersion: input.apiVersion ?? null }),
+					...(input.useLlmFilter !== undefined && { useLlmFilter: input.useLlmFilter }),
 					updatedAt: now,
 				})
 				.where(

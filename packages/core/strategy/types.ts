@@ -35,6 +35,7 @@ export interface Strategy {
 	executionMode: "analysis" | "paper" | "live";
 	apiVersion: string | null;
 	status: StrategyStatus;
+	useLlmFilter: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 	deletedAt: Date | null;
@@ -54,6 +55,7 @@ export interface CreateStrategyInput {
 	decisionConfig: Record<string, unknown>;
 	executionMode?: "analysis" | "paper" | "live";
 	apiVersion?: string;
+	useLlmFilter?: boolean;
 }
 
 export interface UpdateStrategyInput {
@@ -70,4 +72,5 @@ export interface UpdateStrategyInput {
 	decisionConfig?: Record<string, unknown>;
 	executionMode?: "analysis" | "paper" | "live";
 	apiVersion?: string;
+	useLlmFilter?: boolean;
 }

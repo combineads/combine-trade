@@ -1,8 +1,8 @@
-import { Elysia, t } from "elysia";
 import type { StrategyRepository } from "@combine/core/strategy/repository.js";
 import { ExecutionModeService } from "@combine/execution/mode.js";
 import type { ExecutionModeDeps } from "@combine/execution/types.js";
 import { ModeTransitionError } from "@combine/execution/types.js";
+import { Elysia, t } from "elysia";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../lib/errors.js";
 import { ok } from "../lib/response.js";
 
@@ -83,6 +83,7 @@ export function strategyRoutes(deps: StrategyRouteDeps) {
 					executionMode: t.Optional(
 						t.Union([t.Literal("analysis"), t.Literal("paper"), t.Literal("live")]),
 					),
+					useLlmFilter: t.Optional(t.Boolean()),
 				}),
 			},
 		)
@@ -131,6 +132,7 @@ export function strategyRoutes(deps: StrategyRouteDeps) {
 					executionMode: t.Optional(
 						t.Union([t.Literal("analysis"), t.Literal("paper"), t.Literal("live")]),
 					),
+					useLlmFilter: t.Optional(t.Boolean()),
 				}),
 			},
 		)

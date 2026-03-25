@@ -1,4 +1,13 @@
-import { index, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	index,
+	integer,
+	jsonb,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { authUser } from "./better-auth.js";
 
 export const strategies = pgTable(
@@ -23,6 +32,7 @@ export const strategies = pgTable(
 		executionMode: text("execution_mode").notNull().default("analysis"),
 		apiVersion: text("api_version"),
 		status: text("status").notNull().default("draft"),
+		useLlmFilter: boolean("use_llm_filter").notNull().default(false),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 		deletedAt: timestamp("deleted_at", { withTimezone: true }),

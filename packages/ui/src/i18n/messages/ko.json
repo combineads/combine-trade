@@ -350,6 +350,13 @@
       "running": "실행 중",
       "completed": "완료",
       "failed": "실패"
+    },
+    "comparison": {
+      "equityCurve": "자산 곡선",
+      "drawdown": "낙폭",
+      "versionLabel": "버전",
+      "noData": "비교할 데이터가 없습니다",
+      "version": "버전"
     }
   },
   "events": {

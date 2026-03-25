@@ -125,16 +125,14 @@ export {
 	type EquityCurvePoint,
 	type EquityCurveChartProps,
 } from "./views/charts/equity-curve-chart";
-export {
-	RadarChart,
-	normalizeValue,
-	computePolygonPoints,
-	type RadarChartProps,
-	type RadarMetric,
-	type RadarSeries,
-} from "./views/charts/radar-chart";
 
 // Views — Backtest
+export {
+	BacktestComparisonChart,
+	type VersionEquityPoint,
+	type VersionEquitySeries,
+	type BacktestComparisonChartProps,
+} from "./views/backtest/backtest-comparison-chart";
 export {
 	TradeStats,
 	type TradeStatsData,

@@ -350,6 +350,13 @@
       "running": "Running",
       "completed": "Completed",
       "failed": "Failed"
+    },
+    "comparison": {
+      "equityCurve": "Equity Curve",
+      "drawdown": "Drawdown",
+      "versionLabel": "Version",
+      "noData": "No data to compare",
+      "version": "Version"
     }
   },
   "events": {

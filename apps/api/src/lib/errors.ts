@@ -11,6 +11,13 @@ export class ApiError extends Error {
 	}
 }
 
+export class BadRequestError extends ApiError {
+	constructor(message = "Bad request") {
+		super(400, "BAD_REQUEST", message);
+		this.name = "BadRequestError";
+	}
+}
+
 export class NotFoundError extends ApiError {
 	constructor(message = "Resource not found") {
 		super(404, "NOT_FOUND", message);

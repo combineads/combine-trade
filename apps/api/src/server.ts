@@ -8,13 +8,15 @@ import type { AlertRouteDeps } from "./routes/alerts.js";
 import { alertRoutes } from "./routes/alerts.js";
 import type { BacktestRouteDeps } from "./routes/backtest.js";
 import { backtestRoutes } from "./routes/backtest.js";
-import type { CandleCursorRouteDeps, CandleRouteDeps } from "./routes/candles.js";
-import { candleCursorRoutes, candleRoutes } from "./routes/candles.js";
+import type { CandleRouteDeps } from "./routes/candles.js";
+import { candleRoutes } from "./routes/candles.js";
 import type { CredentialRouteDeps } from "./routes/credentials.js";
 import { credentialRoutes } from "./routes/credentials.js";
 import type { EventRouteDeps } from "./routes/events.js";
 import { eventRoutes } from "./routes/events.js";
 import { healthRoute } from "./routes/health.js";
+import type { IndicatorRouteDeps } from "./routes/indicators.js";
+import { indicatorRoutes } from "./routes/indicators.js";
 import type { JournalRouteDeps } from "./routes/journals.js";
 import { journalRoutes } from "./routes/journals.js";
 import type { KillSwitchRouteDeps } from "./routes/kill-switch.js";
@@ -55,13 +57,13 @@ export interface ApiServerDeps {
 	eventDeps: EventRouteDeps;
 	orderDeps: OrderRouteDeps;
 	candleDeps: CandleRouteDeps;
-	candleCursorDeps: CandleCursorRouteDeps;
 	alertDeps: AlertRouteDeps;
 	backtestDeps: BacktestRouteDeps;
 	journalDeps: JournalRouteDeps;
 	paperDeps: PaperRouteDeps;
 	tradingModeDeps: TradingModeRouteDeps;
 	readinessDeps: ReadinessRouteDeps;
+	indicatorDeps: IndicatorRouteDeps;
 }
 
 const PUBLIC_PATH = "/api/v1/health";
@@ -144,13 +146,13 @@ export function createApiServer(deps: ApiServerDeps) {
 		.use(eventRoutes(deps.eventDeps))
 		.use(orderRoutes(deps.orderDeps))
 		.use(candleRoutes(deps.candleDeps))
-		.use(candleCursorRoutes(deps.candleCursorDeps))
 		.use(alertRoutes(deps.alertDeps))
 		.use(backtestRoutes(deps.backtestDeps))
 		.use(journalRoutes(deps.journalDeps))
 		.use(paperRoutes(deps.paperDeps))
 		.use(tradingModeRoutes(deps.tradingModeDeps))
 		.use(readinessRoutes(deps.readinessDeps))
+		.use(indicatorRoutes(deps.indicatorDeps))
 		.use(
 			sseRoutes({
 				subscribe: deps.sseSubscribe,

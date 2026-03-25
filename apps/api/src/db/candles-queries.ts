@@ -1,8 +1,13 @@
-import { and, count, eq, gte, lte } from "drizzle-orm";
+import type { Candle } from "@combine/candle/types.js";
+import { and, asc, count, eq, gt, gte, lte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../../../../db/schema/index.js";
-import type { Candle } from "@combine/candle/types.js";
-import type { CandleQueryOptions, CandleRouteDeps } from "../routes/candles.js";
+import type {
+	CandleCursorQueryOptions,
+	CandleCursorRouteDeps,
+	CandleQueryOptions,
+	CandleRouteDeps,
+} from "../routes/candles.js";
 
 type Db = PostgresJsDatabase<typeof schema>;
 
@@ -21,6 +26,7 @@ function mapRowToCandle(row: typeof schema.candles.$inferSelect): Candle {
 	};
 }
 
+/** Legacy offset-based candle deps (kept for backward compatibility). */
 export function createCandleDeps(db: Db): CandleRouteDeps {
 	return {
 		findCandles: async (opts: CandleQueryOptions): Promise<{ items: Candle[]; total: number }> => {
@@ -44,6 +50,32 @@ export function createCandleDeps(db: Db): CandleRouteDeps {
 				items: rows.map(mapRowToCandle),
 				total: countRow?.total ?? 0,
 			};
+		},
+	};
+}
+
+/** Cursor-based candle deps for the chart data API. */
+export function createCandleCursorDeps(db: Db): CandleCursorRouteDeps {
+	return {
+		findCandlesCursor: async (opts: CandleCursorQueryOptions): Promise<Candle[]> => {
+			const conditions = [
+				eq(schema.candles.symbol, opts.symbol),
+				eq(schema.candles.timeframe, opts.timeframe),
+			];
+
+			if (opts.cursor) {
+				conditions.push(gt(schema.candles.openTime, new Date(opts.cursor)));
+			}
+
+			const rows = await db
+				.select()
+				.from(schema.candles)
+				.where(and(...conditions))
+				.orderBy(asc(schema.candles.openTime))
+				// Fetch limit+1 to detect next page
+				.limit(opts.limit + 1);
+
+			return rows.map(mapRowToCandle);
 		},
 	};
 }

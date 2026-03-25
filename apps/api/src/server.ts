@@ -1,15 +1,15 @@
+import type { StrategyRepository } from "@combine/core/strategy/repository.js";
+import type { ExecutionModeDeps } from "@combine/execution/types.js";
 import cors from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { elysiaHelmet } from "elysiajs-helmet";
-import type { StrategyRepository } from "@combine/core/strategy/repository.js";
-import type { ExecutionModeDeps } from "@combine/execution/types.js";
 import { UnauthorizedError, errorHandlerPlugin } from "./lib/errors.js";
 import type { AlertRouteDeps } from "./routes/alerts.js";
 import { alertRoutes } from "./routes/alerts.js";
 import type { BacktestRouteDeps } from "./routes/backtest.js";
 import { backtestRoutes } from "./routes/backtest.js";
-import type { CandleRouteDeps } from "./routes/candles.js";
-import { candleRoutes } from "./routes/candles.js";
+import type { CandleCursorRouteDeps, CandleRouteDeps } from "./routes/candles.js";
+import { candleCursorRoutes, candleRoutes } from "./routes/candles.js";
 import type { CredentialRouteDeps } from "./routes/credentials.js";
 import { credentialRoutes } from "./routes/credentials.js";
 import type { EventRouteDeps } from "./routes/events.js";
@@ -23,11 +23,11 @@ import type { OrderRouteDeps } from "./routes/orders.js";
 import { orderRoutes } from "./routes/orders.js";
 import type { PaperRouteDeps } from "./routes/paper.js";
 import { paperRoutes } from "./routes/paper.js";
-import type { TradingModeRouteDeps, ReadinessRouteDeps } from "./routes/trading/index.js";
-import { tradingModeRoutes, readinessRoutes } from "./routes/trading/index.js";
 import type { SseEvent } from "./routes/sse.js";
 import { sseRoutes } from "./routes/sse.js";
 import { strategyRoutes } from "./routes/strategies.js";
+import type { ReadinessRouteDeps, TradingModeRouteDeps } from "./routes/trading/index.js";
+import { readinessRoutes, tradingModeRoutes } from "./routes/trading/index.js";
 
 /**
  * Minimal interface for the better-auth instance required by the server.
@@ -55,6 +55,7 @@ export interface ApiServerDeps {
 	eventDeps: EventRouteDeps;
 	orderDeps: OrderRouteDeps;
 	candleDeps: CandleRouteDeps;
+	candleCursorDeps: CandleCursorRouteDeps;
 	alertDeps: AlertRouteDeps;
 	backtestDeps: BacktestRouteDeps;
 	journalDeps: JournalRouteDeps;
@@ -143,6 +144,7 @@ export function createApiServer(deps: ApiServerDeps) {
 		.use(eventRoutes(deps.eventDeps))
 		.use(orderRoutes(deps.orderDeps))
 		.use(candleRoutes(deps.candleDeps))
+		.use(candleCursorRoutes(deps.candleCursorDeps))
 		.use(alertRoutes(deps.alertDeps))
 		.use(backtestRoutes(deps.backtestDeps))
 		.use(journalRoutes(deps.journalDeps))

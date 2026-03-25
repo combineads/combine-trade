@@ -15,6 +15,12 @@ export interface PaginatedResponse<T> {
 	pageSize: number;
 }
 
+/** Response shape for cursor-based candle pagination (chart data API). */
+export interface CandleCursorResponse<T> {
+	data: T[];
+	nextCursor: string | null;
+}
+
 export function buildQueryString(params: Record<string, unknown>): string {
 	const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null);
 	if (entries.length === 0) return "";
@@ -87,6 +93,8 @@ export const apiPaths = {
 
 	// Data queries
 	candles: () => "/api/v1/candles",
+	candlesCursor: (symbol: string, timeframe: string) =>
+		`/api/v1/candles/${encodeURIComponent(symbol)}/${encodeURIComponent(timeframe)}`,
 	orders: () => "/api/v1/orders",
 	alerts: () => "/api/v1/alerts",
 	events: (id: string) => `/api/v1/events/${id}`,

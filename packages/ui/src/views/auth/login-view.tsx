@@ -1,3 +1,4 @@
+import { Lockup } from "../../components/lockup";
 import { useTranslations } from "../../i18n";
 
 export interface LoginViewProps {
@@ -28,17 +29,15 @@ export function LoginView({ onSubmit, error, loading }: LoginViewProps) {
 					width: 400,
 				}}
 			>
-				<h1
+				<div
 					style={{
-						fontSize: 24,
-						fontWeight: 700,
-						color: "var(--color-primary)",
-						textAlign: "center",
+						display: "flex",
+						justifyContent: "center",
 						marginBottom: 8,
 					}}
 				>
-					Combine Trade
-				</h1>
+					<Lockup size="lg" />
+				</div>
 				<p
 					style={{
 						fontSize: 13,

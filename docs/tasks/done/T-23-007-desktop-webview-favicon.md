@@ -50,3 +50,9 @@ bun run typecheck
 ## Out of Scope
 - Dynamic favicon changes (e.g., notification badges)
 - Desktop-specific metadata beyond favicon
+
+## Implementation Notes
+- Copied `docs/assets/logo/favicon.svg` → `apps/desktop/src/app/icon.svg`
+- Next.js Metadata File API auto-discovers `icon.svg` in `src/app/` regardless of client/server layout
+- No changes needed to `layout.tsx` — file-based metadata convention works independently
+- TDD: RED (3 failing tests) → GREEN (copy file, all pass) → no REFACTOR needed (minimal change)

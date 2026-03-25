@@ -1,5 +1,6 @@
 "use client";
 
+import { Logo } from "@combine/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -39,13 +40,23 @@ export function Sidebar() {
 		>
 			<div
 				style={{
-					padding: "0 16px 24px",
-					fontWeight: 700,
-					fontSize: 18,
-					color: "var(--color-primary)",
+					padding: "12px 16px",
+					display: "flex",
+					alignItems: "center",
+					gap: "10px",
+					marginBottom: "8px",
 				}}
 			>
-				Combine Trade
+				<Logo size={28} />
+				<span
+					style={{
+						fontSize: 15,
+						fontWeight: 600,
+						color: "var(--text-primary)",
+					}}
+				>
+					Combine Trade
+				</span>
 			</div>
 			<nav style={{ flex: 1 }}>
 				{sections.map((section) => (

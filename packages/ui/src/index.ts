@@ -15,6 +15,8 @@ export {
 export { useTheme } from "./theme/use-theme";
 
 // Components
+export { Logo, type LogoVariant, type LogoProps } from "./components/logo";
+export { Lockup, type LockupProps } from "./components/lockup";
 export { Button, type ButtonVariant, type ButtonProps } from "./components/button";
 export {
 	StatusBadge,

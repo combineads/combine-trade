@@ -4,6 +4,16 @@ import "./globals.css";
 export const metadata: Metadata = {
 	title: "Combine Trade",
 	description: "Strategy-defined vectorization trading system",
+	openGraph: {
+		title: "Combine Trade",
+		description: "Strategy-defined vectorization trading system",
+		type: "website",
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Combine Trade",
+		description: "Strategy-defined vectorization trading system",
+	},
 };
 
 /**

@@ -19,11 +19,12 @@ export interface LlmDecisionRepository {
 	} | null>;
 	getRecentTrades(strategyId: string): Promise<RecentTrade[]>;
 	getMacroContext(strategyId: string): Promise<DecisionMacroContext>;
-	updateWithLlmResult(
-		decisionId: string,
-		llmResult: LlmDecision,
-		finalDirection: string,
-	): Promise<void>;
+	/**
+	 * Persist the LLM evaluation result into the dedicated llm_* columns.
+	 * The original kNN direction column is NOT changed — only llm_action,
+	 * llm_reason, llm_confidence, llm_risk_factors, llm_evaluated_at are written.
+	 */
+	updateWithLlmResult(decisionId: string, llmResult: LlmDecision): Promise<void>;
 	publishDecisionCompleted(
 		decisionId: string,
 		direction: string,
@@ -75,6 +76,9 @@ export class LlmDecisionWorker {
 		const prompt = buildDecisionPrompt(promptInput);
 		const llmResult = await this.evaluate(prompt);
 
+		// Determine the final direction for downstream workers.
+		// The kNN original direction is preserved in the decisions.direction column.
+		// LLM override is recorded in decisions.llm_action.
 		let finalDirection: string;
 		let sizeModifier: number | undefined;
 
@@ -91,7 +95,9 @@ export class LlmDecisionWorker {
 				break;
 		}
 
-		await this.repo.updateWithLlmResult(decisionId, llmResult, finalDirection);
+		// Persist LLM columns (does not touch the original direction column)
+		await this.repo.updateWithLlmResult(decisionId, llmResult);
+		// Emit decision_completed with the LLM-determined final direction
 		await this.repo.publishDecisionCompleted(decisionId, finalDirection, sizeModifier);
 	}
 }

@@ -58,11 +58,10 @@ function createMockRepo(
 			recentNews: [],
 			highImpactNext24h: 0,
 		})),
-		updateWithLlmResult: mock(
-			async (id: string, llmResult: LlmDecision, finalDirection: string) => {
-				updatedDecisions.push({ id, llmResult, finalDirection });
-			},
-		),
+		updateWithLlmResult: mock(async (id: string, llmResult: LlmDecision) => {
+			// finalDirection is now determined by the worker, not stored in direction column
+			updatedDecisions.push({ id, llmResult, finalDirection: "" });
+		}),
 		publishDecisionCompleted: mock(
 			async (decisionId: string, direction: string, sizeModifier?: number) => {
 				publishedMessages.push({
@@ -83,7 +82,7 @@ function mockEvaluator(decision: LlmDecision) {
 }
 
 describe("LlmDecisionWorker", () => {
-	test("CONFIRM preserves original direction", async () => {
+	test("CONFIRM preserves original direction in published message", async () => {
 		const repo = createMockRepo();
 		const evaluate = mockEvaluator({
 			action: "CONFIRM",
@@ -96,13 +95,15 @@ describe("LlmDecisionWorker", () => {
 		await worker.processDecision("dec-1");
 
 		expect(repo.updatedDecisions).toHaveLength(1);
-		expect(repo.updatedDecisions[0].finalDirection).toBe("LONG");
+		// updateWithLlmResult now only stores LLM columns — llmResult is persisted
+		expect(repo.updatedDecisions[0].llmResult.action).toBe("CONFIRM");
 		expect(repo.publishedMessages).toHaveLength(1);
+		// Published direction must still be the kNN direction (LONG) for CONFIRM
 		expect(repo.publishedMessages[0].direction).toBe("LONG");
 		expect(repo.publishedMessages[0].sizeModifier).toBeUndefined();
 	});
 
-	test("PASS overrides direction to PASS", async () => {
+	test("PASS: publishDecisionCompleted emits PASS direction", async () => {
 		const repo = createMockRepo();
 		const evaluate = mockEvaluator({
 			action: "PASS",
@@ -114,7 +115,9 @@ describe("LlmDecisionWorker", () => {
 
 		await worker.processDecision("dec-1");
 
-		expect(repo.updatedDecisions[0].finalDirection).toBe("PASS");
+		// LLM action stored in llm_* columns (not direction)
+		expect(repo.updatedDecisions[0].llmResult.action).toBe("PASS");
+		// Published direction is PASS so downstream workers suppress alert/order
 		expect(repo.publishedMessages[0].direction).toBe("PASS");
 	});
 
@@ -130,7 +133,7 @@ describe("LlmDecisionWorker", () => {
 
 		await worker.processDecision("dec-1");
 
-		expect(repo.updatedDecisions[0].finalDirection).toBe("LONG");
+		expect(repo.updatedDecisions[0].llmResult.action).toBe("REDUCE_SIZE");
 		expect(repo.publishedMessages[0].direction).toBe("LONG");
 		expect(repo.publishedMessages[0].sizeModifier).toBe(0.5);
 	});

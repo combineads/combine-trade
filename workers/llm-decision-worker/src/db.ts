@@ -1,4 +1,8 @@
-import type { DecisionMacroContext, LlmDecision, RecentTrade } from "@combine/core/macro/decision-prompt-builder.js";
+import type {
+	DecisionMacroContext,
+	LlmDecision,
+	RecentTrade,
+} from "@combine/core/macro/decision-prompt-builder.js";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { decisions } from "../../../db/schema/decisions.js";
@@ -153,19 +157,23 @@ export async function getMacroContext(db: Db, timestamp: Date): Promise<Decision
 }
 
 /**
- * Update the decisions row with the LLM verdict and final direction.
+ * Persist the LLM evaluation result into the dedicated llm_* columns.
+ * The original kNN direction column is NOT changed — only llm_action,
+ * llm_reason, llm_confidence, llm_risk_factors, and llm_evaluated_at are written.
  */
 export async function updateWithLlmResult(
 	db: Db,
 	decisionId: string,
 	llmResult: LlmDecision,
-	finalDirection: string,
 ): Promise<void> {
 	await db
 		.update(decisions)
 		.set({
-			direction: finalDirection,
-			decisionReason: `LLM(${llmResult.action}): ${llmResult.reason}`,
+			llmAction: llmResult.action,
+			llmReason: llmResult.reason,
+			llmConfidence: llmResult.confidence,
+			llmRiskFactors: llmResult.risk_factors,
+			llmEvaluatedAt: new Date(),
 		})
 		.where(eq(decisions.id, decisionId));
 }
@@ -203,17 +211,13 @@ export async function publishDecisionCompleted(
 /**
  * Build a Drizzle-based LlmDecisionRepository using the standalone functions above.
  */
-export function createLlmDecisionRepository(
-	db: Db,
-	publishSql: PublishSql,
-): LlmDecisionRepository {
+export function createLlmDecisionRepository(db: Db, publishSql: PublishSql): LlmDecisionRepository {
 	return {
 		getKnnDecision: (decisionId) => getKnnDecision(db, decisionId),
 		getRecentTrades: (strategyId) => getRecentTrades(db, strategyId),
 		getMacroContext: (_strategyId) => getMacroContext(db, new Date()),
-		updateWithLlmResult: (decisionId, llmResult, finalDirection) =>
-			updateWithLlmResult(db, decisionId, llmResult, finalDirection),
-		publishDecisionCompleted: (decisionId, direction, _sizeModifier) =>
+		updateWithLlmResult: (decisionId, llmResult) => updateWithLlmResult(db, decisionId, llmResult),
+		publishDecisionCompleted: (decisionId, _direction, _sizeModifier) =>
 			publishDecisionCompleted(publishSql, db, decisionId),
 	};
 }

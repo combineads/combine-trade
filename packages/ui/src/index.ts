@@ -242,6 +242,29 @@ export {
 	type StrategyEventOverlayProps,
 } from "./views/charts/strategy-event-overlay";
 
+// Views — Charts (indicator overlays)
+export {
+	SmaOverlay,
+	EmaOverlay,
+	BollingerBandsOverlay,
+	IndicatorOverlay,
+	applyIndicatorToChart,
+	removeIndicatorFromChart,
+	setIndicatorVisible,
+	type SmaOverlayProps,
+	type EmaOverlayProps,
+	type BollingerBandsOverlayProps,
+	type IndicatorOverlayProps,
+	type IndicatorOverlayItem,
+	type IndicatorConfig,
+	type SmaIndicatorConfig,
+	type EmaIndicatorConfig,
+	type BollingerIndicatorConfig,
+	type IndicatorHandle,
+	type LinePoint,
+	type BollingerPoint,
+} from "./views/charts/indicator-overlay";
+
 // Hooks — Dashboard Real-time
 export {
 	usePortfolioStatus,

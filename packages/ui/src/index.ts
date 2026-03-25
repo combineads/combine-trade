@@ -243,6 +243,14 @@ export {
 	type UseStrategyPerformanceResult,
 } from "./hooks/use-strategy-performance";
 
+// Hooks — Chart Theme
+export {
+	useChartTheme,
+	CHART_THEMES,
+	toLightweightChartsOptions,
+	type ChartTheme,
+} from "./hooks/use-chart-theme";
+
 // Views — Auth
 export { LoginView, type LoginViewProps } from "./views/auth/login-view";
 

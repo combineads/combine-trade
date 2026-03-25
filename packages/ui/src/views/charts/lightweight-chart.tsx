@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { toLightweightChartsOptions, useChartTheme } from "../../hooks/use-chart-theme";
 
 export interface OHLCVBar {
 	time: number;
@@ -20,6 +21,7 @@ export interface LightweightChartProps {
 export function LightweightChart({ data, height = 400, className }: LightweightChartProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const chartRef = useRef<unknown>(null);
+	const theme = useChartTheme();
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -32,30 +34,21 @@ export function LightweightChart({ data, height = 400, className }: LightweightC
 				const { createChart, CandlestickSeries } = await import("lightweight-charts");
 				if (disposed) return;
 
-				const style = getComputedStyle(container);
-				const bg = style.getPropertyValue("--color-surface").trim() || "#1a1a2e";
-				const text = style.getPropertyValue("--color-text-primary").trim() || "#e0e0e0";
-				const grid = style.getPropertyValue("--color-border").trim() || "#2a2a3e";
-				const up = style.getPropertyValue("--color-success").trim() || "#22c55e";
-				const down = style.getPropertyValue("--color-danger").trim() || "#ef4444";
+				const themeOptions = toLightweightChartsOptions(theme);
 
 				const chart = createChart(container, {
 					width: container.clientWidth,
 					height,
-					layout: { background: { color: bg }, textColor: text },
-					grid: {
-						vertLines: { color: grid },
-						horzLines: { color: grid },
-					},
+					...themeOptions,
 				});
 
 				const series = chart.addSeries(CandlestickSeries, {
-					upColor: up,
-					downColor: down,
-					borderUpColor: up,
-					borderDownColor: down,
-					wickUpColor: up,
-					wickDownColor: down,
+					upColor: theme.bullish,
+					downColor: theme.bearish,
+					borderUpColor: theme.bullish,
+					borderDownColor: theme.bearish,
+					wickUpColor: theme.bullish,
+					wickDownColor: theme.bearish,
 				});
 
 				if (data.length > 0) {
@@ -90,7 +83,7 @@ export function LightweightChart({ data, height = 400, className }: LightweightC
 				chartRef.current = null;
 			}
 		};
-	}, [data, height]);
+	}, [data, height, theme]);
 
 	return (
 		<div

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { toLightweightChartsOptions, useChartTheme } from "../../hooks/use-chart-theme";
 
 export interface EquityCurvePoint {
 	time: number;
@@ -23,6 +24,7 @@ export function EquityCurveChart({
 }: EquityCurveChartProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const chartRef = useRef<unknown>(null);
+	const theme = useChartTheme();
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -35,18 +37,12 @@ export function EquityCurveChart({
 				const { createChart } = await import("lightweight-charts");
 				if (disposed) return;
 
-				const style = getComputedStyle(container);
-				const bg = style.getPropertyValue("--color-surface").trim() || "#1a1a2e";
-				const text = style.getPropertyValue("--color-text-primary").trim() || "#e0e0e0";
-				const grid = style.getPropertyValue("--color-border").trim() || "#2a2a3e";
-				const successColor = style.getPropertyValue("--color-success").trim() || "#22c55e";
-				const dangerColor = style.getPropertyValue("--color-danger").trim() || "#ef4444";
+				const themeOptions = toLightweightChartsOptions(theme);
 
 				const chart = createChart(container, {
 					width: container.clientWidth,
 					height,
-					layout: { background: { color: bg }, textColor: text },
-					grid: { vertLines: { color: grid }, horzLines: { color: grid } },
+					...themeOptions,
 					rightPriceScale: { visible: true },
 					leftPriceScale: { visible: true },
 				});
@@ -54,15 +50,15 @@ export function EquityCurveChart({
 				const { LineSeries, AreaSeries } = await import("lightweight-charts");
 
 				const equitySeries = chart.addSeries(LineSeries, {
-					color: successColor,
+					color: theme.bullish,
 					lineWidth: 2,
 					priceScaleId: "left",
 				});
 
 				const drawdownSeries = chart.addSeries(AreaSeries, {
 					topColor: "transparent",
-					bottomColor: `${dangerColor}4d`,
-					lineColor: dangerColor,
+					bottomColor: `${theme.bearish}4d`,
+					lineColor: theme.bearish,
 					lineWidth: 1,
 					priceScaleId: "right",
 				});
@@ -104,7 +100,7 @@ export function EquityCurveChart({
 				chartRef.current = null;
 			}
 		};
-	}, [data, height]);
+	}, [data, height, theme]);
 
 	return (
 		<div

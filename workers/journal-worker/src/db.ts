@@ -32,6 +32,7 @@ export function createJournalStorage(db: Db): JournalStorage {
 				mfePct: String(journal.mfePct),
 				maePct: String(journal.maePct),
 				exitMarketContext: journal.exitMarketContext ?? null,
+				entryMacroContext: journal.entryMacroContext ?? null,
 				autoTags: journal.autoTags,
 			});
 		},

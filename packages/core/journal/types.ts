@@ -1,5 +1,6 @@
 import type { ConfidenceTier, Direction } from "../decision/types.js";
 import type { ResultType } from "../label/types.js";
+import type { MacroContext } from "../macro/types.js";
 
 export interface SnapshotPattern {
 	eventId: string;
@@ -62,6 +63,7 @@ export interface TradeJournal {
 	entrySnapshot: EntrySnapshot;
 	exitMarketContext: MarketContext | null;
 	backtestComparison: BacktestComparison | null;
+	entryMacroContext: MacroContext | null;
 	autoTags: string[];
 	isPaper: boolean;
 	createdAt: Date;

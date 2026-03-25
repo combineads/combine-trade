@@ -34,6 +34,7 @@ export function assembleJournal(input: AssemblerInput): TradeJournal {
 		entrySnapshot: input.entrySnapshot,
 		exitMarketContext: input.exitMarketContext ?? null,
 		backtestComparison: input.backtestComparison ?? null,
+		entryMacroContext: null,
 		autoTags: [],
 		createdAt: new Date(),
 	};

@@ -41,7 +41,7 @@ export class AlertWorkerHandler {
 
 		// Format message
 		const ctx = await this.deps.loadAlertContext(eventId);
-		const message = formatAlertMessage(result, ctx);
+		const message = formatAlertMessage(result, ctx, mode);
 
 		// Send with retry
 		const sent = await this.sendWithRetry(message);

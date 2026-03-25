@@ -10,6 +10,11 @@ export function requiresOrder(mode: ExecutionMode): boolean {
 	return mode === "paper" || mode === "live";
 }
 
+/** Determines whether a mode is paper trading. */
+export function isPaperMode(mode: ExecutionMode | undefined): boolean {
+	return mode === "paper";
+}
+
 /** Per-strategy execution mode management with safety gates. */
 export class ExecutionModeService {
 	constructor(private readonly deps: ExecutionModeDeps) {}

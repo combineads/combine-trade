@@ -1,5 +1,5 @@
 // Order execution engine — exchange order submission and position tracking.
-export { ExecutionModeService, isActionable, requiresOrder } from "./mode.js";
+export { ExecutionModeService, isActionable, isPaperMode, requiresOrder } from "./mode.js";
 export {
 	buildOrder,
 	generateClientOrderId,

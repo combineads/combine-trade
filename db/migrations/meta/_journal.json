@@ -50,6 +50,13 @@
       "when": 1774413956410,
       "tag": "0006_trade_journals_macro_retrospective",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1774865600000,
+      "tag": "0007_add_is_paper_to_trade_journals",
+      "breakpoints": true
     }
   ]
 }

@@ -1,13 +1,21 @@
 import type { DecisionResult } from "@combine/core/decision";
+import { type ExecutionMode, isPaperMode } from "@combine/execution";
 import type { AlertContext, SlackMessage } from "./types.js";
 
+const PAPER_TAG = "[모의매매]";
+
 /** Format a decision result into a Slack Block Kit message. Throws if decision is PASS. */
-export function formatAlertMessage(result: DecisionResult, ctx: AlertContext): SlackMessage {
+export function formatAlertMessage(
+	result: DecisionResult,
+	ctx: AlertContext,
+	mode?: ExecutionMode,
+): SlackMessage {
 	if (result.decision === "PASS") {
 		throw new Error("Cannot format alert for PASS decision");
 	}
 
 	const winratePct = (result.statistics.winrate * 100).toFixed(1);
+	const prefix = isPaperMode(mode) ? `${PAPER_TAG} ` : "";
 
 	return {
 		blocks: [
@@ -15,7 +23,7 @@ export function formatAlertMessage(result: DecisionResult, ctx: AlertContext): S
 				type: "header",
 				text: {
 					type: "plain_text",
-					text: `${result.decision} ${ctx.symbol}`,
+					text: `${prefix}${result.decision} ${ctx.symbol}`,
 				},
 			},
 			{

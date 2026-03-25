@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { authUser } from "./better-auth.js";
 import { entrySnapshots } from "./entry-snapshots.js";
 import { orders } from "./orders.js";
@@ -43,6 +43,7 @@ export const tradeJournals = pgTable("trade_journals", {
 	entryMacroContext: jsonb("entry_macro_context"),
 	retrospectiveReport: text("retrospective_report"),
 	retrospectiveGeneratedAt: timestamp("retrospective_generated_at", { withTimezone: true }),
+	isPaper: boolean("is_paper").notNull().default(false),
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

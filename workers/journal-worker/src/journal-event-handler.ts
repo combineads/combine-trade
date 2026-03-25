@@ -28,10 +28,14 @@ export interface EventBus {
 	subscribe(eventType: string, handler: (event: unknown) => Promise<void>): EventBusSubscription;
 }
 
+export type ExecutionMode = "analysis" | "alert" | "paper" | "live";
+export type LoadExecutionMode = () => Promise<ExecutionMode>;
+
 export class JournalEventHandler {
 	constructor(
 		private eventBus: EventBus,
 		private storage: JournalStorage,
+		private loadExecutionMode?: LoadExecutionMode,
 	) {}
 
 	start(): EventBusSubscription {
@@ -42,6 +46,7 @@ export class JournalEventHandler {
 
 	async handleLabelReady(event: LabelReadyEvent): Promise<void> {
 		try {
+			const mode = this.loadExecutionMode ? await this.loadExecutionMode() : undefined;
 			const journal: TradeJournal = {
 				id: crypto.randomUUID(),
 				eventId: event.tradeId,
@@ -83,6 +88,7 @@ export class JournalEventHandler {
 				exitMarketContext: null,
 				backtestComparison: null,
 				autoTags: [],
+				isPaper: mode === "paper",
 				createdAt: new Date(),
 			};
 

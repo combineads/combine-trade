@@ -63,6 +63,7 @@ export interface TradeJournal {
 	exitMarketContext: MarketContext | null;
 	backtestComparison: BacktestComparison | null;
 	autoTags: string[];
+	isPaper: boolean;
 	createdAt: Date;
 }
 

@@ -29,3 +29,14 @@ export type {
 	BacktestResult,
 	StrategyOutput,
 } from "./types.js";
+
+export {
+	buildTableName,
+	runReVectorize,
+	type FeatureVector,
+	type MigrateTableFn,
+	type ReVectorizeConfig,
+	type ReVectorizeDeps,
+	type ReVectorizeResult,
+	type StoredEvent,
+} from "./re-vectorize.js";

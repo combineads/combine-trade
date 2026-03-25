@@ -6,6 +6,8 @@ import type { CandleClosedPayload } from "@combine/shared/event-bus/channels.js"
 import type { Channel, EventPublisher } from "@combine/shared/event-bus/types.js";
 import { CandleCollector } from "../src/collector.js";
 import type { GapRepairService, RepairResult } from "../src/gap-repair.js";
+import { SymbolSlot } from "../src/symbol-slot.js";
+import type { SymbolSlotDeps } from "../src/symbol-slot.js";
 
 function makeExchangeCandle(ts: number): ExchangeCandle {
 	return { timestamp: ts, open: 50000, high: 50100, low: 49900, close: 50050, volume: 100 };
@@ -117,8 +119,8 @@ describe("CandleCollector", () => {
 		await collector.start("binance", "BTCUSDT", "1m");
 
 		expect(publisher.published.length).toBe(1);
-		expect(publisher.published[0]!.channel).toBe("candle_closed");
-		const payload = publisher.published[0]!.payload as CandleClosedPayload;
+		expect(publisher.published[0]?.channel).toBe("candle_closed");
+		const payload = publisher.published[0]?.payload as CandleClosedPayload;
 		expect(payload.symbol).toBe("BTCUSDT");
 	});
 
@@ -134,8 +136,8 @@ describe("CandleCollector", () => {
 		await collector.start("binance", "BTCUSDT", "1m");
 
 		expect(repo.upserted.length).toBe(1);
-		expect(typeof repo.upserted[0]!.candle.open).toBe("string");
-		expect(repo.upserted[0]!.candle.open).toBe("50000");
+		expect(typeof repo.upserted[0]?.candle.open).toBe("string");
+		expect(repo.upserted[0]?.candle.open).toBe("50000");
 	});
 
 	test("stop halts the collector", async () => {
@@ -183,6 +185,134 @@ describe("CandleCollector", () => {
 
 		await collector.start("binance", "BTCUSDT", "1m");
 		expect(collector.lastCandleTime).not.toBeNull();
-		expect(collector.lastCandleTime!.getTime()).toBe(BASE);
+		expect(collector.lastCandleTime?.getTime()).toBe(BASE);
+	});
+});
+
+describe("CandleCollector multi-symbol", () => {
+	test("start with two symbols spawns two independent slots", async () => {
+		const slotsStarted: string[] = [];
+
+		const adapter = new MockExchangeAdapter({
+			candles: [makeExchangeCandle(BASE)],
+		});
+		const repo = createMockRepository();
+		const gapRepair = createMockGapRepair();
+		const publisher = createMockPublisher();
+
+		// Spy factory: track which symbols were started
+		const collector = new CandleCollector(
+			{ adapter, repository: repo, gapRepair, publisher },
+			{
+				createSlot: (deps: SymbolSlotDeps) => {
+					const slot = new SymbolSlot(deps);
+					const origStart = slot.start.bind(slot);
+					slot.start = async (exchange: string, symbol: string, timeframe: string) => {
+						slotsStarted.push(symbol);
+						return origStart(exchange, symbol, timeframe);
+					};
+					return slot;
+				},
+			},
+		);
+
+		await collector.startMulti("binance", ["BTCUSDT", "ETHUSDT"], "1m");
+
+		expect(slotsStarted).toContain("BTCUSDT");
+		expect(slotsStarted).toContain("ETHUSDT");
+		expect(slotsStarted.length).toBe(2);
+	});
+
+	test("slot A error does not stop slot B from publishing", async () => {
+		const publisher = createMockPublisher();
+		const repo = createMockRepository();
+		const gapRepair = createMockGapRepair();
+
+		// Adapter A always throws; Adapter B returns one candle then slot B auto-stops
+		const adapterA = new MockExchangeAdapter({ candles: [] });
+		const adapterB = new MockExchangeAdapter({ candles: [makeExchangeCandle(BASE)] });
+
+		adapterA.fetchOHLCV = async () => {
+			throw new Error("WS connection failed for BTCUSDT");
+		};
+
+		const slotA = new SymbolSlot({ adapter: adapterA, repository: repo, gapRepair, publisher });
+		const slotB = new SymbolSlot({ adapter: adapterB, repository: repo, gapRepair, publisher });
+
+		// slotB finishes after one cycle; stop slotA immediately after slotB completes
+		const slotBPromise = slotB.start("binance", "ETHUSDT", "1m");
+		const slotAPromise = slotA.start("binance", "BTCUSDT", "1m");
+
+		// Wait for slotB to complete on its own, then stop slotA
+		await slotBPromise;
+		await slotA.stop();
+		await slotAPromise;
+
+		// slotB should have published regardless of slotA's error
+		const ethPublished = publisher.published.filter((p) => {
+			const payload = p.payload as CandleClosedPayload;
+			return payload.symbol === "ETHUSDT";
+		});
+		expect(ethPublished.length).toBeGreaterThan(0);
+	});
+
+	test("each slot publishes candle_closed with its own symbol", async () => {
+		const publisher = createMockPublisher();
+		const repo = createMockRepository();
+		const gapRepair = createMockGapRepair();
+
+		const adapterBTC = new MockExchangeAdapter({ candles: [makeExchangeCandle(BASE)] });
+		const adapterETH = new MockExchangeAdapter({ candles: [makeExchangeCandle(BASE + 1000)] });
+
+		const slotBTC = new SymbolSlot({ adapter: adapterBTC, repository: repo, gapRepair, publisher });
+		const slotETH = new SymbolSlot({ adapter: adapterETH, repository: repo, gapRepair, publisher });
+
+		await Promise.allSettled([
+			slotBTC.start("binance", "BTCUSDT", "1m"),
+			slotETH.start("binance", "ETHUSDT", "1m"),
+		]);
+
+		const btcPublished = publisher.published.filter(
+			(p) => (p.payload as CandleClosedPayload).symbol === "BTCUSDT",
+		);
+		const ethPublished = publisher.published.filter(
+			(p) => (p.payload as CandleClosedPayload).symbol === "ETHUSDT",
+		);
+
+		expect(btcPublished.length).toBe(1);
+		expect(ethPublished.length).toBe(1);
+	});
+
+	test("stopMulti shuts down all slots cleanly", async () => {
+		const publisher = createMockPublisher();
+		const repo = createMockRepository();
+		const gapRepair = createMockGapRepair();
+		const adapter = new MockExchangeAdapter({ candles: [] });
+
+		const collector = new CandleCollector({ adapter, repository: repo, gapRepair, publisher });
+
+		const startPromise = collector.startMulti("binance", ["BTCUSDT", "ETHUSDT"], "1m");
+		await collector.stop();
+		await startPromise;
+
+		expect(publisher.published.length).toBe(0);
+	});
+
+	test("health returns per-symbol status object", async () => {
+		const publisher = createMockPublisher();
+		const repo = createMockRepository();
+		const gapRepair = createMockGapRepair();
+		const adapter = new MockExchangeAdapter({ candles: [makeExchangeCandle(BASE)] });
+
+		const collector = new CandleCollector({ adapter, repository: repo, gapRepair, publisher });
+		await collector.startMulti("binance", ["BTCUSDT", "ETHUSDT"], "1m");
+
+		const health = collector.symbolsHealth;
+		expect(health.BTCUSDT).toBeDefined();
+		expect(health.ETHUSDT).toBeDefined();
+		expect(health.BTCUSDT?.lastCandleTime).not.toBeNull();
+		expect(health.ETHUSDT?.lastCandleTime).not.toBeNull();
+		expect(typeof health.BTCUSDT?.backoffMs).toBe("number");
+		expect(typeof health.BTCUSDT?.connected).toBe("boolean");
 	});
 });

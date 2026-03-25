@@ -6,6 +6,8 @@ import { Channels } from "@combine/shared/event-bus/channels.js";
 import type { CandleClosedPayload } from "@combine/shared/event-bus/channels.js";
 import type { EventPublisher } from "@combine/shared/event-bus/types.js";
 import type { GapRepairService } from "./gap-repair.js";
+import { SymbolSlot } from "./symbol-slot.js";
+import type { SymbolHealthStatus, SymbolSlotDeps } from "./symbol-slot.js";
 
 const logger = createLogger("candle-collector");
 
@@ -49,9 +51,17 @@ export interface CandleCollectorDeps {
 	publisher: EventPublisher;
 }
 
+/** Options for injecting a custom slot factory (used in tests) */
+export interface CandleCollectorOptions {
+	createSlot?: (deps: SymbolSlotDeps) => SymbolSlot;
+}
+
 /**
- * Candle collector: startup recovery → WebSocket loop → NOTIFY on close.
- * Injectable for testing.
+ * CandleCollector: manages per-symbol SymbolSlot instances concurrently.
+ *
+ * Single-symbol mode (`start`) is preserved for backward compatibility.
+ * Multi-symbol mode (`startMulti`) spawns one SymbolSlot per symbol and
+ * uses Promise.allSettled so one slot's failure does not affect others.
  */
 export class CandleCollector {
 	private running = false;
@@ -59,7 +69,17 @@ export class CandleCollector {
 	private _lastCandleTime: Date | null = null;
 	private _gapRepairStatus: "pending" | "complete" | "incomplete" = "pending";
 
-	constructor(private readonly deps: CandleCollectorDeps) {}
+	/** Active slots keyed by symbol (populated by startMulti) */
+	private slots = new Map<string, SymbolSlot>();
+
+	private readonly createSlot: (deps: SymbolSlotDeps) => SymbolSlot;
+
+	constructor(
+		private readonly deps: CandleCollectorDeps,
+		options: CandleCollectorOptions = {},
+	) {
+		this.createSlot = options.createSlot ?? ((d) => new SymbolSlot(d));
+	}
 
 	get lastCandleTime(): Date | null {
 		return this._lastCandleTime;
@@ -69,6 +89,22 @@ export class CandleCollector {
 		return this._gapRepairStatus;
 	}
 
+	/**
+	 * Per-symbol health status for multi-symbol mode.
+	 * Returns a snapshot of each slot's status keyed by symbol.
+	 */
+	get symbolsHealth(): Record<string, SymbolHealthStatus> {
+		const result: Record<string, SymbolHealthStatus> = {};
+		for (const [symbol, slot] of this.slots) {
+			result[symbol] = slot.healthStatus;
+		}
+		return result;
+	}
+
+	/**
+	 * Single-symbol start — preserved for backward compatibility.
+	 * Delegates to a single SymbolSlot internally.
+	 */
 	async start(exchange: string, symbol: string, timeframe: Timeframe): Promise<void> {
 		this.running = true;
 
@@ -79,8 +115,52 @@ export class CandleCollector {
 		await this.runWebSocketLoop(exchange, symbol, timeframe);
 	}
 
+	/**
+	 * Multi-symbol start — spawns one SymbolSlot per symbol concurrently.
+	 * Promise.allSettled ensures a failing slot does not block or abort others.
+	 * All slots share the same publisher/repository (one DB connection pool).
+	 */
+	async startMulti(exchange: string, symbols: string[], timeframe: Timeframe): Promise<void> {
+		this.running = true;
+		this.slots.clear();
+
+		const slotDeps: SymbolSlotDeps = {
+			adapter: this.deps.adapter,
+			repository: this.deps.repository,
+			gapRepair: this.deps.gapRepair,
+			publisher: this.deps.publisher,
+		};
+
+		for (const symbol of symbols) {
+			const slot = this.createSlot(slotDeps);
+			this.slots.set(symbol, slot);
+		}
+
+		const results = await Promise.allSettled(
+			[...this.slots.entries()].map(([symbol, slot]) =>
+				slot.start(exchange, symbol, timeframe).catch((err: Error) => {
+					logger.error({ symbol, error: err.message }, "Slot failed — isolated from other slots");
+					throw err;
+				}),
+			),
+		);
+
+		// Log any slot failures without propagating
+		for (const result of results) {
+			if (result.status === "rejected") {
+				logger.warn({ reason: String(result.reason) }, "A symbol slot ended with error");
+			}
+		}
+	}
+
 	async stop(): Promise<void> {
 		this.running = false;
+
+		// Stop all multi-symbol slots concurrently
+		if (this.slots.size > 0) {
+			await Promise.allSettled([...this.slots.values()].map((slot) => slot.stop()));
+			this.slots.clear();
+		}
 	}
 
 	private async runStartupRecovery(

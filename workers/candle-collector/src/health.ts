@@ -9,6 +9,7 @@ export function startHealthServer(collector: CandleCollector, port = 9001) {
 				status: "ok",
 				lastCandleTime: collector.lastCandleTime?.toISOString() ?? null,
 				gapRepairStatus: collector.gapRepairStatus,
+				symbols: collector.symbolsHealth,
 			});
 		},
 	});

@@ -231,14 +231,13 @@ export {
 
 // Views — Charts (TradingView widgets)
 export {
-	TickerTapeWidget,
-	MarketOverviewWidget,
-	type TradingViewTheme,
-	type TickerTapeSymbol,
-	type TickerTapeWidgetProps,
-	type MarketOverviewTab,
-	type MarketOverviewWidgetProps,
-} from "./views/charts/ticker-tape-widget";
+	TimelineWidget,
+	type TimelineWidgetProps,
+} from "./views/charts/timeline-widget";
+export {
+	EconomicCalendarWidget,
+	type EconomicCalendarWidgetProps,
+} from "./views/charts/economic-calendar-widget";
 
 // Hooks — TradingView Widget
 export {

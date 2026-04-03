@@ -1,0 +1,40 @@
+# 패키지 의존성
+node_modules/
+vendor/
+.venv/
+
+# 락 파일 (451줄, 읽을 필요 없음)
+bun.lock
+
+# 빌드 결과물
+dist/
+build/
+*.min.js
+*.min.css
+
+# 바이너리 및 미디어
+*.png
+*.jpg
+*.gif
+*.mp4
+*.pdf
+*.ico
+*.svg
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# 로그 및 임시 파일
+*.log
+tmp/
+.cache/
+
+# Drizzle 마이그레이션 (자동 생성)
+drizzle/meta/
+
+# Pencil 디자인 파일 (MCP 도구로만 접근)
+*.pen
+
+# 자동 생성 문서
+docs/generated/

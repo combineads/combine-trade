@@ -1,0 +1,46 @@
+{
+  "name": "combine-trade",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Automated crypto futures trading system implementing Kim Jikseon's Double-BB strategy",
+  "module": "src/daemon.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/daemon.ts",
+    "build": "vite build",
+    "test": "bun test",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "migrate": "bun src/db/migrate.ts",
+    "seed": "bun run scripts/seed.ts",
+    "check-layers": "bun run scripts/check-layers.ts",
+    "daemon": "bun run src/daemon.ts"
+  },
+  "dependencies": {
+    "typescript": "^6.0.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router": "^7.14.0",
+    "zustand": "^5.0.12",
+    "@tanstack/react-query": "^5.96.1",
+    "@ixjb94/indicators": "^1.2.4",
+    "ccxt": "^4.5.46",
+    "decimal.js": "^10.6.0",
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.8",
+    "pgvector": "^0.2.1",
+    "hono": "^4.12.10",
+    "zod": "^4.3.6",
+    "jsonwebtoken": "^9.0.3",
+    "@slack/webhook": "^7.0.8"
+  },
+  "devDependencies": {
+    "vite": "^8.0.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "tailwindcss": "^4.2.2",
+    "drizzle-kit": "^0.31.10",
+    "@biomejs/biome": "^2.4.10",
+    "@types/jsonwebtoken": "^9.0.10"
+  }
+}

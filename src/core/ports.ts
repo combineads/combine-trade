@@ -35,10 +35,10 @@ export type CreateOrderParams = {
   symbol: string;
   side: OrderSide;
   size: Decimal;
-  /** Limit price — omit for market orders */
+  /** Limit price for limit orders; trigger/stop price for stop_market orders */
   price?: Decimal;
   stopLoss?: Decimal;
-  type: "market" | "limit";
+  type: "market" | "limit" | "stop_market";
   reduceOnly?: boolean;
 };
 
@@ -79,6 +79,7 @@ export type ExchangeAdapter = {
   fetchOrder(orderId: string, symbol: string): Promise<OrderResult>;
   watchOHLCV(symbol: string, timeframe: string, callback: OHLCVCallback): Promise<Unsubscribe>;
   getExchangeInfo(symbol: string): Promise<ExchangeSymbolInfo>;
+  setLeverage(leverage: number, symbol: string): Promise<void>;
 };
 
 // ---------------------------------------------------------------------------

@@ -151,28 +151,32 @@ describe("core/constants — Supported symbols", () => {
 // ---------------------------------------------------------------------------
 
 describe("core/constants — compile-time immutability", () => {
-  it("BB20_CONFIG properties cannot be reassigned", () => {
-    // @ts-expect-error — cannot assign to readonly property
-    BB20_CONFIG.length = 50;
-    expect(true).toBe(true);
+  it("BB20_CONFIG properties cannot be reassigned (throws at runtime via Object.freeze)", () => {
+    expect(() => {
+      // @ts-expect-error — cannot assign to readonly property
+      BB20_CONFIG.length = 50;
+    }).toThrow();
   });
 
-  it("BB4_CONFIG properties cannot be reassigned", () => {
-    // @ts-expect-error — cannot assign to readonly property
-    BB4_CONFIG.stddev = 2;
-    expect(true).toBe(true);
+  it("BB4_CONFIG properties cannot be reassigned (throws at runtime via Object.freeze)", () => {
+    expect(() => {
+      // @ts-expect-error — cannot assign to readonly property
+      BB4_CONFIG.stddev = 2;
+    }).toThrow();
   });
 
-  it("MA_PERIODS elements cannot be reassigned", () => {
-    // @ts-expect-error — cannot assign to readonly tuple index
-    MA_PERIODS[0] = 50;
-    expect(true).toBe(true);
+  it("MA_PERIODS elements cannot be reassigned (throws at runtime via Object.freeze)", () => {
+    expect(() => {
+      // @ts-expect-error — cannot assign to readonly tuple index
+      MA_PERIODS[0] = 50;
+    }).toThrow();
   });
 
-  it("SUPPORTED_EXCHANGES elements cannot be reassigned", () => {
-    // @ts-expect-error — cannot assign to readonly tuple index
-    SUPPORTED_EXCHANGES[0] = "kraken";
-    expect(true).toBe(true);
+  it("SUPPORTED_EXCHANGES elements cannot be reassigned (throws at runtime via Object.freeze)", () => {
+    expect(() => {
+      // @ts-expect-error — cannot assign to readonly tuple index
+      SUPPORTED_EXCHANGES[0] = "kraken";
+    }).toThrow();
   });
 
   it("VECTOR_DIM has literal type 202 (not widened to number)", () => {

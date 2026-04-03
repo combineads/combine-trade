@@ -1,0 +1,135 @@
+{
+  "project_name": "combine-trade",
+  "language": "en",
+  "one_line_pitch": "Automated crypto futures trading system implementing Kim Jikseon's Double-BB strategy with KNN-based statistical validation across multiple exchanges.",
+  "problem": "Manual execution of the Double-BB trading strategy is subject to human emotion, missed entries, inconsistent position sizing, and inability to monitor 24/7. The system automates direction filtering (1D), context detection (1H), precise entry (5M/1M), and risk management across BTCUSDT and XAUTUSDT on 4 exchanges.",
+  "target_users": [
+    "Single operator (설계자 병화) running the bot with 300K~30M KRW capital"
+  ],
+  "platforms": [
+    "daemon",
+    "web",
+    "api"
+  ],
+  "primary_stack": {
+    "runtime": "Bun + TypeScript",
+    "frontend": "React + Vite + Zustand + TanStack Query",
+    "database": "PostgreSQL + pgvector (HNSW)",
+    "exchange": "CCXT (Binance, OKX, Bitget, MEXC)",
+    "precision": "Decimal.js",
+    "alerts": "Slack Webhook",
+    "economic_data": "Investing.com API"
+  },
+  "core_capabilities": [
+    "Multi-timeframe candle collection (1D/1H/5M/1M) via WebSocket per exchange",
+    "Daily direction filter (LONG_ONLY / SHORT_ONLY / NEUTRAL)",
+    "Trade block system (market open, 3-star economic events, funding rate, manual)",
+    "WATCHING state detection on 1H close (squeeze breakout, S/R confluence, BB4 touch)",
+    "Evidence Gate: BB4 touch detection with Double-B vs One-B classification",
+    "Safety Gate: wick ratio, box range center, abnormal candle filters",
+    "202-dimensional vectorization with Median/IQR normalization",
+    "KNN decision engine (cosine/L2, time decay, A-grade signal boost)",
+    "Dynamic position sizing with Decimal.js precision",
+    "3-stage exit (TP1→TP2→trailing) with per-ticket independent management",
+    "Pyramiding (add-only, max 2, risk-free prerequisite)",
+    "Multi-exchange ExchangeAdapter abstraction (entry+SL, partial close, edit SL)",
+    "Reconciliation worker (1-min cycle, DB↔exchange sync, panic close)",
+    "Crash recovery (restore positions or panic close unknowns)",
+    "Loss limit (daily 10%, session 3, hourly 2/1)",
+    "Labeling system (WIN/LOSS/TIME_EXIT with full metadata)",
+    "Execution modes (analysis/alert/live) switchable via web UI",
+    "Slack alerts (entry, exit, streak, slippage, loss limit)",
+    "Web UI dashboard (FSM state, positions, statistics, mode toggle)",
+    "Backtesting (same code path as live, WFO included)",
+    "Walk-Forward Optimization (6mo IS / 2mo OOS / 1mo roll)"
+  ],
+  "non_goals": [
+    "Multi-user support",
+    "Spot trading",
+    "Strategies other than Double-BB",
+    "Mobile native app"
+  ],
+  "constraints": [
+    "Single Bun process (no microservices)",
+    "Decimal.js for all monetary calculations (no float)",
+    "Structural anchors immutable: BB20(20,2), BB4(4,4), MA periods(20/60/120), normalization method",
+    "Candle collection per exchange (same symbol has different prices); orders routed to corresponding exchange",
+    "Max leverage 38x hard cap",
+    "4 exchanges × 2 symbols = 8 trading pairs max",
+    "Rate limits: Binance 1200/min, OKX 60/2s, Bitget 20/s, MEXC 20/s",
+    "XAUTUSDT futures availability unconfirmed on all 4 exchanges",
+    "Single-user password → JWT (HttpOnly cookie) for web UI"
+  ],
+  "quality_attributes": {
+    "performance": "Signal detection within 1 second of candle close. Order placement within 2 seconds.",
+    "reliability": "SL always registered on exchange (survives daemon crash). Reconciliation catches all orphaned positions within 1 minute. 99%+ execution match rate.",
+    "security": "API keys encrypted at rest, never logged. Single-user auth with JWT HttpOnly cookies. No PII beyond trading data.",
+    "developer_experience": "Single bun daemon process. Backtest uses identical code path. Config-driven tuning without code changes."
+  },
+  "repo_commands": {
+    "install": "bun install",
+    "dev": "bun run dev",
+    "test": "bun test",
+    "lint": "bun run lint",
+    "typecheck": "bun run typecheck",
+    "build": "bun run build",
+    "daemon": "bun run daemon",
+    "backtest": "bun run backtest"
+  },
+  "assumptions": [
+    "Each exchange provides WebSocket kline streams for all required timeframes (Binance first, then OKX/Bitget/MEXC)",
+    "CCXT abstracts enough exchange differences that ExchangeAdapter layer is thin",
+    "pgvector HNSW is sufficient for 202-dim KNN with ~100K vectors per symbol",
+    "Investing.com API (or scraping) can provide 3-star economic event schedule reliably",
+    "Bun WebSocket client is production-stable for 24/7 operation",
+    "A single Bun process can handle 2 symbols × N exchanges × 4 timeframes + reconciliation + web server",
+    "MEXC may need 2-step order flow (entry then SL separately) — confirmed during development"
+  ],
+  "operation_modes": [
+    "analysis (signal recording only)",
+    "alert (real orders + Slack alerts)",
+    "live (real orders, no alerts)"
+  ],
+  "pipeline_modules": [
+    "candle-collector",
+    "direction-filter",
+    "trade-block-manager",
+    "watching-detector",
+    "evidence-gate",
+    "safety-gate",
+    "vectorizer",
+    "knn-engine",
+    "position-sizer",
+    "order-executor",
+    "exit-manager",
+    "reconciliation-worker",
+    "labeling-engine",
+    "slack-notifier",
+    "web-api",
+    "web-ui",
+    "backtester",
+    "wfo-optimizer"
+  ],
+  "architecture": {
+    "pattern": "Pipeline Module Monolith",
+    "layers": 10,
+    "layer_rule": "Module at layer N may only import from layers 0..N-1",
+    "enforcement": "eslint-plugin-boundaries or custom CI script",
+    "modules": [
+      "core (L0)", "db (L1)", "config (L1)", "indicators (L2)", "exchanges (L2)",
+      "candles (L3)", "vectors (L3)", "filters (L4)", "knn (L4)",
+      "signals (L5)", "positions (L5)", "limits (L5)",
+      "orders (L6)", "exits (L6)", "labeling (L6)",
+      "reconciliation (L7)", "notifications (L7)",
+      "api (L8)", "backtest (L8)", "web (standalone)", "daemon (L9)"
+    ],
+    "adrs": [
+      "ADR-001-pipeline-monolith",
+      "ADR-002-single-process-reconciliation",
+      "ADR-003-exchange-rollout"
+    ],
+    "exchange_rollout": "Binance first → OKX → Bitget/MEXC"
+  },
+  "epic_count_estimate": "8-12",
+  "task_size": "30min-3hr"
+}

@@ -13,8 +13,12 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { corsMiddleware, createAuthGuard, errorHandler, queryTimeout } from "@/api/middleware";
+import { createConfigRoutes } from "@/api/routes/config";
+import { createControlRoutes } from "@/api/routes/control";
+import { createEventsRoutes } from "@/api/routes/events";
 import { createHealthRoutes } from "@/api/routes/health";
 import { createPositionsRoutes } from "@/api/routes/positions";
+import { createSignalsRoutes } from "@/api/routes/signals";
 import { createStatsRoutes } from "@/api/routes/stats";
 import { createSymbolStatesRoutes } from "@/api/routes/symbol-states";
 import { createTicketRoutes } from "@/api/routes/tickets";
@@ -45,6 +49,10 @@ function createApiRouter(routeDeps?: RouteDeps): Hono {
     api.route("/", createPositionsRoutes(routeDeps));
     api.route("/", createTicketRoutes(routeDeps));
     api.route("/", createStatsRoutes(routeDeps));
+    api.route("/", createSignalsRoutes(routeDeps));
+    api.route("/", createEventsRoutes(routeDeps));
+    api.route("/", createConfigRoutes(routeDeps));
+    api.route("/", createControlRoutes(routeDeps));
   }
 
   // Catch-all: any /api/* path that doesn't match a registered route → 404 JSON

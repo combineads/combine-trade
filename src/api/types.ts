@@ -4,8 +4,12 @@
  * Layer: L8 (api) — may import L0-L7.
  */
 
+import type { ConfigDeps } from "@/api/routes/config";
+import type { ControlDeps } from "@/api/routes/control";
+import type { EventsDeps } from "@/api/routes/events";
 import type { HealthDeps } from "@/api/routes/health";
 import type { PositionsDeps } from "@/api/routes/positions";
+import type { SignalsDeps } from "@/api/routes/signals";
 import type { StatsDeps } from "@/api/routes/stats";
 import type { SymbolStatesDeps } from "@/api/routes/symbol-states";
 import type { TicketsDeps } from "@/api/routes/tickets";
@@ -19,7 +23,15 @@ import type { Logger } from "@/core/logger";
  * Combined dependency interface for all dashboard route modules.
  * Each route's deps are merged into a single flat interface.
  */
-export type RouteDeps = HealthDeps & SymbolStatesDeps & PositionsDeps & TicketsDeps & StatsDeps;
+export type RouteDeps = HealthDeps &
+  SymbolStatesDeps &
+  PositionsDeps &
+  TicketsDeps &
+  StatsDeps &
+  SignalsDeps &
+  EventsDeps &
+  ConfigDeps &
+  ControlDeps;
 
 // ---------------------------------------------------------------------------
 // ApiServerDeps — everything the API server needs, injected from outside

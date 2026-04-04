@@ -13,9 +13,9 @@ import { symbolStateTable } from "@/db/schema";
  *
  * Rules (from PRODUCT.md / T-05-004):
  * - MA20 slope = (ma20Today - ma20Yesterday)
- * - slope > 0  AND close > open → LONG_ONLY
- * - slope < 0  AND close < open → SHORT_ONLY
- * - Conditions disagree, slope = 0, or close = open → NEUTRAL
+ * - slope > 0  AND close >= open → LONG_ONLY
+ * - slope < 0  AND close <= open → SHORT_ONLY
+ * - Conditions disagree or slope = 0 → NEUTRAL
  *
  * @param todayClose    - Today's closing price (Decimal)
  * @param dailyOpen     - Today's opening price (Decimal)
@@ -34,8 +34,8 @@ export function determineDailyBias(
   const slopePositive = slope.isPositive() && !slope.isZero();
   const slopeNegative = slope.isNegative();
 
-  const closeAboveOpen = todayClose.greaterThan(dailyOpen);
-  const closeBelowOpen = todayClose.lessThan(dailyOpen);
+  const closeAboveOpen = todayClose.greaterThanOrEqualTo(dailyOpen);
+  const closeBelowOpen = todayClose.lessThanOrEqualTo(dailyOpen);
 
   if (slopePositive && closeAboveOpen) {
     return "LONG_ONLY";

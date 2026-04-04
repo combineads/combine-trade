@@ -87,10 +87,32 @@ describe("daily-direction — determineDailyBias", () => {
     expect(result).toBe("NEUTRAL");
   });
 
-  it("returns NEUTRAL when close equals open (no bullish/bearish bias)", () => {
+  it("returns LONG_ONLY when close equals open and MA20 slope is positive", () => {
     const todayClose = new Decimal("100");
     const dailyOpen = new Decimal("100");
     const ma20Today = new Decimal("52");
+    const ma20Yesterday = new Decimal("50");
+
+    const result = determineDailyBias(todayClose, dailyOpen, ma20Today, ma20Yesterday);
+
+    expect(result).toBe("LONG_ONLY");
+  });
+
+  it("returns SHORT_ONLY when close equals open and MA20 slope is negative", () => {
+    const todayClose = new Decimal("100");
+    const dailyOpen = new Decimal("100");
+    const ma20Today = new Decimal("48");
+    const ma20Yesterday = new Decimal("50");
+
+    const result = determineDailyBias(todayClose, dailyOpen, ma20Today, ma20Yesterday);
+
+    expect(result).toBe("SHORT_ONLY");
+  });
+
+  it("returns NEUTRAL when close equals open and MA20 slope is zero", () => {
+    const todayClose = new Decimal("100");
+    const dailyOpen = new Decimal("100");
+    const ma20Today = new Decimal("50");
     const ma20Yesterday = new Decimal("50");
 
     const result = determineDailyBias(todayClose, dailyOpen, ma20Today, ma20Yesterday);

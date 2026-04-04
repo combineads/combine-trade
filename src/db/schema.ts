@@ -155,3 +155,83 @@ export const candleTable = pgTable(
 
 export type CandleRow = InferSelectModel<typeof candleTable>;
 export type NewCandleRow = InferInsertModel<typeof candleTable>;
+
+// ---------------------------------------------------------------------------
+// trade_block table
+// ---------------------------------------------------------------------------
+
+export const tradeBlockTable = pgTable(
+  "trade_block",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    block_type: text("block_type").notNull(),
+    start_time: timestamp("start_time", { withTimezone: true, mode: "date" }).notNull(),
+    end_time: timestamp("end_time", { withTimezone: true, mode: "date" }).notNull(),
+    reason: text("reason"),
+    is_recurring: boolean("is_recurring").notNull().default(false),
+    recurrence_rule: jsonb("recurrence_rule"),
+    source_data: jsonb("source_data"),
+    created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check(
+      "trade_block_block_type_check",
+      sql`${t.block_type} IN ('ECONOMIC', 'FUNDING', 'MANUAL', 'MARKET_OPEN')`,
+    ),
+    index("trade_block_recurring_idx").on(t.is_recurring).where(sql`${t.is_recurring} = true`),
+    index("trade_block_onetime_idx")
+      .on(t.start_time, t.end_time)
+      .where(sql`${t.is_recurring} = false`),
+  ],
+);
+
+export type TradeBlockRow = InferSelectModel<typeof tradeBlockTable>;
+export type NewTradeBlockRow = InferInsertModel<typeof tradeBlockTable>;
+
+// ---------------------------------------------------------------------------
+// watch_session table
+// ---------------------------------------------------------------------------
+
+export const watchSessionTable = pgTable(
+  "watch_session",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    symbol: text("symbol").notNull(),
+    exchange: text("exchange").notNull(),
+    detection_type: text("detection_type").notNull(),
+    direction: text("direction").notNull(),
+    tp1_price: numeric("tp1_price"),
+    tp2_price: numeric("tp2_price"),
+    detected_at: timestamp("detected_at", { withTimezone: true, mode: "date" }).notNull(),
+    invalidated_at: timestamp("invalidated_at", { withTimezone: true, mode: "date" }),
+    invalidation_reason: text("invalidation_reason"),
+    context_data: jsonb("context_data"),
+    created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.symbol, t.exchange],
+      foreignColumns: [symbolTable.symbol, symbolTable.exchange],
+    }).onDelete("restrict"),
+    check(
+      "watch_session_detection_type_check",
+      sql`${t.detection_type} IN ('SQUEEZE_BREAKOUT', 'SR_CONFLUENCE', 'BB4_TOUCH')`,
+    ),
+    check("watch_session_direction_check", sql`${t.direction} IN ('LONG', 'SHORT')`),
+    uniqueIndex("watch_session_active_unique_idx")
+      .on(t.symbol, t.exchange)
+      .where(sql`${t.invalidated_at} IS NULL`),
+    index("watch_session_symbol_exchange_invalidated_idx").on(
+      t.symbol,
+      t.exchange,
+      t.invalidated_at,
+    ),
+  ],
+);
+
+export type WatchSessionRow = InferSelectModel<typeof watchSessionTable>;
+export type NewWatchSessionRow = InferInsertModel<typeof watchSessionTable>;

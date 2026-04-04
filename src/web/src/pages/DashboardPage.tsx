@@ -4,6 +4,7 @@ import { RecentTrades } from "../components/dashboard/RecentTrades.tsx";
 import { SymbolCard, SymbolCardSkeleton } from "../components/dashboard/SymbolCard.tsx";
 import { SystemStatusRow } from "../components/dashboard/SystemStatusRow.tsx";
 import { TodayPerformance } from "../components/dashboard/TodayPerformance.tsx";
+import { TransferHistory } from "../components/dashboard/TransferHistory.tsx";
 import { useSymbolStates } from "../hooks/useApi.ts";
 
 export function DashboardPage() {
@@ -57,6 +58,7 @@ export function DashboardPage() {
           <TodayPerformance />
           <RecentTrades />
           <RecentSignals />
+          <TransferHistory />
         </div>
       </div>
     </main>

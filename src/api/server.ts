@@ -13,7 +13,12 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { corsMiddleware, createAuthGuard, errorHandler, queryTimeout } from "@/api/middleware";
-import type { ApiServerDeps, ApiServerHandle } from "@/api/types";
+import { createHealthRoutes } from "@/api/routes/health";
+import { createPositionsRoutes } from "@/api/routes/positions";
+import { createStatsRoutes } from "@/api/routes/stats";
+import { createSymbolStatesRoutes } from "@/api/routes/symbol-states";
+import { createTicketRoutes } from "@/api/routes/tickets";
+import type { ApiServerDeps, ApiServerHandle, RouteDeps } from "@/api/types";
 
 // ---------------------------------------------------------------------------
 // Default configuration
@@ -27,11 +32,20 @@ const DEFAULT_STATIC_DIR = "./public";
 // ---------------------------------------------------------------------------
 
 /**
- * Creates the /api sub-router. Individual route modules will be mounted
- * here in later tasks (T-11-004 onwards).
+ * Creates the /api sub-router. Mounts dashboard route modules when routeDeps
+ * is provided; otherwise, returns a bare router with only the 404 catch-all.
  */
-function createApiRouter(): Hono {
+function createApiRouter(routeDeps?: RouteDeps): Hono {
   const api = new Hono();
+
+  // Mount dashboard routes when dependencies are provided
+  if (routeDeps !== undefined) {
+    api.route("/", createHealthRoutes(routeDeps));
+    api.route("/", createSymbolStatesRoutes(routeDeps));
+    api.route("/", createPositionsRoutes(routeDeps));
+    api.route("/", createTicketRoutes(routeDeps));
+    api.route("/", createStatsRoutes(routeDeps));
+  }
 
   // Catch-all: any /api/* path that doesn't match a registered route → 404 JSON
   api.all("/*", (c) => {
@@ -63,6 +77,7 @@ export function createApiServer(deps: ApiServerDeps): ApiServerHandle {
     staticDir = DEFAULT_STATIC_DIR,
     jwtSecret,
     queryTimeoutMs = 5000,
+    routeDeps,
   } = deps;
 
   const app = new Hono();
@@ -76,7 +91,7 @@ export function createApiServer(deps: ApiServerDeps): ApiServerHandle {
   app.use("*", queryTimeout(queryTimeoutMs));
 
   // ---- Mount /api/* routes ----
-  const apiRouter = createApiRouter();
+  const apiRouter = createApiRouter(routeDeps);
   app.route("/api", apiRouter);
 
   // ---- Static file serving from ./public ----

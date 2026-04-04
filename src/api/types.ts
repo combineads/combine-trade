@@ -4,7 +4,22 @@
  * Layer: L8 (api) — may import L0-L7.
  */
 
+import type { HealthDeps } from "@/api/routes/health";
+import type { PositionsDeps } from "@/api/routes/positions";
+import type { StatsDeps } from "@/api/routes/stats";
+import type { SymbolStatesDeps } from "@/api/routes/symbol-states";
+import type { TicketsDeps } from "@/api/routes/tickets";
 import type { Logger } from "@/core/logger";
+
+// ---------------------------------------------------------------------------
+// RouteDeps — combined dependency interface for all route modules
+// ---------------------------------------------------------------------------
+
+/**
+ * Combined dependency interface for all dashboard route modules.
+ * Each route's deps are merged into a single flat interface.
+ */
+export type RouteDeps = HealthDeps & SymbolStatesDeps & PositionsDeps & TicketsDeps & StatsDeps;
 
 // ---------------------------------------------------------------------------
 // ApiServerDeps — everything the API server needs, injected from outside
@@ -30,6 +45,9 @@ export type ApiServerDeps = {
 
   /** Query timeout in milliseconds (default: 5000) */
   queryTimeoutMs?: number;
+
+  /** Route dependencies for dashboard endpoints. When omitted, routes are not mounted. */
+  routeDeps?: RouteDeps;
 };
 
 // ---------------------------------------------------------------------------

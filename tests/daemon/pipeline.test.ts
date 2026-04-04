@@ -284,7 +284,7 @@ function buildDeps(overrides?: Partial<PipelineDeps>): PipelineDeps {
     applyTimeDecay: mock(() => []),
     makeDecision: mock(() => makeKnnPass()),
     loadKnnConfig: mock(async () => ({ topK: 50, distanceMetric: "cosine" as const })),
-    loadTimeDecayConfig: mock(async () => ({ halfLifeDays: 90 })),
+    loadTimeDecayConfig: mock(async () => ({})),
 
     getActiveTicket: mock(async () => null),
     canPyramid: mock(() => ({ allowed: false, reason: "max_count_reached" })),

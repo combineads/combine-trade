@@ -204,8 +204,8 @@ export type PipelineDeps = {
     now: Date,
     config: TimeDecayConfig,
   ) => WeightedNeighbor[];
-  /** Load time-decay config from CommonCode */
-  loadTimeDecayConfig: (db: DbInstance) => Promise<TimeDecayConfig>;
+  /** Load time-decay config (steps are structural constants; no DB needed) */
+  loadTimeDecayConfig: () => Promise<TimeDecayConfig>;
   /** Derive a trading decision from weighted neighbors */
   makeDecision: (
     neighbors: WeightedNeighbor[],
@@ -650,7 +650,7 @@ async function processEntry(
   });
 
   // ---- 9. Time-decay + decision ----
-  const timeDecayConfig = await deps.loadTimeDecayConfig(deps.db);
+  const timeDecayConfig = await deps.loadTimeDecayConfig();
   const weightedNeighbors = deps.applyTimeDecay(rawNeighbors, new Date(), timeDecayConfig);
   const knnDecision = deps.makeDecision(
     weightedNeighbors,

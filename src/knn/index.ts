@@ -7,4 +7,5 @@ export {
   applyTimeDecay,
   calcTimeDecay,
   loadTimeDecayConfig,
+  TIME_DECAY_STEPS,
 } from "./time-decay";

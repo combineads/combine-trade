@@ -85,7 +85,7 @@
 ### M4 — 프로젝트 빌드, 린트, 로거
 - Deliverables:
   - `tsconfig.json` — strict 모드, path alias
-  - `eslint.config.ts` — eslint-plugin-boundaries 레이어 규칙
+  - `scripts/check-layers.ts` — 커스텀 레이어 의존성 검증 스크립트
   - `package.json` scripts — dev, build, test, lint, typecheck, migrate, seed
   - `.env.example` — 필수 환경변수 템플릿
   - `src/core/logger.ts` — 구조화 JSON 로거 (L0, 의존성 없음)

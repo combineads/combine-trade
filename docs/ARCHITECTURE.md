@@ -114,7 +114,7 @@ L9  daemon                     — orchestrates all layers
 
 **Dependency direction rule:** A module at layer N may only import from layers 0..N-1. Never upward. Diamond dependencies through lower layers are permitted.
 
-**Enforcement:** ESLint `eslint-plugin-boundaries` with zone config matching layer numbers. CI runs `bun run lint` which includes boundary checks. If eslint-plugin-boundaries is not available for Bun, a custom script scans `import` statements and validates layer ordering.
+**Enforcement:** `scripts/check-layers.ts` — 커스텀 import 검증 스크립트가 레이어 방향 규칙을 정적 분석으로 검증. CI에서 `bun run check-layers`로 실행.
 
 **Key structural rules:**
 - `ExchangeAdapter` interface lives in `core/ports.ts` — modules depend on the interface, not concrete adapters
@@ -264,7 +264,7 @@ Runs on 60-second interval timer within the daemon process. While sharing a proc
 | Max leverage: 38× | positions | Hard cap in `sizer.ts` (`HARD_CAP_LEVERAGE = 38`) |
 | 202-dim vectors | vectors | Constant, validated at insertion |
 | No lookahead in backtest | backtest | Mock adapter only serves data ≤ current timestamp |
-| Layer dependency direction | all | eslint-plugin-boundaries or custom CI script |
+| Layer dependency direction | all | `scripts/check-layers.ts` 커스텀 검증 스크립트 |
 
 ## Exchange rollout strategy
 

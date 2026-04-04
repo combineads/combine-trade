@@ -8,3 +8,13 @@ export {
   type TicketSnapshot,
   type UnmatchedPosition,
 } from "./comparator.ts";
+
+export {
+  type ExchangeError,
+  type ReconciliationConfig,
+  type ReconciliationDeps,
+  type ReconciliationHandle,
+  type ReconciliationRunResult,
+  runOnce,
+  startReconciliation,
+} from "./worker.ts";

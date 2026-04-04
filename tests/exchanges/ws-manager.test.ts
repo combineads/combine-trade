@@ -42,7 +42,10 @@ class MockWebSocket {
 
   close(code?: number, reason?: string): void {
     if (this.readyState === WebSocket.CLOSED) return;
-    this.closedWith = { code, reason };
+    this.closedWith = {
+      ...(code !== undefined ? { code } : {}),
+      ...(reason !== undefined ? { reason } : {}),
+    };
     this.readyState = WebSocket.CLOSED;
     // Trigger onclose if registered (simulate normal close from our side)
     const event = makeMockCloseEvent(code ?? 1000, reason ?? "");

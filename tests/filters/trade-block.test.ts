@@ -5,7 +5,6 @@ import {
   describe,
   expect,
   it,
-  mock,
 } from "bun:test";
 import {
   isInMarketOpenWindow,

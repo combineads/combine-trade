@@ -10,6 +10,7 @@
 
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { Decimal } from "decimal.js";
+import type { Balances, Order } from "ccxt";
 import {
   BinanceAdapter,
   BitgetAdapter,
@@ -38,31 +39,31 @@ const MARKET_ORDER_RESPONSE = {
   average: 60000.5,
   filled: 1.0,
   timestamp: 1700000000000,
-};
+} as unknown as Order;
 
 const STOP_MARKET_ORDER_RESPONSE = {
   id: "exch-sl-001",
   status: "open",
-  average: null,
+  average: undefined,
   filled: 0,
   timestamp: 1700000001000,
-};
+} as unknown as Order;
 
 const FETCHED_OPEN_ORDER = {
   id: "exch-order-001",
   status: "open",
-  average: null,
+  average: undefined,
   filled: 0,
   timestamp: 1700000002000,
-};
+} as unknown as Order;
 
 const FETCHED_CANCELLED_ORDER = {
   id: "exch-order-001",
   status: "canceled",
-  average: null,
+  average: undefined,
   filled: 0,
   timestamp: 1700000003000,
-};
+} as unknown as Order;
 
 // ---------------------------------------------------------------------------
 // Full order flow: setLeverage → createOrder(market) → fetchOrder → cancelOrder
@@ -84,7 +85,7 @@ describe("BinanceAdapter integration — full order flow", () => {
     spyOn(adapter["ccxt"], "fetchOrder").mockResolvedValue({
       ...FETCHED_OPEN_ORDER,
     });
-    const mockCancelOrder = spyOn(adapter["ccxt"], "cancelOrder").mockResolvedValue({});
+    const mockCancelOrder = spyOn(adapter["ccxt"], "cancelOrder").mockResolvedValue({} as unknown as Order);
 
     // Act: full lifecycle
     await adapter.setLeverage(10, "BTCUSDT");
@@ -142,7 +143,7 @@ describe("BinanceAdapter integration — full order flow", () => {
 
   it("cancelOrder after createOrder results in CANCELLED status on subsequent fetchOrder", async () => {
     spyOn(adapter["ccxt"], "createOrder").mockResolvedValue(MARKET_ORDER_RESPONSE);
-    spyOn(adapter["ccxt"], "cancelOrder").mockResolvedValue({});
+    spyOn(adapter["ccxt"], "cancelOrder").mockResolvedValue({} as unknown as Order);
     spyOn(adapter["ccxt"], "fetchOrder").mockResolvedValue(FETCHED_CANCELLED_ORDER);
 
     const created = await adapter.createOrder({
@@ -193,10 +194,10 @@ describe("BinanceAdapter integration — SL order flow", () => {
     spyOn(adapter["ccxt"], "fetchOrder").mockResolvedValue({
       id: "exch-sl-001",
       status: "open",
-      average: null,
+      average: undefined,
       filled: 0,
       timestamp: 1700000001000,
-    });
+    } as unknown as Order);
 
     const sl = await adapter.createOrder({
       symbol: "BTCUSDT",
@@ -379,7 +380,7 @@ describe("BinanceAdapter integration — retry flow: NetworkError exhaustion", (
         free: { USDT: 4000 },
         used: { USDT: 1000 },
         total: { USDT: 5000 },
-      });
+      } as unknown as Balances);
 
     try {
       const result = await adapter.fetchBalance();

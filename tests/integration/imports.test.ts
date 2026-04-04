@@ -36,6 +36,7 @@ import type {
   SymbolState,
   Ticket,
   TicketState,
+  Timeframe,
   TradeBlock,
   TradeResult,
   Vector,

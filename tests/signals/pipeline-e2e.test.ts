@@ -15,11 +15,10 @@ import { eq } from "drizzle-orm";
 
 import { getDb, getPool } from "@/db/pool";
 import type { DbInstance } from "@/db/pool";
-import { candleTable, signalTable, symbolStateTable, vectorTable } from "@/db/schema";
+import { signalTable } from "@/db/schema";
 import type { Candle, DailyBias, Exchange } from "@/core/types";
 import type { AllIndicators } from "@/indicators/types";
 import { seedTradeBlocks, isTradeBlocked } from "@/filters/trade-block";
-import { updateDailyBias } from "@/filters/daily-direction";
 import { detectWatching, openWatchSession } from "@/signals/watching";
 import { checkEvidence, createSignal } from "@/signals/evidence-gate";
 import { checkSafety, updateSignalSafety } from "@/signals/safety-gate";
@@ -111,7 +110,7 @@ function makeTestIndicators(overrides: Partial<AllIndicators> = {}): AllIndicato
  * Label distribution: e.g. { WIN: 40, LOSS: 10 } → 50 rows total.
  */
 async function seedTestVectors(
-  db: DbInstance,
+  _db: DbInstance,
   count: number,
   labelDistribution: Record<string, number>,
   symbol = SYMBOL,
@@ -372,7 +371,7 @@ describe.skipIf(!dbAvailable)("[E2E] LONG 전체 흐름: bias=LONG_ONLY → WATC
 
     // 12. Apply time decay and make decision
     const now = new Date();
-    const weighted = applyTimeDecay(neighbors, now, { halfLifeDays: 90 });
+    const weighted = applyTimeDecay(neighbors, now, {} as Record<string, never>);
     const decision = makeDecision(weighted, "ONE_B", true);
     expect(decision.decision).toBe("PASS"); // 40 WIN / 50 total = 0.80 winrate > 0.55
     expect(decision.winRate).toBeGreaterThan(0.55);
@@ -501,7 +500,7 @@ describe.skipIf(!dbAvailable)("[E2E] SHORT A-grade 흐름: bias=SHORT_ONLY → W
 
     // 11. Decision: DOUBLE_B + safetyPassed + winrate >= 0.65 → a_grade=true
     const now = new Date();
-    const weighted = applyTimeDecay(neighbors, now, { halfLifeDays: 90 });
+    const weighted = applyTimeDecay(neighbors, now, {} as Record<string, never>);
     const decision = makeDecision(weighted, "DOUBLE_B", true);
     expect(decision.decision).toBe("PASS");
     expect(decision.winRate).toBeGreaterThanOrEqual(0.65);
@@ -740,7 +739,7 @@ describe.skipIf(!dbAvailable)("[E2E] KNN SKIP: labeled 벡터 부족 → knn_dec
 
     // 10. Apply time decay and make decision — should be SKIP
     const now = new Date();
-    const weighted = applyTimeDecay(neighbors, now, { halfLifeDays: 90 });
+    const weighted = applyTimeDecay(neighbors, now, {} as Record<string, never>);
     const decision = makeDecision(weighted, "ONE_B", true);
     expect(decision.decision).toBe("SKIP");
     expect(decision.sampleCount).toBeLessThan(30);

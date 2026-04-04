@@ -70,7 +70,7 @@ export async function isTestDbAvailable(): Promise<boolean> {
     return false;
   }
 
-  let client: ReturnType<typeof import("postgres").default> | null = null;
+  let client: import("postgres").Sql | null = null;
   try {
     const postgres = (await import("postgres")).default;
     client = postgres(url, { max: 1, connect_timeout: 3, idle_timeout: 1 });

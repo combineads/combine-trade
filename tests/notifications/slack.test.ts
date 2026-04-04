@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import {
-  type SlackAlertDetails,
   SlackEventType,
   formatMessage,
   getWebhookUrl,
@@ -15,13 +14,13 @@ const originalFetch = globalThis.fetch;
 
 function mockFetchOk(): ReturnType<typeof mock> {
   const fn = mock(() => Promise.resolve(new Response("ok", { status: 200 })));
-  globalThis.fetch = fn as typeof globalThis.fetch;
+  globalThis.fetch = fn as unknown as typeof globalThis.fetch;
   return fn;
 }
 
 function mockFetchFail(): ReturnType<typeof mock> {
   const fn = mock(() => Promise.reject(new Error("network error")));
-  globalThis.fetch = fn as typeof globalThis.fetch;
+  globalThis.fetch = fn as unknown as typeof globalThis.fetch;
   return fn;
 }
 
@@ -29,7 +28,7 @@ function mockFetchNon200(): ReturnType<typeof mock> {
   const fn = mock(() =>
     Promise.resolve(new Response("channel_not_found", { status: 404 })),
   );
-  globalThis.fetch = fn as typeof globalThis.fetch;
+  globalThis.fetch = fn as unknown as typeof globalThis.fetch;
   return fn;
 }
 
@@ -210,7 +209,6 @@ describe("formatMessage", () => {
   it("includes timestamp in the payload", () => {
     const payload = formatMessage(SlackEventType.DAEMON_START, {});
 
-    const bodyStr = JSON.stringify(payload);
     // Should contain a timestamp-like pattern (ISO or Unix)
     expect(payload.blocks).toBeDefined();
     // At least one block should have a context with timestamp

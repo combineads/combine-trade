@@ -493,6 +493,7 @@ describe('core/types — compile-time type safety', () => {
       exchange: 'binance',
       timeframe: '5M',
       open_time: new Date(),
+      // @ts-expect-error — number is not assignable to Decimal
       open: 65000, // should be Decimal
       high: new Decimal('65200'),
       low: new Decimal('64900'),
@@ -507,6 +508,7 @@ describe('core/types — compile-time type safety', () => {
   it('null is not assignable to non-nullable required field', () => {
     // @ts-expect-error — null is not assignable to string (symbol field is required)
     const _bad: SymbolEntity = {
+      // @ts-expect-error — null is not assignable to string
       symbol: null,
       exchange: 'binance',
       name: 'BTC/USDT',

@@ -1,10 +1,8 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import type Decimal from "decimal.js";
+import { describe, expect, it, mock } from "bun:test";
 
 import { d } from "../../src/core/decimal";
 import type { ExchangeAdapter, CreateOrderParams, OrderResult } from "../../src/core/ports";
-import type { Direction, Exchange, ExecutionMode, OrderSide } from "../../src/core/types";
-import type { SlippageConfig } from "../../src/orders/slippage";
+import type { Direction, Exchange, ExecutionMode } from "../../src/core/types";
 import {
   executeEntry,
   emergencyClose,
@@ -44,7 +42,7 @@ function createMockAdapter(overrides?: Partial<ExchangeAdapter>): ExchangeAdapte
         filledSize: d("0.1"),
         timestamp: new Date(),
       }),
-    ),
+    ) as any,
     fetchOrder: mock(() =>
       Promise.resolve({
         orderId: crypto.randomUUID(),
@@ -54,7 +52,7 @@ function createMockAdapter(overrides?: Partial<ExchangeAdapter>): ExchangeAdapte
         filledSize: d("0.1"),
         timestamp: new Date(),
       }),
-    ),
+    ) as any,
     watchOHLCV: mock(() => Promise.resolve(() => {})),
     getExchangeInfo: mock(() =>
       Promise.resolve({
@@ -85,15 +83,6 @@ function makeEntryParams(overrides?: Partial<ExecuteEntryParams>): ExecuteEntryP
     slippageConfig: { maxSpreadPct: d("0.05") },
     ...overrides,
   };
-}
-
-/** Determine expected order side from direction */
-function entryOrderSide(direction: Direction): OrderSide {
-  return direction === "LONG" ? "BUY" : "SELL";
-}
-
-function slOrderSide(direction: Direction): OrderSide {
-  return direction === "LONG" ? "SELL" : "BUY";
 }
 
 // ---------------------------------------------------------------------------
@@ -474,7 +463,7 @@ describe("executor", () => {
     it("SHORT position emergency close uses BUY side", async () => {
       const adapter = createMockAdapter();
 
-      const result = await emergencyClose({
+      await emergencyClose({
         adapter,
         symbol: "BTC/USDT:USDT",
         exchange: "binance",

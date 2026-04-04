@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { Decimal } from "decimal.js";
+import type { Balances, OHLCV, Order, Position } from "ccxt";
 import { BinanceAdapter } from "../../src/exchanges/binance";
 import {
   ExchangeInsufficientFundsError,
@@ -34,7 +35,7 @@ describe("BinanceAdapter — fetchBalance", () => {
       free: { USDT: 8500 },
       used: { USDT: 1500 },
       total: { USDT: 10000 },
-    });
+    } as unknown as Balances);
 
     const result = await adapter.fetchBalance();
 
@@ -52,7 +53,7 @@ describe("BinanceAdapter — fetchBalance", () => {
       free: {},
       used: {},
       total: {},
-    });
+    } as unknown as Balances);
 
     const result = await adapter.fetchBalance();
 
@@ -94,7 +95,7 @@ describe("BinanceAdapter — fetchPositions", () => {
   ];
 
   it("returns ExchangePosition[] with all fields as Decimal", async () => {
-    spyOn(adapter["ccxt"], "fetchPositions").mockResolvedValue(mockPositions);
+    spyOn(adapter["ccxt"], "fetchPositions").mockResolvedValue(mockPositions as unknown as Position[]);
 
     const result = await adapter.fetchPositions();
 
@@ -116,7 +117,7 @@ describe("BinanceAdapter — fetchPositions", () => {
   });
 
   it("maps short side correctly", async () => {
-    spyOn(adapter["ccxt"], "fetchPositions").mockResolvedValue(mockPositions);
+    spyOn(adapter["ccxt"], "fetchPositions").mockResolvedValue(mockPositions as unknown as Position[]);
 
     const result = await adapter.fetchPositions();
     const eth = result[1]!;
@@ -126,7 +127,7 @@ describe("BinanceAdapter — fetchPositions", () => {
   });
 
   it("filters by symbol when symbol is provided", async () => {
-    spyOn(adapter["ccxt"], "fetchPositions").mockResolvedValue(mockPositions);
+    spyOn(adapter["ccxt"], "fetchPositions").mockResolvedValue(mockPositions as unknown as Position[]);
 
     const result = await adapter.fetchPositions("BTCUSDT");
 
@@ -135,7 +136,7 @@ describe("BinanceAdapter — fetchPositions", () => {
   });
 
   it("returns empty array when no positions match the filter", async () => {
-    spyOn(adapter["ccxt"], "fetchPositions").mockResolvedValue(mockPositions);
+    spyOn(adapter["ccxt"], "fetchPositions").mockResolvedValue(mockPositions as unknown as Position[]);
 
     const result = await adapter.fetchPositions("SOLUSDT");
 
@@ -163,7 +164,7 @@ describe("BinanceAdapter — fetchPositions", () => {
         liquidationPrice: null,
       },
     ];
-    spyOn(adapter["ccxt"], "fetchPositions").mockResolvedValue(withZero);
+    spyOn(adapter["ccxt"], "fetchPositions").mockResolvedValue(withZero as unknown as Position[]);
 
     const result = await adapter.fetchPositions();
 
@@ -192,7 +193,7 @@ describe("BinanceAdapter — fetchOrder", () => {
       timestamp: 1700000000000,
     };
 
-    spyOn(adapter["ccxt"], "fetchOrder").mockResolvedValue(mockOrder);
+    spyOn(adapter["ccxt"], "fetchOrder").mockResolvedValue(mockOrder as unknown as Order);
 
     const result = await adapter.fetchOrder("order-123", "BTCUSDT");
 
@@ -211,10 +212,10 @@ describe("BinanceAdapter — fetchOrder", () => {
     spyOn(adapter["ccxt"], "fetchOrder").mockResolvedValue({
       id: "order-abc",
       status: "open",
-      average: null,
+      average: undefined,
       filled: 0,
       timestamp: Date.now(),
-    });
+    } as unknown as Order);
 
     const result = await adapter.fetchOrder("order-abc", "BTCUSDT");
     expect(result.status).toBe("PENDING");
@@ -224,10 +225,10 @@ describe("BinanceAdapter — fetchOrder", () => {
     spyOn(adapter["ccxt"], "fetchOrder").mockResolvedValue({
       id: "order-abc",
       status: "canceled",
-      average: null,
+      average: undefined,
       filled: 0,
       timestamp: Date.now(),
-    });
+    } as unknown as Order);
 
     const result = await adapter.fetchOrder("order-abc", "BTCUSDT");
     expect(result.status).toBe("CANCELLED");
@@ -237,10 +238,10 @@ describe("BinanceAdapter — fetchOrder", () => {
     spyOn(adapter["ccxt"], "fetchOrder").mockResolvedValue({
       id: "order-abc",
       status: "open",
-      average: null,
-      filled: null,
+      average: undefined,
+      filled: undefined,
       timestamp: Date.now(),
-    });
+    } as unknown as Order);
 
     const result = await adapter.fetchOrder("order-abc", "BTCUSDT");
     expect(result.filledPrice).toBeNull();
@@ -282,7 +283,7 @@ describe("BinanceAdapter — fetchOHLCV", () => {
   ]);
 
   it("returns Candle[] with correct length", async () => {
-    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV);
+    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV as unknown as OHLCV[]);
 
     const result = await adapter.fetchOHLCV("BTCUSDT", "5m");
 
@@ -290,7 +291,7 @@ describe("BinanceAdapter — fetchOHLCV", () => {
   });
 
   it("converts CCXT timestamp to Date for open_time", async () => {
-    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV);
+    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV as unknown as OHLCV[]);
 
     const result = await adapter.fetchOHLCV("BTCUSDT", "5m");
 
@@ -299,7 +300,7 @@ describe("BinanceAdapter — fetchOHLCV", () => {
   });
 
   it("converts OHLCV numbers to Decimal", async () => {
-    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV);
+    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV as unknown as OHLCV[]);
 
     const result = await adapter.fetchOHLCV("BTCUSDT", "5m");
     const candle = result[0]!;
@@ -312,7 +313,7 @@ describe("BinanceAdapter — fetchOHLCV", () => {
   });
 
   it("sets correct OHLCV values", async () => {
-    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV);
+    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV as unknown as OHLCV[]);
 
     const result = await adapter.fetchOHLCV("BTCUSDT", "5m");
     const candle = result[0]!;
@@ -325,7 +326,7 @@ describe("BinanceAdapter — fetchOHLCV", () => {
   });
 
   it("sets symbol and exchange on each candle", async () => {
-    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV);
+    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV as unknown as OHLCV[]);
 
     const result = await adapter.fetchOHLCV("BTCUSDT", "5m");
 
@@ -336,7 +337,7 @@ describe("BinanceAdapter — fetchOHLCV", () => {
   });
 
   it("maps 5m timeframe to 5M", async () => {
-    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV);
+    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(mockOHLCV as unknown as OHLCV[]);
 
     const result = await adapter.fetchOHLCV("BTCUSDT", "5m");
 
@@ -344,7 +345,7 @@ describe("BinanceAdapter — fetchOHLCV", () => {
   });
 
   it("maps 1h timeframe to 1H", async () => {
-    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue([[baseTimestamp, 60000, 60100, 59900, 60050, 500]]);
+    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue([[baseTimestamp, 60000, 60100, 59900, 60050, 500]] as unknown as OHLCV[]);
 
     const result = await adapter.fetchOHLCV("BTCUSDT", "1h");
 
@@ -352,7 +353,7 @@ describe("BinanceAdapter — fetchOHLCV", () => {
   });
 
   it("maps 1d timeframe to 1D", async () => {
-    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue([[baseTimestamp, 60000, 62000, 58000, 61000, 50000]]);
+    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue([[baseTimestamp, 60000, 62000, 58000, 61000, 50000]] as unknown as OHLCV[]);
 
     const result = await adapter.fetchOHLCV("BTCUSDT", "1d");
 
@@ -376,7 +377,7 @@ describe("BinanceAdapter — fetchOHLCV", () => {
       60050,
       1000,
     ]);
-    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(bars);
+    spyOn(adapter["ccxt"], "fetchOHLCV").mockResolvedValue(bars as unknown as OHLCV[]);
 
     const result = await adapter.fetchOHLCV("BTCUSDT", "5m", undefined, 100);
 
@@ -403,12 +404,12 @@ describe("BinanceAdapter — getExchangeInfo", () => {
         symbol: "BTCUSDT",
         precision: { price: 0.1, amount: 0.001 },
         limits: {
-          amount: { min: 0.001 },
-          leverage: { max: 125 },
+          amount: { min: 0.001, max: undefined },
+          leverage: { max: 125, min: undefined },
         },
         contractSize: 1,
       },
-    });
+    } as never);
 
     const result = await adapter.getExchangeInfo("BTCUSDT");
 
@@ -428,9 +429,9 @@ describe("BinanceAdapter — getExchangeInfo", () => {
         symbol: "BTCUSDT",
         precision: {},
         limits: {},
-        contractSize: null,
+        contractSize: undefined,
       },
-    });
+    } as never);
 
     const result = await adapter.getExchangeInfo("BTCUSDT");
 
@@ -441,7 +442,7 @@ describe("BinanceAdapter — getExchangeInfo", () => {
   });
 
   it("throws an error for an unknown symbol", async () => {
-    spyOn(adapter["ccxt"], "loadMarkets").mockResolvedValue({});
+    spyOn(adapter["ccxt"], "loadMarkets").mockResolvedValue({} as never);
 
     await expect(adapter.getExchangeInfo("UNKNOWNSYM")).rejects.toThrow("UNKNOWNSYM");
   });
@@ -464,15 +465,15 @@ describe("BinanceAdapter — createOrder", () => {
     average: 60000.5,
     filled: 1.0,
     timestamp: 1700000000000,
-  };
+  } as unknown as Order;
 
   const openLimitResponse = {
     id: "ccxt-binance-002",
     status: "open",
-    average: null,
+    average: undefined,
     filled: 0,
     timestamp: 1700000001000,
-  };
+  } as unknown as Order;
 
   it("market buy → OrderResult with status FILLED and filledPrice/filledSize as Decimal", async () => {
     spyOn(adapter["ccxt"], "createOrder").mockResolvedValue(filledMarketResponse);
@@ -646,7 +647,7 @@ describe("BinanceAdapter — cancelOrder", () => {
   });
 
   it("returns void on success", async () => {
-    spyOn(adapter["ccxt"], "cancelOrder").mockResolvedValue({});
+    spyOn(adapter["ccxt"], "cancelOrder").mockResolvedValue({} as unknown as Order);
 
     const result = await adapter.cancelOrder("order-123", "BTCUSDT");
 
@@ -665,7 +666,7 @@ describe("BinanceAdapter — cancelOrder", () => {
   });
 
   it("passes orderId and symbol to CCXT cancelOrder", async () => {
-    const mockCancel = spyOn(adapter["ccxt"], "cancelOrder").mockResolvedValue({});
+    const mockCancel = spyOn(adapter["ccxt"], "cancelOrder").mockResolvedValue({} as unknown as Order);
 
     await adapter.cancelOrder("my-order-99", "ETHUSDT");
 
@@ -689,10 +690,10 @@ describe("BinanceAdapter — editOrder", () => {
   const editedOrderResponse = {
     id: "ccxt-binance-003",
     status: "open",
-    average: null,
+    average: undefined,
     filled: 0,
     timestamp: 1700000002000,
-  };
+  } as unknown as Order;
 
   it("returns updated OrderResult with new price as Decimal", async () => {
     spyOn(adapter["ccxt"], "editOrder").mockResolvedValue(editedOrderResponse);
@@ -733,7 +734,7 @@ describe("BinanceAdapter — editOrder", () => {
       average: 59500.0,
       filled: 0.75,
       timestamp: 1700000003000,
-    });
+    } as unknown as Order);
 
     const result = await adapter.editOrder("order-edit-3", {
       price: new Decimal("59500"),
@@ -819,10 +820,10 @@ describe("BinanceAdapter — createOrder stop_market", () => {
   const slOrderResponse = {
     id: "ccxt-sl-001",
     status: "open",
-    average: null,
+    average: undefined,
     filled: 0,
     timestamp: 1700000005000,
-  };
+  } as unknown as Order;
 
   it("creates a stop_market order and returns OrderResult", async () => {
     spyOn(adapter["ccxt"], "createOrder").mockResolvedValue(slOrderResponse);
@@ -926,10 +927,10 @@ describe("BinanceAdapter — createOrder stop_market", () => {
     spyOn(adapter["ccxt"], "fetchOrder").mockResolvedValue({
       id: "ccxt-sl-001",
       status: "open",
-      average: null,
+      average: undefined,
       filled: 0,
       timestamp: 1700000005000,
-    });
+    } as unknown as Order);
 
     const created = await adapter.createOrder({
       symbol: "BTCUSDT",

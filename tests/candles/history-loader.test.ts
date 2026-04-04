@@ -1,9 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { Decimal } from "../../src/core/decimal";
-import type { Candle, Exchange, Timeframe } from "../../src/core/types";
+import type { Candle } from "../../src/core/types";
 import type { ExchangeAdapter } from "../../src/core/ports";
 import {
-  type NewCandle,
   buildDailyUrl,
   buildMonthlyUrl,
   downloadCandles,
@@ -262,7 +261,7 @@ describe("history-loader", () => {
         const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         fetchedUrls.push(url);
         return new Response(null, { status: 404 });
-      }) as typeof globalThis.fetch;
+      }) as unknown as typeof globalThis.fetch;
 
       // Range: 2024-01-15 to 2024-03-10
       // Expected:
@@ -303,7 +302,7 @@ describe("history-loader", () => {
         const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         fetchedUrls.push(url);
         return new Response(null, { status: 404 });
-      }) as typeof globalThis.fetch;
+      }) as unknown as typeof globalThis.fetch;
 
       // Full months: Feb and Mar 2024
       await downloadCandles(
@@ -325,7 +324,7 @@ describe("history-loader", () => {
     it("skips failed downloads (404) gracefully", async () => {
       globalThis.fetch = mock(async () => {
         return new Response(null, { status: 404 });
-      }) as typeof globalThis.fetch;
+      }) as unknown as typeof globalThis.fetch;
 
       // Should not throw
       const result = await downloadCandles(
@@ -342,7 +341,7 @@ describe("history-loader", () => {
     it("skips network errors gracefully", async () => {
       globalThis.fetch = mock(async () => {
         throw new Error("Network error");
-      }) as typeof globalThis.fetch;
+      }) as unknown as typeof globalThis.fetch;
 
       const result = await downloadCandles(
         "BTCUSDT",
@@ -366,11 +365,11 @@ describe("history-loader", () => {
       const zipped = zipSync({ "BTCUSDT-1h-2024-01-01.csv": csvBytes });
 
       globalThis.fetch = mock(async () => {
-        return new Response(zipped.buffer, {
+        return new Response(zipped.buffer as ArrayBuffer, {
           status: 200,
           headers: { "Content-Type": "application/zip" },
         });
-      }) as typeof globalThis.fetch;
+      }) as unknown as typeof globalThis.fetch;
 
       const result = await downloadCandles(
         "BTCUSDT",
@@ -398,11 +397,11 @@ describe("history-loader", () => {
       const zipped = zipSync({ "data.csv": csvBytes });
 
       globalThis.fetch = mock(async () => {
-        return new Response(zipped.buffer, {
+        return new Response(zipped.buffer as ArrayBuffer, {
           status: 200,
           headers: { "Content-Type": "application/zip" },
         });
-      }) as typeof globalThis.fetch;
+      }) as unknown as typeof globalThis.fetch;
 
       const result = await downloadCandles(
         "XAUTUSDT",
@@ -424,7 +423,7 @@ describe("history-loader", () => {
         const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         fetchedUrls.push(url);
         return new Response(null, { status: 404 });
-      }) as typeof globalThis.fetch;
+      }) as unknown as typeof globalThis.fetch;
 
       await downloadCandles(
         "BTCUSDT",
@@ -447,7 +446,7 @@ describe("history-loader", () => {
         const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         fetchedUrls.push(url);
         return new Response(null, { status: 404 });
-      }) as typeof globalThis.fetch;
+      }) as unknown as typeof globalThis.fetch;
 
       await downloadCandles(
         "BTCUSDT",
@@ -487,11 +486,11 @@ describe("history-loader", () => {
       const zipped = zipSync({ "data.csv": csvBytes });
 
       globalThis.fetch = mock(async () => {
-        return new Response(zipped.buffer, {
+        return new Response(zipped.buffer as ArrayBuffer, {
           status: 200,
           headers: { "Content-Type": "application/zip" },
         });
-      }) as typeof globalThis.fetch;
+      }) as unknown as typeof globalThis.fetch;
 
       const result = await downloadCandles(
         "BTCUSDT",

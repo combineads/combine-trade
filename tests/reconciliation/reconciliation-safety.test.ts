@@ -147,7 +147,7 @@ describe("reconciliation-safety — sendSlackAlert on panic close", () => {
 
     expect(slackAlertMock).toHaveBeenCalledTimes(1);
 
-    const [eventType, details] = slackAlertMock.mock.calls[0] as [
+    const [eventType, details] = slackAlertMock.mock.calls[0] as unknown as [
       string,
       Record<string, string | number | boolean | undefined>,
     ];

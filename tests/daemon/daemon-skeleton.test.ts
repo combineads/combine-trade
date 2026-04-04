@@ -15,25 +15,7 @@ import type { Exchange } from "../../src/core/types";
 import type { ReconciliationDeps, ReconciliationHandle } from "../../src/reconciliation/worker";
 
 // ---------------------------------------------------------------------------
-// Call-order tracking helper
-// ---------------------------------------------------------------------------
 
-function makeCallTracker() {
-  const calls: string[] = [];
-  return {
-    calls,
-    record(name: string) {
-      return () => {
-        calls.push(name);
-      };
-    },
-    recordAsync(name: string) {
-      return async () => {
-        calls.push(name);
-      };
-    },
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Mock adapter factory (minimal — only needs to satisfy ExchangeAdapter shape)
@@ -83,6 +65,9 @@ function createMockCrashRecoveryDeps(): CrashRecoveryDeps {
     checkSlOnExchange: mock(async () => true),
     reRegisterSl: mock(async () => {}),
     restoreLossCounters: mock(async () => {}),
+    getActiveWatchSessions: mock(async () => []),
+    getSymbolDailyBias: mock(async () => null),
+    invalidateWatchSession: mock(async () => {}),
     insertEvent: mock(async () => {}),
     sendSlackAlert: mock(async () => {}),
   };
@@ -94,6 +79,8 @@ function createMockRecoverFromCrash() {
     unmatched: 0,
     orphaned: 0,
     slReRegistered: 0,
+    watchSessionsRestored: 0,
+    watchSessionsInvalidated: 0,
     errors: [],
     durationMs: 0,
   };
@@ -201,7 +188,6 @@ describe("startDaemon", () => {
   describe("startup sequence", () => {
     it("calls initDb before loadAllConfig", async () => {
       const order: string[] = [];
-      const tracker = makeCallTracker();
       const { deps } = buildDeps({
         initDb: mock(async () => { order.push("initDb"); }),
         loadAllConfig: mock(async () => { order.push("loadAllConfig"); }),

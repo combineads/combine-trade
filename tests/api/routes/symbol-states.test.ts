@@ -75,14 +75,14 @@ describe("GET /api/symbol-states", () => {
     expect(body).toHaveLength(2);
 
     // Verify first row has expected fields
-    expect(body[0].symbol).toBe("BTCUSDT");
-    expect(body[0].fsm_state).toBe("IDLE");
-    expect(body[0].daily_bias).toBe("LONG_ONLY");
+    expect(body[0]!.symbol).toBe("BTCUSDT");
+    expect(body[0]!.fsm_state).toBe("IDLE");
+    expect(body[0]!.daily_bias).toBe("LONG_ONLY");
 
     // Verify second row
-    expect(body[1].symbol).toBe("ETHUSDT");
-    expect(body[1].fsm_state).toBe("WATCHING");
-    expect(body[1].daily_bias).toBe("SHORT_ONLY");
+    expect(body[1]!.symbol).toBe("ETHUSDT");
+    expect(body[1]!.fsm_state).toBe("WATCHING");
+    expect(body[1]!.daily_bias).toBe("SHORT_ONLY");
   });
 
   it("returns empty array when no symbols exist", async () => {
@@ -119,11 +119,11 @@ describe("GET /api/symbol-states", () => {
     expect(body).toHaveLength(1);
 
     // All numeric fields must be strings, not numbers
-    expect(typeof body[0].daily_open).toBe("string");
-    expect(typeof body[0].losses_today).toBe("string");
-    expect(typeof body[0].losses_session).toBe("string");
-    expect(typeof body[0].losses_this_1h_5m).toBe("string");
-    expect(typeof body[0].losses_this_1h_1m).toBe("string");
+    expect(typeof body[0]!.daily_open).toBe("string");
+    expect(typeof body[0]!.losses_today).toBe("string");
+    expect(typeof body[0]!.losses_session).toBe("string");
+    expect(typeof body[0]!.losses_this_1h_5m).toBe("string");
+    expect(typeof body[0]!.losses_this_1h_1m).toBe("string");
   });
 
   it("handles nullable fields correctly", async () => {
@@ -143,9 +143,9 @@ describe("GET /api/symbol-states", () => {
 
     expect(res.status).toBe(200);
     const body = (await res.json()) as SymbolStateRow[];
-    expect(body[0].daily_bias).toBeNull();
-    expect(body[0].daily_open).toBeNull();
-    expect(body[0].session_box_high).toBeNull();
-    expect(body[0].session_box_low).toBeNull();
+    expect(body[0]!.daily_bias).toBeNull();
+    expect(body[0]!.daily_open).toBeNull();
+    expect(body[0]!.session_box_high).toBeNull();
+    expect(body[0]!.session_box_low).toBeNull();
   });
 });

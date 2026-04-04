@@ -231,9 +231,9 @@ describe("time-decay: applyTimeDecay — adds weight to each neighbor", () => {
     const result = applyTimeDecay(neighbors, now, DEFAULT_CONFIG);
 
     expect(result).toHaveLength(3);
-    expect(result[0].weight).toBe(1.0);
-    expect(result[1].weight).toBe(0.7);
-    expect(result[2].weight).toBe(0.2);
+    expect(result[0]!.weight).toBe(1.0);
+    expect(result[1]!.weight).toBe(0.7);
+    expect(result[2]!.weight).toBe(0.2);
   });
 
   it("preserves all original neighbor fields", () => {
@@ -248,11 +248,11 @@ describe("time-decay: applyTimeDecay — adds weight to each neighbor", () => {
 
     const result = applyTimeDecay([neighbor], now, DEFAULT_CONFIG);
 
-    expect(result[0].vectorId).toBe("abc");
-    expect(result[0].distance).toBe(0.42);
-    expect(result[0].label).toBe("LOSS");
-    expect(result[0].grade).toBe("B");
-    expect(result[0].createdAt).toBe(neighbor.createdAt);
+    expect(result[0]!.vectorId).toBe("abc");
+    expect(result[0]!.distance).toBe(0.42);
+    expect(result[0]!.label).toBe("LOSS");
+    expect(result[0]!.grade).toBe("B");
+    expect(result[0]!.createdAt).toBe(neighbor.createdAt);
   });
 
   it("returns empty array for empty input", () => {
@@ -278,9 +278,9 @@ describe("time-decay: applyTimeDecay — adds weight to each neighbor", () => {
     const now = new Date("2024-01-01T00:00:00Z");
     const neighbor = makeNeighbor({ label: null, grade: null });
     const result = applyTimeDecay([neighbor], now, DEFAULT_CONFIG);
-    expect(result[0].label).toBeNull();
-    expect(result[0].grade).toBeNull();
-    expect(typeof result[0].weight).toBe("number");
+    expect(result[0]!.label).toBeNull();
+    expect(result[0]!.grade).toBeNull();
+    expect(typeof result[0]!.weight).toBe("number");
   });
 });
 

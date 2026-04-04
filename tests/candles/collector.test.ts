@@ -9,11 +9,9 @@ import {
 } from "bun:test";
 import Decimal from "decimal.js";
 import { CandleCollector } from "../../src/candles/collector";
-import type { NewCandle } from "../../src/candles/history-loader";
 import type { ExchangeAdapter, OHLCVCallback, Unsubscribe } from "../../src/core/ports";
 import type { Candle, Timeframe } from "../../src/core/types";
-import { getDb, getPool } from "../../src/db/pool";
-import { bulkUpsertCandles } from "../../src/candles/repository";
+import { getPool } from "../../src/db/pool";
 import {
   cleanupTables,
   initTestDb,

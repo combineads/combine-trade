@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import {
-  type LogLevel,
   _reset,
   _setWriteFunctions,
   createLogger,

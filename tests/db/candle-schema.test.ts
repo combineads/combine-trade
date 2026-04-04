@@ -1,17 +1,15 @@
 import {
-  afterAll,
-  afterEach,
   beforeAll,
+  beforeEach,
   describe,
   expect,
   it,
 } from "bun:test";
 import { getTableName } from "drizzle-orm";
-import { candleTable, symbolTable } from "../../src/db/schema";
+import { candleTable } from "../../src/db/schema";
 import { getPool } from "../../src/db/pool";
 import {
   cleanupTables,
-  closeTestDb,
   initTestDb,
   isTestDbAvailable,
 } from "../helpers/test-db";

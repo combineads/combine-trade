@@ -121,7 +121,7 @@ describe("GET /signals/recent", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toHaveLength(10);
-    expect(getRecentSignals.mock.calls[0]?.[0]).toBe(10);
+    expect((getRecentSignals.mock.calls as unknown[][])[0]?.[0]).toBe(10);
   });
 
   it("returns exactly N items when limit=5", async () => {
@@ -134,7 +134,7 @@ describe("GET /signals/recent", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toHaveLength(5);
-    expect(getRecentSignals.mock.calls[0]?.[0]).toBe(5);
+    expect((getRecentSignals.mock.calls as unknown[][])[0]?.[0]).toBe(5);
   });
 
   it("clamps limit to 50 when limit=100", async () => {
@@ -143,7 +143,7 @@ describe("GET /signals/recent", () => {
 
     await app.request("/signals/recent?limit=100");
 
-    expect(getRecentSignals.mock.calls[0]?.[0]).toBe(50);
+    expect((getRecentSignals.mock.calls as unknown[][])[0]?.[0]).toBe(50);
   });
 
   it("returns 200 with empty array when no signals exist", async () => {
@@ -162,7 +162,7 @@ describe("GET /signals/recent", () => {
 
     await app.request("/signals/recent?limit=abc");
 
-    expect(getRecentSignals.mock.calls[0]?.[0]).toBe(10);
+    expect((getRecentSignals.mock.calls as unknown[][])[0]?.[0]).toBe(10);
   });
 
   it("defaults to 10 when limit < 1", async () => {
@@ -171,7 +171,7 @@ describe("GET /signals/recent", () => {
 
     await app.request("/signals/recent?limit=0");
 
-    expect(getRecentSignals.mock.calls[0]?.[0]).toBe(10);
+    expect((getRecentSignals.mock.calls as unknown[][])[0]?.[0]).toBe(10);
   });
 
   it("defaults to 10 when limit is negative", async () => {
@@ -180,7 +180,7 @@ describe("GET /signals/recent", () => {
 
     await app.request("/signals/recent?limit=-5");
 
-    expect(getRecentSignals.mock.calls[0]?.[0]).toBe(10);
+    expect((getRecentSignals.mock.calls as unknown[][])[0]?.[0]).toBe(10);
   });
 });
 
@@ -201,7 +201,7 @@ describe("GET /events/recent", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toHaveLength(10);
-    expect(getRecentEvents.mock.calls[0]?.[0]).toBe(10);
+    expect((getRecentEvents.mock.calls as unknown[][])[0]?.[0]).toBe(10);
   });
 
   it("returns exactly N items when limit=20", async () => {
@@ -214,7 +214,7 @@ describe("GET /events/recent", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toHaveLength(20);
-    expect(getRecentEvents.mock.calls[0]?.[0]).toBe(20);
+    expect((getRecentEvents.mock.calls as unknown[][])[0]?.[0]).toBe(20);
   });
 
   it("clamps limit to 50 when limit > 50", async () => {
@@ -223,7 +223,7 @@ describe("GET /events/recent", () => {
 
     await app.request("/events/recent?limit=999");
 
-    expect(getRecentEvents.mock.calls[0]?.[0]).toBe(50);
+    expect((getRecentEvents.mock.calls as unknown[][])[0]?.[0]).toBe(50);
   });
 
   it("defaults to 10 when limit is invalid", async () => {
@@ -232,7 +232,7 @@ describe("GET /events/recent", () => {
 
     await app.request("/events/recent?limit=xyz");
 
-    expect(getRecentEvents.mock.calls[0]?.[0]).toBe(10);
+    expect((getRecentEvents.mock.calls as unknown[][])[0]?.[0]).toBe(10);
   });
 });
 

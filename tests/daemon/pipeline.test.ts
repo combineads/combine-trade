@@ -12,7 +12,7 @@
  * - Guard conditions (trade blocked, loss limit, no evidence, safety fail, KNN fail)
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import Decimal from "decimal.js";
 import type { ActiveSymbol, PipelineDeps } from "../../src/daemon/pipeline";
 import { handleCandleClose } from "../../src/daemon/pipeline";
@@ -22,6 +22,7 @@ import type { EvidenceResult } from "../../src/signals/evidence-gate";
 import type { SafetyResult } from "../../src/signals/safety-gate";
 import type { KnnDecisionResult } from "../../src/knn/decision";
 import type { ExitAction } from "../../src/exits/checker";
+import type { LossViolation } from "../../src/limits/loss-limit";
 
 // ---------------------------------------------------------------------------
 // Helpers: build minimal domain objects for tests
@@ -677,7 +678,7 @@ describe("handleCandleClose", () => {
       const deps = buildDeps({
         isTradeBlocked: mock(async () => ({ blocked: false })),
         getSymbolState: mock(async () => makeSymbolState()),
-        checkLossLimit: mock(() => ({ allowed: false, violations: ["DAILY"] as const })),
+        checkLossLimit: mock(() => ({ allowed: false, violations: ["DAILY"] as LossViolation[] })),
       });
 
       const candle = makeCandle({ timeframe: "5M" });
@@ -1106,9 +1107,9 @@ describe("handleCandleClose", () => {
       await handleCandleClose(candle, "5M", [makeActiveSymbol({ symbol })], deps);
 
       expect(capturedIndicators).not.toBeNull();
-      expect((capturedIndicators as AllIndicators).bb4_1h).not.toBeNull();
-      expect((capturedIndicators as AllIndicators).bb4_1h?.upper.toString()).toBe("41000");
-      expect((capturedIndicators as AllIndicators).bb4_1h?.lower.toString()).toBe("40000");
+      expect((capturedIndicators as unknown as AllIndicators).bb4_1h).not.toBeNull();
+      expect((capturedIndicators as unknown as AllIndicators).bb4_1h?.upper.toString()).toBe("41000");
+      expect((capturedIndicators as unknown as AllIndicators).bb4_1h?.lower.toString()).toBe("40000");
     });
 
     it("leaves bb4_1h as null when 1H candles < 4", async () => {
@@ -1134,7 +1135,7 @@ describe("handleCandleClose", () => {
       await handleCandleClose(candle, "5M", [makeActiveSymbol({ symbol })], deps);
 
       expect(capturedIndicators).not.toBeNull();
-      expect((capturedIndicators as AllIndicators).bb4_1h).toBeNull();
+      expect((capturedIndicators as unknown as AllIndicators).bb4_1h).toBeNull();
     });
 
     it("leaves bb4_1h as null when calcBB4 returns null despite sufficient candles", async () => {
@@ -1159,7 +1160,7 @@ describe("handleCandleClose", () => {
       await handleCandleClose(candle, "5M", [makeActiveSymbol({ symbol })], deps);
 
       expect(capturedIndicators).not.toBeNull();
-      expect((capturedIndicators as AllIndicators).bb4_1h).toBeNull();
+      expect((capturedIndicators as unknown as AllIndicators).bb4_1h).toBeNull();
     });
 
     it("passes indicators with bb4_1h to checkEvidence — enabling aGrade=true for LONG BB4 lower touch", async () => {
@@ -1225,7 +1226,7 @@ describe("handleCandleClose", () => {
           return [makeCandle({ symbol })];
         }),
         calcBB4: mock(() => bb4_1h_result),
-        checkEvidence: mock((c: unknown, indicators: AllIndicators) => {
+        checkEvidence: mock((_c: unknown, indicators: AllIndicators) => {
           capturedIndicators = indicators;
           return null;
         }),

@@ -19,18 +19,16 @@ import {
   it,
   mock,
 } from "bun:test";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { d } from "@/core/decimal";
-import type { DbInstance } from "@/db/pool";
 import { getDb, getPool } from "@/db/pool";
 import {
   orderTable,
-  symbolStateTable,
   ticketTable,
 } from "@/db/schema";
 import type { CreateOrderParams, ExchangeAdapter, OrderResult } from "@/core/ports";
-import type { Direction, Exchange, ExecutionMode } from "@/core/types";
+import type { Direction, Exchange } from "@/core/types";
 import { calculateSize, getRiskPct, type SizeParams } from "@/positions/sizer";
 import {
   executeEntry,
@@ -41,7 +39,6 @@ import { createTicket, getActiveTicket } from "@/positions/ticket-manager";
 import {
   checkLossLimit,
   loadLossLimitConfig,
-  type LossLimitConfig,
   type SymbolLossState,
 } from "@/limits/loss-limit";
 import { checkSlippage, type SlippageConfig } from "@/orders/slippage";
@@ -249,8 +246,8 @@ async function setupPrerequisites(opts?: {
   const symbolStateId = await insertSymbolWithState({
     fsmState: "WATCHING",
     executionMode: opts?.executionMode ?? "live",
-    lossesToday: opts?.lossesToday,
-    lossesSession: opts?.lossesSession,
+    ...(opts?.lossesToday !== undefined ? { lossesToday: opts.lossesToday } : {}),
+    ...(opts?.lossesSession !== undefined ? { lossesSession: opts.lossesSession } : {}),
   });
   const watchSessionId = await insertWatchSession(direction);
   const signalId = await insertSignal(watchSessionId, direction);
@@ -574,7 +571,7 @@ describe.skipIf(!dbAvailable)(
   () => {
     it("SL fails 3 times, emergencyClose called, PANIC_CLOSE order in DB", async () => {
       const db = getDb();
-      const { signalId } = await setupPrerequisites({ direction: "LONG" });
+      await setupPrerequisites({ direction: "LONG" });
 
       // Create adapter where bracket fails + SL always fails + emergency close succeeds
       let entryDone = false;
@@ -683,7 +680,7 @@ describe.skipIf(!dbAvailable)(
   () => {
     it("fill price far from expected, slippage check fails, emergencyClose, no ticket", async () => {
       const db = getDb();
-      const { signalId } = await setupPrerequisites({ direction: "LONG" });
+      await setupPrerequisites({ direction: "LONG" });
 
       // Adapter returns a fill price 10% higher (exceeds 5% max spread)
       const adapter = createMockAdapter({
@@ -770,7 +767,7 @@ describe.skipIf(!dbAvailable)(
   () => {
     it("executeEntry throws ExecutionModeError, no tickets or orders created", async () => {
       const db = getDb();
-      const { signalId } = await setupPrerequisites({
+      await setupPrerequisites({
         direction: "LONG",
         executionMode: "analysis",
       });

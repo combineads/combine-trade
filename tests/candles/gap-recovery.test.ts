@@ -150,7 +150,7 @@ describe("GapRecovery unit tests", () => {
     expect(result.errors).toBe(0);
     expect(fetchCandlesFn).toHaveBeenCalledTimes(1);
     // Verify fetchCandlesFn was called with correct limit (expectedCount + 10)
-    const fetchCall = fetchCandlesFn.mock.calls[0];
+    const fetchCall = fetchCandlesFn.mock.calls[0] as unknown[] | undefined;
     expect(fetchCall?.[4]).toBe(13); // 3 + 10
     expect(upsertFn).toHaveBeenCalledTimes(1);
   });

@@ -14,8 +14,6 @@ import type { DbInstance } from "../../src/db/pool";
 import { getDb, getPool } from "../../src/db/pool";
 import { symbolTable } from "../../src/db/schema";
 import {
-  type SyncOptions,
-  type SyncResult,
   syncCandles,
 } from "../../src/candles/sync";
 import {

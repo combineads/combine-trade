@@ -148,22 +148,6 @@ describe.skipIf(!dbAvailable)("schema-vector — integration", () => {
     return result[0]!.id as string;
   }
 
-  async function insertSignal(
-    watchSessionId: string,
-    symbol = "BTC/USDT",
-    exchange = "binance",
-  ): Promise<string> {
-    const pool = getPool();
-    const result = await pool`
-      INSERT INTO signals
-        (symbol, exchange, watch_session_id, timeframe, signal_type, direction, entry_price, sl_price, safety_passed)
-      VALUES
-        (${symbol}, ${exchange}, ${watchSessionId}, ${"5M"}, ${"DOUBLE_B"}, ${"LONG"}, ${"85000.00"}, ${"84500.00"}, ${true})
-      RETURNING id
-    `;
-    return result[0]!.id as string;
-  }
-
   /** Build a 202-dimension vector literal for pgvector. */
   function make202dim(fillValue = 0.1): string {
     return "[" + Array.from({ length: 202 }, () => fillValue).join(",") + "]";

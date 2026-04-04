@@ -227,10 +227,10 @@ describe("candle-close-event", () => {
     expect(closeCb).toHaveBeenCalledTimes(4);
 
     // Verify each call received the correct timeframe
-    expect(closeCb.mock.calls[0]![1]).toBe("1D");
-    expect(closeCb.mock.calls[1]![1]).toBe("1H");
-    expect(closeCb.mock.calls[2]![1]).toBe("5M");
-    expect(closeCb.mock.calls[3]![1]).toBe("1M");
+    expect((closeCb.mock.calls[0]! as unknown[])[1]).toBe("1D");
+    expect((closeCb.mock.calls[1]! as unknown[])[1]).toBe("1H");
+    expect((closeCb.mock.calls[2]! as unknown[])[1]).toBe("5M");
+    expect((closeCb.mock.calls[3]! as unknown[])[1]).toBe("1M");
   });
 
   it("onCandleClose returns working unsubscribe function", async () => {

@@ -380,10 +380,6 @@ describe.skipIf(!dbAvailable)("vector-repository integration", () => {
       await updateVectorLabel(db, inserted.id, "WIN", "A");
 
       const pool = getPool();
-      const first = await pool`
-        SELECT labeled_at FROM vectors WHERE id = ${inserted.id}
-      `;
-      const firstLabeledAt = first[0]!.labeled_at as Date;
 
       // Small wait to ensure timestamp differs
       await new Promise((r) => setTimeout(r, 10));

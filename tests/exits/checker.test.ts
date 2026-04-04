@@ -4,8 +4,6 @@ import {
   checkExit,
   calcCloseSize,
   calcMfeMae,
-  type ExitAction,
-  type MfeMaeResult,
   type CheckExitInput,
 } from "@/exits/checker";
 

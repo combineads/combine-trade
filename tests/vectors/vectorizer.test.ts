@@ -1023,8 +1023,8 @@ describe("vectorizer", () => {
     const indicators = calcAllIndicators(candles);
     const vec = vectorize(candles, indicators, "5M");
 
-    expect([-1, 0, 1]).toContain(vec[38]);
-    expect([-1, 0, 1]).toContain(vec[39]);
+    expect([-1, 0, 1]).toContain(vec[38]!);
+    expect([-1, 0, 1]).toContain(vec[39]!);
   });
 
   it("result is deterministic: same inputs yield identical output", () => {

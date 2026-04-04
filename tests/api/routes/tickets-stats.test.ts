@@ -123,7 +123,7 @@ describe("GET /tickets", () => {
 
     await app.request("/tickets?period=today");
 
-    expect(getTickets.mock.calls[0]?.[0]).toEqual({ period: "today" });
+    expect((getTickets.mock.calls as unknown[][])[0]?.[0]).toEqual({ period: "today" });
   });
 
   it("passes symbol filter to getTickets", async () => {
@@ -132,7 +132,7 @@ describe("GET /tickets", () => {
 
     await app.request("/tickets?symbol=BTCUSDT");
 
-    expect(getTickets.mock.calls[0]?.[0]).toEqual({
+    expect((getTickets.mock.calls as unknown[][])[0]?.[0]).toEqual({
       period: "all",
       symbol: "BTCUSDT",
     });
@@ -144,7 +144,7 @@ describe("GET /tickets", () => {
 
     await app.request("/tickets?exchange=binance");
 
-    expect(getTickets.mock.calls[0]?.[0]).toEqual({
+    expect((getTickets.mock.calls as unknown[][])[0]?.[0]).toEqual({
       period: "all",
       exchange: "binance",
     });
@@ -156,7 +156,7 @@ describe("GET /tickets", () => {
 
     await app.request("/tickets?result=WIN");
 
-    expect(getTickets.mock.calls[0]?.[0]).toEqual({
+    expect((getTickets.mock.calls as unknown[][])[0]?.[0]).toEqual({
       period: "all",
       result: "WIN",
     });
@@ -168,7 +168,7 @@ describe("GET /tickets", () => {
 
     await app.request("/tickets?period=30d&symbol=BTCUSDT&exchange=binance&result=LOSS");
 
-    expect(getTickets.mock.calls[0]?.[0]).toEqual({
+    expect((getTickets.mock.calls as unknown[][])[0]?.[0]).toEqual({
       period: "30d",
       symbol: "BTCUSDT",
       exchange: "binance",
@@ -183,7 +183,7 @@ describe("GET /tickets", () => {
     const cursorId = "some-uuid-cursor";
     await app.request(`/tickets?cursor=${cursorId}`);
 
-    expect(getTickets.mock.calls[0]?.[1]).toBe(cursorId);
+    expect((getTickets.mock.calls as unknown[][])[0]?.[1]).toBe(cursorId);
   });
 
   it("returns hasMore=true and cursor when more items exist", async () => {
@@ -218,7 +218,7 @@ describe("GET /tickets", () => {
     await app.request("/tickets?limit=10");
 
     // Should request 11 (limit+1) to detect hasMore
-    expect(getTickets.mock.calls[0]?.[2]).toBe(11);
+    expect((getTickets.mock.calls as unknown[][])[0]?.[2]).toBe(11);
   });
 
   it("returns 400 for invalid period", async () => {
@@ -268,7 +268,7 @@ describe("GET /tickets", () => {
     await app.request("/tickets?limit=500");
 
     // Capped to 100, so requests 101 (100+1)
-    expect(getTickets.mock.calls[0]?.[2]).toBe(101);
+    expect((getTickets.mock.calls as unknown[][])[0]?.[2]).toBe(101);
   });
 
   it("defaults period to 'all' when omitted", async () => {
@@ -277,7 +277,7 @@ describe("GET /tickets", () => {
 
     await app.request("/tickets");
 
-    expect(getTickets.mock.calls[0]?.[0]).toEqual({ period: "all" });
+    expect((getTickets.mock.calls as unknown[][])[0]?.[0]).toEqual({ period: "all" });
   });
 
   it("all numeric fields in response are strings", async () => {
@@ -303,7 +303,7 @@ describe("GET /tickets", () => {
     const res = await app.request("/tickets?period=7d");
 
     expect(res.status).toBe(200);
-    expect(getTickets.mock.calls[0]?.[0]).toEqual({ period: "7d" });
+    expect((getTickets.mock.calls as unknown[][])[0]?.[0]).toEqual({ period: "7d" });
   });
 
   it("accepts result=TIME_EXIT", async () => {
@@ -313,7 +313,7 @@ describe("GET /tickets", () => {
     const res = await app.request("/tickets?result=TIME_EXIT");
 
     expect(res.status).toBe(200);
-    expect(getTickets.mock.calls[0]?.[0]).toEqual({
+    expect((getTickets.mock.calls as unknown[][])[0]?.[0]).toEqual({
       period: "all",
       result: "TIME_EXIT",
     });
@@ -335,7 +335,7 @@ describe("GET /stats", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual(stats);
-    expect(getStats.mock.calls[0]?.[0]).toBe("all");
+    expect((getStats.mock.calls as unknown[][])[0]?.[0]).toBe("all");
   });
 
   it("passes period=today to getStats", async () => {
@@ -344,7 +344,7 @@ describe("GET /stats", () => {
 
     await app.request("/stats?period=today");
 
-    expect(getStats.mock.calls[0]?.[0]).toBe("today");
+    expect((getStats.mock.calls as unknown[][])[0]?.[0]).toBe("today");
   });
 
   it("passes period=7d to getStats", async () => {
@@ -353,7 +353,7 @@ describe("GET /stats", () => {
 
     await app.request("/stats?period=7d");
 
-    expect(getStats.mock.calls[0]?.[0]).toBe("7d");
+    expect((getStats.mock.calls as unknown[][])[0]?.[0]).toBe("7d");
   });
 
   it("passes period=30d to getStats", async () => {
@@ -362,7 +362,7 @@ describe("GET /stats", () => {
 
     await app.request("/stats?period=30d");
 
-    expect(getStats.mock.calls[0]?.[0]).toBe("30d");
+    expect((getStats.mock.calls as unknown[][])[0]?.[0]).toBe("30d");
   });
 
   it("returns 400 for invalid period", async () => {

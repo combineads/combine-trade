@@ -1,5 +1,4 @@
 import { describe, expect, it } from "bun:test";
-import type { TicketState } from "@/core/types";
 import {
   canTransition,
   validateTransition,

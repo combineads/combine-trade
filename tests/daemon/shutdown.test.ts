@@ -6,7 +6,7 @@
  * call-order tracking.
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import type { ExchangeAdapter } from "@/core/ports";
 import type { Exchange } from "@/core/types";
 import {
@@ -260,7 +260,7 @@ describe("gracefulShutdown — PENDING orders", () => {
 
     await gracefulShutdown(deps);
 
-    const call = cancelOrder.mock.calls[0] as [ExchangeAdapter, string, string];
+    const call = cancelOrder.mock.calls[0] as unknown as [ExchangeAdapter, string, string];
     expect(call[1]).toBe("exch-btc-999");
     expect(call[2]).toBe("BTCUSDT");
   });
@@ -458,7 +458,7 @@ describe("gracefulShutdown — error tolerance", () => {
 
     // Only the binance order should be attempted
     expect(cancelOrder.mock.calls.length).toBe(1);
-    const call = cancelOrder.mock.calls[0] as [ExchangeAdapter, string, string];
+    const call = cancelOrder.mock.calls[0] as unknown as [ExchangeAdapter, string, string];
     expect(call[1]).toBe("binance-order");
   });
 });
@@ -493,7 +493,7 @@ describe("gracefulShutdown — 30s timeout", () => {
     // The actual exit test would require fake timer control.
 
     // Resolve the stop to unblock so cleanup runs
-    resolveStop?.();
+    (resolveStop as (() => void) | null)?.call(null);
     await shutdownPromise;
 
     // After normal completion, process.exit should NOT have been called

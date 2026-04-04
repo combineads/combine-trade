@@ -3,7 +3,6 @@ import Decimal from "decimal.js";
 
 import { d } from "../../src/core/decimal";
 import { checkSlippage, checkSpread } from "../../src/orders/slippage";
-import type { SlippageResult, SpreadCheckResult } from "../../src/orders/slippage";
 
 // ---------------------------------------------------------------------------
 // Helpers

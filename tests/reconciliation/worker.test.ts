@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import { d } from "@/core/decimal";
 import type { ExchangeAdapter, ExchangePosition } from "@/core/ports";
 import type { Direction, Exchange } from "@/core/types";
@@ -7,7 +7,6 @@ import {
   runOnce,
   startReconciliation,
   type ReconciliationDeps,
-  type ReconciliationRunResult,
 } from "@/reconciliation/worker";
 
 // ---------------------------------------------------------------------------
@@ -142,7 +141,7 @@ describe("reconciliation-worker — runOnce", () => {
     expect(deps.setSymbolStateIdle).not.toHaveBeenCalled();
     // insertEvent should be called with MATCHED
     expect(deps.insertEvent).toHaveBeenCalled();
-    const call = (deps.insertEvent as ReturnType<typeof mock>).mock.calls[0];
+    const call = (deps.insertEvent as ReturnType<typeof mock>).mock.calls[0]!;
     expect(call[0]).toBe("RECONCILIATION");
     expect(call[1].action).toBe("MATCHED");
     expect(call[1].count).toBe(1);
@@ -169,7 +168,7 @@ describe("reconciliation-worker — runOnce", () => {
     expect(result.unmatched).toBe(1);
     // emergencyClose should be called for the unmatched position
     expect(deps.emergencyClose).toHaveBeenCalledTimes(1);
-    const ecCall = (deps.emergencyClose as ReturnType<typeof mock>).mock.calls[0];
+    const ecCall = (deps.emergencyClose as ReturnType<typeof mock>).mock.calls[0]!;
     expect(ecCall[0].symbol).toBe("ETHUSDT");
     expect(ecCall[0].exchange).toBe("binance");
 
@@ -204,7 +203,7 @@ describe("reconciliation-worker — runOnce", () => {
     expect(result.orphaned).toBe(1);
     // setSymbolStateIdle should be called
     expect(deps.setSymbolStateIdle).toHaveBeenCalledTimes(1);
-    const idleCall = (deps.setSymbolStateIdle as ReturnType<typeof mock>).mock.calls[0];
+    const idleCall = (deps.setSymbolStateIdle as ReturnType<typeof mock>).mock.calls[0]!;
     expect(idleCall[0]).toBe("SOLUSDT");
     expect(idleCall[1]).toBe("binance");
 

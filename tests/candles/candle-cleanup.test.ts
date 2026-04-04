@@ -1,5 +1,4 @@
 import {
-  afterAll,
   beforeAll,
   beforeEach,
   describe,
@@ -11,7 +10,6 @@ import { candleTable, symbolTable } from "../../src/db/schema";
 import { cleanupOldCandles } from "../../src/candles/cleanup";
 import {
   cleanupTables,
-  closeTestDb,
   initTestDb,
   isTestDbAvailable,
 } from "../helpers/test-db";

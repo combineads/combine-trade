@@ -109,6 +109,7 @@ describe("integration/indicators-imports — type exports", () => {
     const allNull: AllIndicators = {
       bb20: null,
       bb4: null,
+      bb4_1h: null,
       sma20: null,
       sma60: null,
       sma120: null,
@@ -117,6 +118,7 @@ describe("integration/indicators-imports — type exports", () => {
       ema120: null,
       rsi14: null,
       atr14: null,
+      prevSma20: null,
       squeeze: "normal",
     };
     expect(allNull.squeeze).toBe("normal");
@@ -186,7 +188,7 @@ describe("integration/indicators-imports — callable functions", () => {
   });
 
   it("detectSqueeze is callable and returns a SqueezeState", () => {
-    const state = detectSqueeze([0.01, 0.02, 0.015]);
+    const state = detectSqueeze([d("0.01"), d("0.02"), d("0.015")]);
     expect(["squeeze", "expansion", "normal"]).toContain(state);
   });
 

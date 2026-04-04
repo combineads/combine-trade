@@ -1,5 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import type Decimal from "decimal.js";
+import { describe, expect, it, mock } from "bun:test";
 
 import { d } from "@/core/decimal";
 import type {
@@ -8,15 +7,13 @@ import type {
   ExchangeAdapter,
   OrderResult,
 } from "@/core/ports";
-import type { Direction, Exchange, OrderSide, TicketState } from "@/core/types";
+import type { Direction, Exchange, TicketState } from "@/core/types";
 import type { ExitAction, ExitActionType } from "@/exits/checker";
 import {
   processExit,
   processTrailing,
   updateTpPrices,
   updateMfeMae,
-  type ProcessExitParams,
-  type ExitResult,
 } from "@/exits/manager";
 
 // ---------------------------------------------------------------------------

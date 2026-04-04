@@ -22,7 +22,7 @@ import { startDaemon } from "../../src/daemon";
 import type { CandleCloseCallback } from "../../src/candles/types";
 import type { CrashRecoveryDeps, CrashRecoveryResult } from "../../src/daemon/crash-recovery";
 import { recoverFromCrash } from "../../src/daemon/crash-recovery";
-import type { ActiveSymbol, PipelineDeps } from "../../src/daemon/pipeline";
+import type { PipelineDeps } from "../../src/daemon/pipeline";
 import type { ShutdownDeps } from "../../src/daemon/shutdown";
 import type { ExchangeAdapter } from "../../src/core/ports";
 import type { Candle, Exchange, Timeframe, WatchSession, SymbolState } from "../../src/core/types";
@@ -245,6 +245,9 @@ function createMockCrashRecoveryDeps(overrides?: Partial<CrashRecoveryDeps>): Cr
     checkSlOnExchange: mock(async () => true),
     reRegisterSl: mock(async () => {}),
     restoreLossCounters: mock(async () => {}),
+    getActiveWatchSessions: mock(async () => []),
+    getSymbolDailyBias: mock(async () => null),
+    invalidateWatchSession: mock(async () => {}),
     insertEvent: mock(async () => {}),
     sendSlackAlert: mock(async () => {}),
     ...overrides,
@@ -283,6 +286,7 @@ function createMockPipelineDeps(overrides?: Partial<PipelineDeps>): PipelineDeps
 
     getCandles: mock(async () => [makeCandle()]),
     calcAllIndicators: mock(() => makeIndicators()),
+    calcBB4: mock(() => null),
     getSymbolState: mock(async () => makeSymbolState()),
 
     determineDailyBias: mock(() => "NEUTRAL" as const),
@@ -294,6 +298,7 @@ function createMockPipelineDeps(overrides?: Partial<PipelineDeps>): PipelineDeps
     openWatchSession: mock(async () => makeWatchSession()),
     invalidateWatchSession: mock(async () => {}),
     checkInvalidation: mock(() => null),
+    updateWatchSessionTp: mock(async () => {}),
 
     checkEvidence: mock(() => null),
     checkSafety: mock(() => makeSafetyPassed()),
@@ -353,7 +358,7 @@ function createMockPipelineDeps(overrides?: Partial<PipelineDeps>): PipelineDeps
       hold_duration_sec: null,
       created_at: new Date(),
       updated_at: new Date(),
-    })),
+    })) as any,
 
     executeEntry: mock(async () => ({
       success: true,
@@ -430,6 +435,8 @@ function buildDaemonDeps(overrides?: Partial<DaemonDeps>): {
     unmatched: 0,
     orphaned: 0,
     slReRegistered: 0,
+    watchSessionsRestored: 0,
+    watchSessionsInvalidated: 0,
     errors: [],
     durationMs: 0,
   }));
@@ -500,7 +507,7 @@ describe("daemon E2E", () => {
         order.push("candleManager.start");
       });
       (candleManager.onCandleClose as ReturnType<typeof mock>) = mock(
-        (cb: CandleCloseCallback) => {
+        (_cb: CandleCloseCallback) => {
           order.push("onCandleClose");
           return () => {};
         },
@@ -528,6 +535,8 @@ describe("daemon E2E", () => {
             unmatched: 0,
             orphaned: 0,
             slReRegistered: 0,
+            watchSessionsRestored: 0,
+            watchSessionsInvalidated: 0,
             errors: [],
             durationMs: 0,
           };

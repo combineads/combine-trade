@@ -6,15 +6,8 @@ import {
   expect,
   it,
 } from "bun:test";
-import { eq } from "drizzle-orm";
 import { getDb, getPool } from "../../src/db/pool";
 import type { DbInstance } from "../../src/db/pool";
-import {
-  signalTable,
-  signalDetailTable,
-  ticketTable,
-  vectorTable,
-} from "../../src/db/schema";
 import {
   cleanupTables,
   closeTestDb,

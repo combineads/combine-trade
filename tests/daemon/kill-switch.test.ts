@@ -5,7 +5,7 @@
  * real exchange adapters are needed.
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
 import { d } from "@/core/decimal";
 import type { ExchangeAdapter, ExchangePosition } from "@/core/ports";
@@ -14,7 +14,6 @@ import type { EmergencyCloseParams } from "@/orders/executor";
 import {
   killSwitch,
   type KillSwitchDeps,
-  type KillSwitchResult,
   type OpenOrder,
 } from "../../scripts/kill-switch";
 

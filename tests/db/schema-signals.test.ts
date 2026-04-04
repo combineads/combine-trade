@@ -369,7 +369,7 @@ describe.skipIf(!dbAvailable)("schema-signals — integration", () => {
         INSERT INTO signals
           (symbol, exchange, watch_session_id, timeframe, signal_type, direction, entry_price, sl_price, safety_passed, knn_decision)
         VALUES
-          (${s.symbol}, ${s.exchange}, ${s.watch_session_id}, ${s.timeframe}, ${s.signal_type}, ${s.direction}, ${s.entry_price}, ${s.sl_price}, ${s.safety_passed}, ${s.knn_decision as string})
+          (${s.symbol}, ${s.exchange}, ${s.watch_session_id}, ${s.timeframe}, ${s.signal_type}, ${s.direction}, ${s.entry_price}, ${s.sl_price}, ${s.safety_passed}, ${(s as Record<string, unknown>).knn_decision as string})
       `;
       expect.unreachable("should have thrown");
     } catch (err: unknown) {

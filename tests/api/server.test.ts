@@ -29,15 +29,6 @@ function createMockLogger(): Logger {
   };
 }
 
-function createDeps(overrides?: Partial<ApiServerDeps>): ApiServerDeps {
-  return {
-    logger: createMockLogger(),
-    port: 0, // ephemeral port — OS assigns an available one
-    staticDir: TEST_PUBLIC_DIR,
-    ...overrides,
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Setup / teardown
 // ---------------------------------------------------------------------------
@@ -325,7 +316,7 @@ describe("daemon apiServer integration", () => {
     const apiServerStop = mock(async () => {});
     const deps = buildDaemonDeps({ start: apiServerStart, stop: apiServerStop });
 
-    const handle = await startDaemon(deps);
+    const handle = await startDaemon(deps as any);
     await handle.stop();
 
     expect(apiServerStart.mock.calls.length).toBe(1);
@@ -337,7 +328,7 @@ describe("daemon apiServer integration", () => {
     const apiServerStop = mock(async () => {});
     const deps = buildDaemonDeps({ start: apiServerStart, stop: apiServerStop });
 
-    const handle = await startDaemon(deps);
+    const handle = await startDaemon(deps as any);
     await handle.stop();
 
     expect(apiServerStop.mock.calls.length).toBe(1);
@@ -347,7 +338,7 @@ describe("daemon apiServer integration", () => {
     const { startDaemon } = await loadDaemon();
     const deps = buildDaemonDeps(); // no apiServer
 
-    const handle = await startDaemon(deps);
+    const handle = await startDaemon(deps as any);
     await handle.stop();
 
     // If we get here without error, backward compatibility is preserved

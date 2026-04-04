@@ -1,5 +1,4 @@
 import {
-  afterAll,
   beforeAll,
   beforeEach,
   describe,
@@ -16,7 +15,6 @@ import {
 } from "../../src/candles/repository";
 import {
   cleanupTables,
-  closeTestDb,
   initTestDb,
   isTestDbAvailable,
 } from "../helpers/test-db";

@@ -63,7 +63,8 @@ function buildApp(opts?: { skipAuth?: boolean }): Hono {
     throw new HTTPException(404, { message: "Resource not found" });
   });
   app.get("/api/timeout-check", (c) => {
-    const timeout = c.get("queryTimeout");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const timeout = (c as any).get("queryTimeout");
     return c.json({ queryTimeout: timeout });
   });
 

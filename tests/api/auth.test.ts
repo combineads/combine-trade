@@ -10,7 +10,7 @@
  * - CSRF: Origin header validation for mutation requests
  */
 
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import { Hono } from "hono";
 import { verify as jwtVerify } from "hono/jwt";
 import { createAuthRoutes, generateToken, verifyPassword } from "../../src/api/auth";

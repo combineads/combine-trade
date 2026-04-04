@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import * as ccxt from "ccxt";
 import { Decimal } from "decimal.js";
 import type {

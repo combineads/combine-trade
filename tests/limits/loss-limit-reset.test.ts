@@ -1,11 +1,9 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 import { and, eq } from "drizzle-orm";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { getDb } from "@/db/pool";
+import { getDb, type DbInstance } from "@/db/pool";
 import { symbolStateTable, symbolTable } from "@/db/schema";
 import {
   type LastResets,
-  type ResetResult,
   resetAllExpired,
   resetDailyLosses,
   resetHourlyLosses,
@@ -176,11 +174,11 @@ describe.skipIf(!dbAvailable)("loss-counter-reset -- DB reset functions", () => 
   const TEST_SYMBOL = "BTC/USDT:USDT";
   const TEST_EXCHANGE = "binance";
 
-  let db: NodePgDatabase;
+  let db: DbInstance;
 
   beforeAll(async () => {
     await initTestDb();
-    db = getDb() as unknown as NodePgDatabase;
+    db = getDb();
   });
 
   afterAll(async () => {

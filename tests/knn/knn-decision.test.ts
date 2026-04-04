@@ -459,7 +459,7 @@ async function insertWatchSession(
 
 async function insertSignal(
   watchSessionId: string,
-  overrides: Record<string, unknown> = {},
+  _overrides: Record<string, unknown> = {},
 ): Promise<string> {
   const pool = getPool();
   const result = await pool`

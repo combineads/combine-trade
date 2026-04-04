@@ -28,6 +28,7 @@ describe("indicators/types — AllIndicators construction", () => {
     const indicators: AllIndicators = {
       bb20: null,
       bb4: null,
+      bb4_1h: null,
       sma20: null,
       sma60: null,
       sma120: null,
@@ -36,10 +37,11 @@ describe("indicators/types — AllIndicators construction", () => {
       ema120: null,
       rsi14: null,
       atr14: null,
+      prevSma20: null,
       squeeze: "normal",
     };
     const keys = Object.keys(indicators);
-    expect(keys).toHaveLength(11);
+    expect(keys).toHaveLength(13);
     expect(keys).toContain("bb20");
     expect(keys).toContain("bb4");
     expect(keys).toContain("sma20");
@@ -57,6 +59,7 @@ describe("indicators/types — AllIndicators construction", () => {
     const indicators: AllIndicators = {
       bb20: null,
       bb4: null,
+      bb4_1h: null,
       sma20: null,
       sma60: null,
       sma120: null,
@@ -65,6 +68,7 @@ describe("indicators/types — AllIndicators construction", () => {
       ema120: null,
       rsi14: null,
       atr14: null,
+      prevSma20: null,
       squeeze: "normal",
     };
     expect(indicators.bb20).toBeNull();
@@ -85,6 +89,7 @@ describe("indicators/types — AllIndicators construction", () => {
     const indicators: AllIndicators = {
       bb20: bb,
       bb4: bb,
+      bb4_1h: null,
       sma20: new Decimal("100"),
       sma60: new Decimal("99"),
       sma120: new Decimal("98"),
@@ -93,6 +98,7 @@ describe("indicators/types — AllIndicators construction", () => {
       ema120: new Decimal("98.3"),
       rsi14: new Decimal("55"),
       atr14: new Decimal("1.5"),
+      prevSma20: new Decimal("99.9"),
       squeeze: "squeeze",
     };
     expect(indicators.bb20).not.toBeNull();
@@ -118,6 +124,7 @@ describe("indicators/types — compile-time type safety", () => {
   it("number is not assignable to BollingerResult.upper", () => {
     // @ts-expect-error — number is not assignable to Decimal
     const _bad: BollingerResult = {
+      // @ts-expect-error — number is not assignable to Decimal
       upper: 100.5,
       middle: new Decimal("100"),
       lower: new Decimal("99.5"),

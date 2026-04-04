@@ -23,13 +23,10 @@ import {
   mock,
   spyOn,
 } from "bun:test";
-import { eq } from "drizzle-orm";
-
 import { d } from "@/core/decimal";
 import type { ExchangeAdapter, ExchangePosition } from "@/core/ports";
 import type { Direction, Exchange } from "@/core/types";
 import { getDb, getPool } from "@/db/pool";
-import { eventLogTable, symbolStateTable } from "@/db/schema";
 import { insertEvent, queryEvents } from "@/db/event-log";
 import { runOnce, type ReconciliationDeps } from "@/reconciliation/worker";
 import type { TicketSnapshot } from "@/reconciliation/comparator";
@@ -234,7 +231,7 @@ async function insertTicket(
  * Inserts a PENDING order for a symbol (used for PENDING safety test).
  */
 async function insertPendingOrder(
-  symbol: string,
+  _symbol: string,
   exchange: string,
   ticketId: string,
 ): Promise<void> {
@@ -445,7 +442,7 @@ describe.skipIf(!dbAvailable)(
 
       // emergencyClose should be called once
       expect(deps.emergencyClose).toHaveBeenCalledTimes(1);
-      const ecCall = (deps.emergencyClose as ReturnType<typeof mock>).mock.calls[0];
+      const ecCall = (deps.emergencyClose as ReturnType<typeof mock>).mock.calls[0]!;
       expect(ecCall[0].symbol).toBe(SYMBOL_ETH);
       expect(ecCall[0].exchange).toBe(EXCHANGE_BINANCE);
 
@@ -523,8 +520,6 @@ describe.skipIf(!dbAvailable)(
   "[safety-net-e2e] Scenario 4: PENDING safety — excludes from panic close",
   () => {
     it("PENDING order exists for symbol -> unmatched excluded, no panic close", async () => {
-      const db = getDb();
-
       // Seed full chain with a ticket + PENDING order for BTC
       const ticketId = await seedFullChain(SYMBOL_BTC, EXCHANGE_BINANCE, "LONG");
       await insertPendingOrder(SYMBOL_BTC, EXCHANGE_BINANCE, ticketId);
@@ -583,8 +578,6 @@ describe.skipIf(!dbAvailable)(
   "[safety-net-e2e] Scenario 5: Exchange API failure -> skip, others processed",
   () => {
     it("fetchPositions throws for one exchange, other exchange processes normally", async () => {
-      const db = getDb();
-
       // Seed BTC on OKX (will be matched)
       await seedFullChain(SYMBOL_BTC, EXCHANGE_OKX, "LONG");
 
@@ -631,8 +624,6 @@ describe.skipIf(!dbAvailable)(
   "[safety-net-e2e] Scenario 6: Slack integration on mismatch",
   () => {
     it("on unmatched position, sendSlackAlert would be called (mock verification)", async () => {
-      const db = getDb();
-
       // Spy on sendSlackAlert
       const slackSpy = spyOn(slackModule, "sendSlackAlert").mockResolvedValue(undefined);
 
@@ -675,7 +666,7 @@ describe.skipIf(!dbAvailable)(
 
       // Verify sendSlackAlert was called with RECONCILIATION_MISMATCH
       expect(slackSpy).toHaveBeenCalledTimes(1);
-      const callArgs = slackSpy.mock.calls[0];
+      const callArgs = slackSpy.mock.calls[0]!;
       expect(callArgs[0]).toBe("RECONCILIATION_MISMATCH");
       expect(callArgs[1]).toMatchObject({
         symbol: SYMBOL_ETH,
@@ -748,7 +739,7 @@ describe.skipIf(!dbAvailable)(
 
       // emergencyClose called once for ETH unmatched
       expect(deps.emergencyClose).toHaveBeenCalledTimes(1);
-      const ecCall = (deps.emergencyClose as ReturnType<typeof mock>).mock.calls[0];
+      const ecCall = (deps.emergencyClose as ReturnType<typeof mock>).mock.calls[0]!;
       expect(ecCall[0].symbol).toBe(SYMBOL_ETH);
       expect(ecCall[0].exchange).toBe(EXCHANGE_BINANCE);
 

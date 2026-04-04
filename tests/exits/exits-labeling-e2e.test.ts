@@ -28,7 +28,6 @@ import { getDb, getPool } from "@/db/pool";
 import {
   orderTable,
   ticketTable,
-  vectorTable,
 } from "@/db/schema";
 import type { CreateOrderParams, ExchangeAdapter, OrderResult } from "@/core/ports";
 import type { Direction, Exchange } from "@/core/types";
@@ -992,7 +991,7 @@ describe.skipIf(!dbAvailable)(
 
       // Need a separate signal for SHORT direction
       await seedCommonCodes();
-      const symbolStateId = await insertSymbolWithState();
+      await insertSymbolWithState();
       const watchSessionId = await insertWatchSession("SHORT");
       const candleId = await insertCandle();
       const vectorId = await insertVector(candleId);

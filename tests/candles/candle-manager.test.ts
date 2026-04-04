@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import Decimal from "decimal.js";
 import { CandleCollector } from "../../src/candles/collector";
 import { GapRecovery } from "../../src/candles/gap-recovery";
@@ -255,7 +255,7 @@ describe("CandleManager unit tests", () => {
   });
 
   it("onCandleClose(cb) proxies to collector.onCandleClose", async () => {
-    const { adapter } = createMockAdapter();
+    const { adapter: _adapter } = createMockAdapter();
     const { collector, closeCallbacks } = createMockCollector();
     const { gapRecovery } = createMockGapRecovery();
     const syncFn = mock(async () => []);
@@ -357,7 +357,7 @@ describe("CandleManager unit tests", () => {
   });
 
   it("runCleanup() delegates to cleanupFn and returns result", async () => {
-    const { adapter } = createMockAdapter();
+    const { adapter: _adapter } = createMockAdapter();
     const { collector } = createMockCollector();
     const { gapRecovery } = createMockGapRecovery();
     const syncFn = mock(async () => []);

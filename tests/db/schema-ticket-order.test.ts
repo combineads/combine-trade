@@ -8,7 +8,6 @@ import {
 } from "bun:test";
 import { getTableName } from "drizzle-orm";
 import { ticketTable, orderTable } from "../../src/db/schema";
-import type { TicketRow, NewTicketRow, OrderRow, NewOrderRow } from "../../src/db/schema";
 import { getPool } from "../../src/db/pool";
 import {
   cleanupTables,

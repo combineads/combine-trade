@@ -52,6 +52,9 @@ const mockAdapter: ExchangeAdapter = {
   getExchangeInfo(_symbol: string): Promise<ExchangeSymbolInfo> {
     throw new Error("not implemented");
   },
+  setLeverage(_leverage: number, _symbol: string): Promise<void> {
+    throw new Error("not implemented");
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -119,6 +122,7 @@ describe("core/ports — CreateOrderParams", () => {
     // @ts-expect-error — 'LONG' is not a valid OrderSide
     const _bad: CreateOrderParams = {
       symbol: "BTCUSDT",
+      // @ts-expect-error — 'LONG' is not a valid OrderSide
       side: "LONG",
       size: new Decimal("0.1"),
       type: "market",
@@ -172,6 +176,7 @@ describe("core/ports — ExchangePosition", () => {
     const _bad: ExchangePosition = {
       symbol: "BTCUSDT",
       exchange: "binance",
+      // @ts-expect-error — 'BUY' is not a valid Direction
       side: "BUY",
       size: new Decimal("0.1"),
       entryPrice: new Decimal("65000"),

@@ -47,9 +47,10 @@ function makeCandles(count: number, baseClose = 85000): Candle[] {
 describe("indicators/unified", () => {
   it("imports: all types are importable from @/indicators index", () => {
     // Type-level check — if this compiles the test passes.
-    const _a: AllIndicators = {
+    const _indicators: AllIndicators = {
       bb20: null,
       bb4: null,
+      bb4_1h: null,
       sma20: null,
       sma60: null,
       sma120: null,
@@ -58,10 +59,14 @@ describe("indicators/unified", () => {
       ema120: null,
       rsi14: null,
       atr14: null,
+      prevSma20: null,
       squeeze: "normal",
     };
-    const _b: BollingerResult | null = null;
-    const _c: SqueezeState = "normal";
+    const _bollingerResult: BollingerResult | null = null;
+    const _squeezeState: SqueezeState = "normal";
+    void _indicators;
+    void _bollingerResult;
+    void _squeezeState;
     expect(typeof calcAllIndicators).toBe("function");
     expect(typeof calcBB20).toBe("function");
     expect(typeof calcBB4).toBe("function");

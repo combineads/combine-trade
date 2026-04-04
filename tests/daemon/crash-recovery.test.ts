@@ -17,7 +17,6 @@ import { comparePositions } from "@/reconciliation/comparator";
 import {
   recoverFromCrash,
   type CrashRecoveryDeps,
-  type CrashRecoveryResult,
 } from "@/daemon/crash-recovery";
 
 // ---------------------------------------------------------------------------

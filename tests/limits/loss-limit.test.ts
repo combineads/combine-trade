@@ -3,7 +3,6 @@ import { d } from "@/core/decimal";
 import {
   checkLossLimit,
   type LossLimitConfig,
-  type LossLimitResult,
   type SymbolLossState,
   type LossViolation,
 } from "@/limits/loss-limit";

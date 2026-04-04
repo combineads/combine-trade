@@ -95,13 +95,13 @@ describe("GET /api/positions", () => {
     const body = (await res.json()) as PositionRow[];
     expect(body).toHaveLength(2);
 
-    expect(body[0].symbol).toBe("BTCUSDT");
-    expect(body[0].state).toBe("INITIAL");
-    expect(body[0].direction).toBe("LONG");
+    expect(body[0]!.symbol).toBe("BTCUSDT");
+    expect(body[0]!.state).toBe("INITIAL");
+    expect(body[0]!.direction).toBe("LONG");
 
-    expect(body[1].symbol).toBe("ETHUSDT");
-    expect(body[1].state).toBe("TP1_HIT");
-    expect(body[1].direction).toBe("SHORT");
+    expect(body[1]!.symbol).toBe("ETHUSDT");
+    expect(body[1]!.state).toBe("TP1_HIT");
+    expect(body[1]!.direction).toBe("SHORT");
   });
 
   it("returns empty array when no active positions", async () => {
@@ -141,14 +141,14 @@ describe("GET /api/positions", () => {
     expect(body).toHaveLength(1);
 
     // All price/size fields must be strings
-    expect(typeof body[0].entry_price).toBe("string");
-    expect(typeof body[0].sl_price).toBe("string");
-    expect(typeof body[0].current_sl_price).toBe("string");
-    expect(typeof body[0].size).toBe("string");
-    expect(typeof body[0].remaining_size).toBe("string");
-    expect(typeof body[0].leverage).toBe("string");
-    expect(typeof body[0].max_profit).toBe("string");
-    expect(typeof body[0].pyramid_count).toBe("string");
+    expect(typeof body[0]!.entry_price).toBe("string");
+    expect(typeof body[0]!.sl_price).toBe("string");
+    expect(typeof body[0]!.current_sl_price).toBe("string");
+    expect(typeof body[0]!.size).toBe("string");
+    expect(typeof body[0]!.remaining_size).toBe("string");
+    expect(typeof body[0]!.leverage).toBe("string");
+    expect(typeof body[0]!.max_profit).toBe("string");
+    expect(typeof body[0]!.pyramid_count).toBe("string");
   });
 
   it("excludes CLOSED tickets (only non-CLOSED returned by deps)", async () => {
@@ -208,9 +208,9 @@ describe("GET /api/positions", () => {
 
     expect(res.status).toBe(200);
     const body = (await res.json()) as PositionRow[];
-    expect(body[0].parent_ticket_id).toBeNull();
-    expect(body[0].tp1_price).toBeNull();
-    expect(body[0].closed_at).toBeNull();
-    expect(body[0].pnl).toBeNull();
+    expect(body[0]!.parent_ticket_id).toBeNull();
+    expect(body[0]!.tp1_price).toBeNull();
+    expect(body[0]!.closed_at).toBeNull();
+    expect(body[0]!.pnl).toBeNull();
   });
 });

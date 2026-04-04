@@ -1,0 +1,229 @@
+import Decimal from "decimal.js";
+import { d, gte, lte } from "@/core/decimal";
+import type {
+  Candle,
+  Direction,
+  Signal,
+  SignalType,
+  VectorTimeframe,
+  WatchSession,
+} from "@/core/types";
+import type { DbInstance } from "@/db/pool";
+import { signalDetailTable, signalTable } from "@/db/schema";
+import type { AllIndicators } from "@/indicators/types";
+
+// ---------------------------------------------------------------------------
+// EvidenceResult
+// ---------------------------------------------------------------------------
+
+export type EvidenceResult = {
+  signalType: SignalType;
+  direction: Direction;
+  entryPrice: Decimal;
+  slPrice: Decimal;
+  details: Record<string, Decimal | string>;
+};
+
+// ---------------------------------------------------------------------------
+// SL price calculation (pure)
+// ---------------------------------------------------------------------------
+
+/**
+ * Computes SL price for LONG or SHORT.
+ * LONG:  candle.low  - ATR * 0.5
+ * SHORT: candle.high + ATR * 0.5
+ * Falls back to candle range (high - low) when ATR is null.
+ */
+function calcSlPrice(candle: Candle, direction: Direction, atr: Decimal | null): Decimal {
+  const fallback = candle.high.minus(candle.low);
+  const buffer = atr != null ? atr.times("0.5") : fallback.times("0.5");
+
+  if (direction === "LONG") {
+    return candle.low.minus(buffer);
+  }
+  return candle.high.plus(buffer);
+}
+
+// ---------------------------------------------------------------------------
+// checkEvidence — pure
+// ---------------------------------------------------------------------------
+
+/**
+ * Evaluates BB4 touch conditions for the given candle against the active
+ * WatchSession and returns an EvidenceResult, or null when:
+ * - BB4 is not available
+ * - No BB4 touch occurred
+ * - Candle direction does not match the session direction
+ */
+export function checkEvidence(
+  candle: Candle,
+  indicators: AllIndicators,
+  watchSession: WatchSession,
+): EvidenceResult | null {
+  if (!indicators.bb4) return null;
+
+  const { upper: bb4Upper, lower: bb4Lower } = indicators.bb4;
+
+  // BB4 touch detection
+  const bb4TouchLong = lte(candle.low, bb4Lower);
+  const bb4TouchShort = gte(candle.high, bb4Upper);
+
+  // Direction determined by BB4 touch
+  let touchDirection: Direction | null = null;
+  if (bb4TouchLong) touchDirection = "LONG";
+  else if (bb4TouchShort) touchDirection = "SHORT";
+
+  // No touch → null
+  if (touchDirection === null) return null;
+
+  // Direction mismatch with watchSession → null
+  if (touchDirection !== watchSession.direction) return null;
+
+  // Double-B classification: BB4 + BB20 simultaneous touch in same candle
+  let signalType: SignalType = "ONE_B";
+  if (indicators.bb20) {
+    const { upper: bb20Upper, lower: bb20Lower } = indicators.bb20;
+    if (touchDirection === "LONG" && lte(candle.low, bb20Lower)) {
+      signalType = "DOUBLE_B";
+    } else if (touchDirection === "SHORT" && gte(candle.high, bb20Upper)) {
+      signalType = "DOUBLE_B";
+    }
+  }
+
+  // entry_price = candle.close
+  const entryPrice = candle.close;
+
+  // SL price
+  const slPrice = calcSlPrice(candle, touchDirection, indicators.atr14);
+
+  // Build details record
+  const details: Record<string, Decimal | string> = {
+    detection_type: signalType,
+  };
+
+  if (touchDirection === "LONG") {
+    details.bb4_touch_price = candle.low;
+    details.bb4_lower = bb4Lower;
+  } else {
+    details.bb4_touch_price = candle.high;
+    details.bb4_upper = bb4Upper;
+  }
+
+  if (indicators.bb20) {
+    details.bb20_lower = indicators.bb20.lower;
+    details.bb20_upper = indicators.bb20.upper;
+  }
+
+  if (indicators.atr14) {
+    details.atr14 = indicators.atr14;
+  }
+
+  // daily_bias from watchSession.context_data if present
+  if (
+    watchSession.context_data !== null &&
+    typeof watchSession.context_data === "object" &&
+    "daily_bias" in (watchSession.context_data as object)
+  ) {
+    details.daily_bias = String((watchSession.context_data as Record<string, unknown>).daily_bias);
+  }
+
+  return {
+    signalType,
+    direction: touchDirection,
+    entryPrice,
+    slPrice,
+    details,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// rowToSignal — DB row → Signal domain type
+// ---------------------------------------------------------------------------
+
+function rowToSignal(row: typeof signalTable.$inferSelect): Signal {
+  return {
+    id: row.id,
+    symbol: row.symbol,
+    exchange: row.exchange as Signal["exchange"],
+    watch_session_id: row.watch_session_id,
+    timeframe: row.timeframe as Signal["timeframe"],
+    signal_type: row.signal_type as Signal["signal_type"],
+    direction: row.direction as Signal["direction"],
+    entry_price: d(row.entry_price),
+    sl_price: d(row.sl_price),
+    safety_passed: row.safety_passed,
+    knn_decision: (row.knn_decision as Signal["knn_decision"]) ?? null,
+    a_grade: row.a_grade,
+    vector_id: row.vector_id ?? null,
+    created_at: row.created_at,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// createSignal — DB write
+// ---------------------------------------------------------------------------
+
+/**
+ * Inserts a Signal row and associated SignalDetail rows derived from
+ * evidence.details. Returns the created Signal.
+ *
+ * - knn_decision = null (filled later by KNN stage)
+ * - a_grade = false
+ * - safety_passed = false (filled later by Safety Gate)
+ * - vector_id = null
+ */
+export async function createSignal(
+  db: DbInstance,
+  evidence: EvidenceResult,
+  watchSession: WatchSession,
+  timeframe: VectorTimeframe,
+): Promise<Signal> {
+  // Insert signal row
+  const inserted = await db
+    .insert(signalTable)
+    .values({
+      symbol: watchSession.symbol,
+      exchange: watchSession.exchange,
+      watch_session_id: watchSession.id,
+      timeframe,
+      signal_type: evidence.signalType,
+      direction: evidence.direction,
+      entry_price: evidence.entryPrice.toString(),
+      sl_price: evidence.slPrice.toString(),
+      safety_passed: false,
+      knn_decision: null,
+      a_grade: false,
+      vector_id: null,
+    })
+    .returning();
+
+  const signalRow = inserted[0];
+  if (!signalRow) {
+    throw new Error("createSignal: INSERT into signals did not return a row");
+  }
+
+  // Insert SignalDetail rows
+  const detailEntries = Object.entries(evidence.details);
+  if (detailEntries.length > 0) {
+    const detailValues = detailEntries.map(([key, val]) => {
+      if (val instanceof Decimal) {
+        return {
+          signal_id: signalRow.id,
+          key,
+          value: val.toString(),
+          text_value: null,
+        };
+      }
+      return {
+        signal_id: signalRow.id,
+        key,
+        value: null,
+        text_value: val,
+      };
+    });
+
+    await db.insert(signalDetailTable).values(detailValues);
+  }
+
+  return rowToSignal(signalRow);
+}

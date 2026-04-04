@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  customType,
   foreignKey,
   index,
   integer,
@@ -15,6 +16,22 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+
+// ---------------------------------------------------------------------------
+// pgvector custom type: vector(202)
+// ---------------------------------------------------------------------------
+
+const vectorType = customType<{ data: string; driverParam: string }>({
+  dataType() {
+    return "vector(202)";
+  },
+  toDriver(value: unknown): string {
+    return value as string;
+  },
+  fromDriver(value: unknown): string {
+    return value as string;
+  },
+});
 
 // ---------------------------------------------------------------------------
 // symbol table
@@ -307,3 +324,46 @@ export const signalDetailTable = pgTable(
 
 export type SignalDetailRow = InferSelectModel<typeof signalDetailTable>;
 export type NewSignalDetailRow = InferInsertModel<typeof signalDetailTable>;
+
+// ---------------------------------------------------------------------------
+// vectors table
+// ---------------------------------------------------------------------------
+
+export const vectorTable = pgTable(
+  "vectors",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    candle_id: uuid("candle_id").notNull().unique(),
+    symbol: text("symbol").notNull(),
+    exchange: text("exchange").notNull(),
+    timeframe: text("timeframe").notNull(),
+    embedding: vectorType("embedding").notNull(),
+    label: text("label"),
+    grade: text("grade"),
+    labeled_at: timestamp("labeled_at", { withTimezone: true, mode: "date" }),
+    signal_id: uuid("signal_id"),
+    created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.candle_id],
+      foreignColumns: [candleTable.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [t.signal_id],
+      foreignColumns: [signalTable.id],
+    }).onDelete("set null"),
+    index("vectors_symbol_exchange_timeframe_idx").on(t.symbol, t.exchange, t.timeframe),
+    check("vectors_timeframe_check", sql`${t.timeframe} IN ('5M', '1M')`),
+    check(
+      "vectors_label_check",
+      sql`${t.label} IS NULL OR ${t.label} IN ('WIN', 'LOSS', 'TIME_EXIT')`,
+    ),
+    check("vectors_grade_check", sql`${t.grade} IS NULL OR ${t.grade} IN ('A', 'B', 'C')`),
+  ],
+);
+
+export type VectorRow = InferSelectModel<typeof vectorTable>;
+export type NewVectorRow = InferInsertModel<typeof vectorTable>;

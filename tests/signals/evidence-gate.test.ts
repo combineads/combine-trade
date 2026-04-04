@@ -1,0 +1,528 @@
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
+import Decimal from "decimal.js";
+import { checkEvidence, createSignal } from "@/signals/evidence-gate";
+import { getDb, getPool } from "@/db/pool";
+import type { AllIndicators } from "@/indicators/types";
+import type { Candle, WatchSession } from "@/core/types";
+import {
+  cleanupTables,
+  closeTestDb,
+  initTestDb,
+  isTestDbAvailable,
+} from "../helpers/test-db";
+
+// ---------------------------------------------------------------------------
+// Test helpers
+// ---------------------------------------------------------------------------
+
+function makeCandle(overrides: Partial<Candle> = {}): Candle {
+  return {
+    id: "00000000-0000-0000-0000-000000000001",
+    symbol: "BTC/USDT",
+    exchange: "binance",
+    timeframe: "5M",
+    open_time: new Date("2024-01-01T00:00:00Z"),
+    open: new Decimal("50000"),
+    high: new Decimal("51000"),
+    low: new Decimal("49000"),
+    close: new Decimal("50200"),
+    volume: new Decimal("100"),
+    is_closed: true,
+    created_at: new Date("2024-01-01T00:05:00Z"),
+    ...overrides,
+  };
+}
+
+function makeIndicators(overrides: Partial<AllIndicators> = {}): AllIndicators {
+  return {
+    bb20: {
+      upper: new Decimal("52000"),
+      middle: new Decimal("50000"),
+      lower: new Decimal("48000"),
+      bandwidth: new Decimal("0.08"),
+      percentB: new Decimal("0.5"),
+    },
+    bb4: {
+      upper: new Decimal("51000"),
+      middle: new Decimal("50000"),
+      lower: new Decimal("49500"),
+      bandwidth: new Decimal("0.03"),
+      percentB: new Decimal("0.5"),
+    },
+    sma20: new Decimal("50000"),
+    sma60: new Decimal("49500"),
+    sma120: new Decimal("49000"),
+    ema20: new Decimal("50100"),
+    ema60: new Decimal("49600"),
+    ema120: new Decimal("49100"),
+    rsi14: new Decimal("50"),
+    atr14: new Decimal("400"),
+    squeeze: "normal",
+    ...overrides,
+  };
+}
+
+function makeWatchSession(overrides: Partial<WatchSession> = {}): WatchSession {
+  return {
+    id: "00000000-0000-0000-0000-000000000002",
+    symbol: "BTC/USDT",
+    exchange: "binance",
+    detection_type: "BB4_TOUCH",
+    direction: "LONG",
+    tp1_price: new Decimal("50000"),
+    tp2_price: new Decimal("52000"),
+    detected_at: new Date("2024-01-01T00:00:00Z"),
+    invalidated_at: null,
+    invalidation_reason: null,
+    context_data: null,
+    created_at: new Date("2024-01-01T00:00:00Z"),
+    ...overrides,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// evidence-gate — checkEvidence — pure function tests
+// ---------------------------------------------------------------------------
+
+describe("evidence-gate — checkEvidence — LONG ONE_B", () => {
+  it("returns ONE_B LONG when candle.low <= BB4 lower (no BB20 touch)", () => {
+    // BB4 lower = 49500, BB20 lower = 48000
+    // candle.low = 49400 — touches BB4 but not BB20
+    const candle = makeCandle({ low: new Decimal("49400"), high: new Decimal("50800") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("ONE_B");
+    expect(result!.direction).toBe("LONG");
+    expect(result!.entryPrice.toString()).toBe("50200"); // candle.close
+  });
+
+  it("entry_price equals candle.close for LONG ONE_B", () => {
+    const candle = makeCandle({
+      low: new Decimal("49400"),
+      close: new Decimal("49700"),
+    });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result!.entryPrice.toString()).toBe("49700");
+  });
+
+  it("sl_price for LONG = candle.low - ATR*0.5", () => {
+    // low=49400, atr14=400 → sl = 49400 - 200 = 49200
+    const candle = makeCandle({ low: new Decimal("49400") });
+    const indicators = makeIndicators({ atr14: new Decimal("400") });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result!.slPrice.toString()).toBe("49200");
+  });
+
+  it("sl_price falls back to candle range when ATR is null", () => {
+    // low=49400, high=50800 → range=1400, buffer=700 → sl=49400-700=48700
+    const candle = makeCandle({ low: new Decimal("49400"), high: new Decimal("50800") });
+    const indicators = makeIndicators({ atr14: null });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result!.slPrice.toString()).toBe("48700");
+  });
+
+  it("details include bb4_touch_price and bb4_lower for LONG", () => {
+    const candle = makeCandle({ low: new Decimal("49400") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result!.details.bb4_touch_price).toBeDefined();
+    expect((result!.details.bb4_touch_price as Decimal).toString()).toBe("49400");
+    expect(result!.details.bb4_lower).toBeDefined();
+  });
+});
+
+describe("evidence-gate — checkEvidence — LONG DOUBLE_B", () => {
+  it("returns DOUBLE_B LONG when candle.low <= BB4 lower AND <= BB20 lower", () => {
+    // BB4 lower = 49500, BB20 lower = 48000 → low=47500 touches both
+    const candle = makeCandle({ low: new Decimal("47500"), high: new Decimal("50500") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("DOUBLE_B");
+    expect(result!.direction).toBe("LONG");
+  });
+
+  it("details include bb20_lower and bb20_upper for DOUBLE_B LONG", () => {
+    const candle = makeCandle({ low: new Decimal("47500") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result!.details.bb20_lower).toBeDefined();
+    expect(result!.details.bb20_upper).toBeDefined();
+  });
+});
+
+describe("evidence-gate — checkEvidence — SHORT ONE_B", () => {
+  it("returns ONE_B SHORT when candle.high >= BB4 upper (no BB20 touch)", () => {
+    // BB4 upper = 51000, BB20 upper = 52000
+    // candle.high = 51200 — touches BB4 but not BB20
+    const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("ONE_B");
+    expect(result!.direction).toBe("SHORT");
+  });
+
+  it("sl_price for SHORT = candle.high + ATR*0.5", () => {
+    // high=51200, atr14=400 → sl = 51200 + 200 = 51400
+    const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
+    const indicators = makeIndicators({ atr14: new Decimal("400") });
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result!.slPrice.toString()).toBe("51400");
+  });
+
+  it("details include bb4_touch_price and bb4_upper for SHORT", () => {
+    const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result!.details.bb4_touch_price).toBeDefined();
+    expect((result!.details.bb4_touch_price as Decimal).toString()).toBe("51200");
+    expect(result!.details.bb4_upper).toBeDefined();
+  });
+});
+
+describe("evidence-gate — checkEvidence — SHORT DOUBLE_B", () => {
+  it("returns DOUBLE_B SHORT when candle.high >= BB4 upper AND >= BB20 upper", () => {
+    // BB4 upper = 51000, BB20 upper = 52000 → high=52500 touches both
+    const candle = makeCandle({ high: new Decimal("52500"), low: new Decimal("50200") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("DOUBLE_B");
+    expect(result!.direction).toBe("SHORT");
+  });
+});
+
+describe("evidence-gate — checkEvidence — no touch / mismatches", () => {
+  it("returns null when candle does not touch BB4 (inside bands)", () => {
+    // BB4 lower=49500, BB4 upper=51000
+    // candle.low=49600, candle.high=50800 — inside BB4
+    const candle = makeCandle({ low: new Decimal("49600"), high: new Decimal("50800") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).toBeNull();
+  });
+
+  it("returns null when BB4 indicators are null", () => {
+    const candle = makeCandle({ low: new Decimal("47000") });
+    const indicators = makeIndicators({ bb4: null });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).toBeNull();
+  });
+
+  it("returns null when BB4 LONG touch but watchSession.direction is SHORT (direction mismatch)", () => {
+    // candle.low <= BB4 lower → would be LONG signal but session is SHORT
+    const candle = makeCandle({ low: new Decimal("49400"), high: new Decimal("50800") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    // HIGH=50800 < BB4 upper=51000 → no SHORT BB4 touch either → null
+    expect(result).toBeNull();
+  });
+
+  it("returns null when BB4 SHORT touch but watchSession.direction is LONG (direction mismatch)", () => {
+    // candle.high >= BB4 upper → would be SHORT signal but session is LONG
+    const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    // LOW=49600 > BB4 lower=49500 → no LONG BB4 touch → null
+    expect(result).toBeNull();
+  });
+
+  it("returns ONE_B (not DOUBLE_B) when BB4 touch but BB20 is null", () => {
+    const candle = makeCandle({ low: new Decimal("49400") });
+    const indicators = makeIndicators({ bb20: null });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("ONE_B");
+  });
+
+  it("includes detection_type in details", () => {
+    const candle = makeCandle({ low: new Decimal("49400") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result!.details.detection_type).toBe("ONE_B");
+  });
+
+  it("includes atr14 in details when ATR is available", () => {
+    const candle = makeCandle({ low: new Decimal("49400") });
+    const indicators = makeIndicators({ atr14: new Decimal("400") });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result!.details.atr14).toBeDefined();
+    expect((result!.details.atr14 as Decimal).toString()).toBe("400");
+  });
+
+  it("includes daily_bias in details when context_data has daily_bias", () => {
+    const candle = makeCandle({ low: new Decimal("49400") });
+    const indicators = makeIndicators();
+    const session = makeWatchSession({
+      direction: "LONG",
+      context_data: { daily_bias: "LONG_ONLY" },
+    });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result!.details.daily_bias).toBe("LONG_ONLY");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DB integration tests
+// ---------------------------------------------------------------------------
+
+const dbAvailable = await isTestDbAvailable();
+
+describe.skipIf(!dbAvailable)("evidence-gate — DB integration", () => {
+  beforeAll(async () => {
+    await initTestDb();
+  });
+
+  afterEach(async () => {
+    await cleanupTables();
+  });
+
+  afterAll(async () => {
+    await closeTestDb();
+  });
+
+  async function insertParentSymbol(symbol = "BTC/USDT", exchange = "binance"): Promise<void> {
+    const pool = getPool();
+    await pool`
+      INSERT INTO symbol (symbol, exchange, name, base_asset, quote_asset)
+      VALUES (${symbol}, ${exchange}, ${"Bitcoin"}, ${"BTC"}, ${"USDT"})
+      ON CONFLICT DO NOTHING
+    `;
+  }
+
+  async function insertWatchSession(
+    symbol = "BTC/USDT",
+    exchange = "binance",
+    direction: "LONG" | "SHORT" = "LONG",
+  ): Promise<string> {
+    const pool = getPool();
+    const rows = await pool`
+      INSERT INTO watch_session (symbol, exchange, detection_type, direction, detected_at)
+      VALUES (${symbol}, ${exchange}, ${"BB4_TOUCH"}, ${direction}, NOW())
+      RETURNING id
+    `;
+    return rows[0]!.id as string;
+  }
+
+  it("createSignal inserts a Signal row with knn_decision=null and a_grade=false", async () => {
+    await insertParentSymbol();
+    const sessionId = await insertWatchSession();
+    const db = getDb();
+
+    const session = makeWatchSession({ id: sessionId });
+    const candle = makeCandle({ low: new Decimal("49400") });
+    const indicators = makeIndicators();
+
+    const evidence = checkEvidence(candle, indicators, session);
+    expect(evidence).not.toBeNull();
+
+    const signal = await createSignal(db, evidence!, session, "5M");
+
+    expect(signal.id).toBeDefined();
+    expect(signal.knn_decision).toBeNull();
+    expect(signal.a_grade).toBe(false);
+    expect(signal.safety_passed).toBe(false);
+    expect(signal.vector_id).toBeNull();
+  });
+
+  it("createSignal sets watch_session_id correctly", async () => {
+    await insertParentSymbol();
+    const sessionId = await insertWatchSession();
+    const db = getDb();
+
+    const session = makeWatchSession({ id: sessionId });
+    const candle = makeCandle({ low: new Decimal("49400") });
+    const indicators = makeIndicators();
+
+    const evidence = checkEvidence(candle, indicators, session);
+    const signal = await createSignal(db, evidence!, session, "5M");
+
+    expect(signal.watch_session_id).toBe(sessionId);
+  });
+
+  it("createSignal sets signal_type and direction correctly", async () => {
+    await insertParentSymbol();
+    const sessionId = await insertWatchSession("BTC/USDT", "binance", "LONG");
+    const db = getDb();
+
+    const session = makeWatchSession({ id: sessionId, direction: "LONG" });
+    // DOUBLE_B: low <= BB4 lower AND BB20 lower
+    const candle = makeCandle({ low: new Decimal("47500") });
+    const indicators = makeIndicators();
+
+    const evidence = checkEvidence(candle, indicators, session);
+    expect(evidence!.signalType).toBe("DOUBLE_B");
+
+    const signal = await createSignal(db, evidence!, session, "5M");
+
+    expect(signal.signal_type).toBe("DOUBLE_B");
+    expect(signal.direction).toBe("LONG");
+  });
+
+  it("createSignal stores entry_price and sl_price with precision", async () => {
+    await insertParentSymbol();
+    const sessionId = await insertWatchSession();
+    const db = getDb();
+
+    const session = makeWatchSession({ id: sessionId });
+    const candle = makeCandle({
+      low: new Decimal("49400.123456789"),
+      close: new Decimal("49750.987654321"),
+    });
+    const indicators = makeIndicators({ atr14: new Decimal("400.5") });
+
+    const evidence = checkEvidence(candle, indicators, session);
+    const signal = await createSignal(db, evidence!, session, "5M");
+
+    // entry_price = candle.close
+    expect(signal.entry_price.toString()).toBe("49750.987654321");
+    // sl_price = low - atr*0.5 = 49400.123456789 - 200.25 = 49199.873456789
+    expect(signal.sl_price.toString()).toBe("49199.873456789");
+  });
+
+  it("createSignal inserts SignalDetail rows including bb4_touch_price", async () => {
+    await insertParentSymbol();
+    const sessionId = await insertWatchSession();
+    const db = getDb();
+    const pool = getPool();
+
+    const session = makeWatchSession({ id: sessionId });
+    const candle = makeCandle({ low: new Decimal("49400") });
+    const indicators = makeIndicators();
+
+    const evidence = checkEvidence(candle, indicators, session);
+    const signal = await createSignal(db, evidence!, session, "5M");
+
+    const details = await pool`
+      SELECT key, value, text_value
+      FROM signal_details
+      WHERE signal_id = ${signal.id}
+    `;
+
+    const detailMap = Object.fromEntries(
+      details.map((r) => [r.key, { value: r.value, text_value: r.text_value }]),
+    );
+
+    expect(detailMap.bb4_touch_price).toBeDefined();
+    expect(detailMap.bb4_lower).toBeDefined();
+    expect(detailMap.detection_type).toBeDefined();
+    expect(detailMap.detection_type.text_value).toBe("ONE_B");
+  });
+
+  it("createSignal inserts SignalDetail rows for DOUBLE_B including bb20 bands", async () => {
+    await insertParentSymbol();
+    const sessionId = await insertWatchSession();
+    const db = getDb();
+    const pool = getPool();
+
+    const session = makeWatchSession({ id: sessionId });
+    // DOUBLE_B: low <= BB4 lower (49500) AND BB20 lower (48000)
+    const candle = makeCandle({ low: new Decimal("47500") });
+    const indicators = makeIndicators();
+
+    const evidence = checkEvidence(candle, indicators, session);
+    expect(evidence!.signalType).toBe("DOUBLE_B");
+
+    const signal = await createSignal(db, evidence!, session, "5M");
+
+    const details = await pool`
+      SELECT key, value, text_value
+      FROM signal_details
+      WHERE signal_id = ${signal.id}
+    `;
+
+    const detailMap = Object.fromEntries(
+      details.map((r) => [r.key, { value: r.value, text_value: r.text_value }]),
+    );
+
+    expect(detailMap.bb20_lower).toBeDefined();
+    expect(detailMap.bb20_upper).toBeDefined();
+    expect(detailMap.detection_type.text_value).toBe("DOUBLE_B");
+  });
+
+  it("createSignal works for SHORT direction", async () => {
+    await insertParentSymbol();
+    const sessionId = await insertWatchSession("BTC/USDT", "binance", "SHORT");
+    const db = getDb();
+    const pool = getPool();
+
+    const session = makeWatchSession({ id: sessionId, direction: "SHORT" });
+    // SHORT ONE_B: high >= BB4 upper (51000), high < BB20 upper (52000)
+    const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
+    const indicators = makeIndicators();
+
+    const evidence = checkEvidence(candle, indicators, session);
+    expect(evidence!.signalType).toBe("ONE_B");
+    expect(evidence!.direction).toBe("SHORT");
+
+    const signal = await createSignal(db, evidence!, session, "1M");
+
+    expect(signal.timeframe).toBe("1M");
+    expect(signal.direction).toBe("SHORT");
+
+    const details = await pool`
+      SELECT key, text_value FROM signal_details WHERE signal_id = ${signal.id}
+    `;
+    const detailMap = Object.fromEntries(details.map((r) => [r.key, r.text_value]));
+    expect(detailMap.detection_type).toBe("ONE_B");
+  });
+});

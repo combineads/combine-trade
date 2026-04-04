@@ -1,17 +1,11 @@
 import { Route, Routes } from "react-router";
+import { Layout } from "./components/Layout.tsx";
+import { LoginPage } from "./pages/LoginPage.tsx";
 
 function Home() {
   return (
     <main id="main" className="flex min-h-screen items-center justify-center">
       <h1 className="text-2xl font-semibold text-primary-500">combine-trade</h1>
-    </main>
-  );
-}
-
-function Login() {
-  return (
-    <main id="main" className="flex min-h-screen items-center justify-center">
-      <h1 className="text-2xl font-semibold text-foreground">Login</h1>
     </main>
   );
 }
@@ -27,9 +21,11 @@ function Trades() {
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/trades" element={<Trades />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={<Layout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/trades" element={<Trades />} />
+      </Route>
     </Routes>
   );
 }

@@ -61,7 +61,6 @@ function makeCandle(
 }
 
 // Minimal stub db for tests that don't use the real DB
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const stubDb = {} as any;
 
 // ---------------------------------------------------------------------------

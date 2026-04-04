@@ -37,8 +37,11 @@ export type KnnDecisionConfig = {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_WINRATE_THRESHOLD = 0.55;
-const DEFAULT_MIN_SAMPLES = 30;
-const DEFAULT_A_GRADE_WINRATE_THRESHOLD = 0.65;
+const DEFAULT_MIN_SAMPLES = 20;
+const DEFAULT_A_GRADE_WINRATE_THRESHOLD = 0.5;
+
+/** Round-trip fee rate (0.08%) deducted from raw expectancy. Hard-coded — exchange fees are structurally fixed. */
+export const FEE_RATE = 0.0008;
 
 // ---------------------------------------------------------------------------
 // Pure decision function
@@ -108,9 +111,10 @@ export function makeDecision(
   }
 
   const winRate = weightSum > 0 ? winWeightedSum / weightSum : 0;
-  const expectancy = weightSum > 0 ? expectancyWeightedSum / weightSum : 0;
+  const rawExpectancy = weightSum > 0 ? expectancyWeightedSum / weightSum : 0;
+  const expectancy = rawExpectancy - FEE_RATE;
 
-  // PASS / FAIL
+  // PASS / FAIL — expectancy condition uses net (fee-deducted) value
   const decision: KnnDecision =
     winRate >= config.winrateThreshold && expectancy > 0 ? "PASS" : "FAIL";
 
@@ -160,8 +164,8 @@ export async function updateSignalKnnDecision(
  *
  * Reads:
  *  - `KNN.winrate_threshold`       → default 0.55
- *  - `KNN.min_samples`             → default 30
- *  - `KNN.a_grade_winrate_threshold` → default 0.65
+ *  - `KNN.min_samples`             → default 20
+ *  - `KNN.a_grade_winrate_threshold` → default 0.50
  *
  * Falls back to the hard-coded default for any row that is absent, inactive,
  * or contains an invalid value.

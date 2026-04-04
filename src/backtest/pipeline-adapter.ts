@@ -12,9 +12,10 @@
  * - executionMode for the ActiveSymbol must be set to 'live' by the caller
  *   so the mock adapter actually processes orders.
  *
- * Layer: L9 (backtest — may import any lower layer)
+ * Layer: L8 (backtest — may import L0-L7)
  */
 
+import type Decimal from "decimal.js";
 import { d } from "@/core/decimal";
 import type { ExchangeAdapter } from "@/core/ports";
 import type {
@@ -36,21 +37,24 @@ import {
   updateTpPrices,
 } from "@/exits/manager";
 import { calcAllIndicators, calcBB4 } from "@/indicators/index";
-import { loadKnnConfig } from "@/knn/engine";
-import { applyTimeDecay, loadTimeDecayConfig } from "@/knn/time-decay";
+import { loadKnnConfig, type KnnSearchOptions } from "@/knn/engine";
+import { applyTimeDecay, loadTimeDecayConfig, type KnnNeighbor } from "@/knn/time-decay";
 import { makeDecision } from "@/knn/decision";
 import { checkLossLimit } from "@/limits/loss-limit";
+import type { SlackAlertDetails, SlackEventType } from "@/notifications/slack";
 import { executeEntry } from "@/orders/executor";
 import { canPyramid } from "@/positions/pyramid";
 import { calculateSize, getRiskPct } from "@/positions/sizer";
-import { checkEvidence } from "@/signals/evidence-gate";
+import type { CreateTicketParams } from "@/positions/ticket-manager";
+import { checkEvidence, type EvidenceResult } from "@/signals/evidence-gate";
 import { checkSafety } from "@/signals/safety-gate";
 import {
   checkInvalidation,
   detectWatching,
+  type OpenWatchSessionParams,
 } from "@/signals/watching";
+import type { InsertVectorParams } from "@/vectors/repository";
 import { vectorize } from "@/vectors/vectorizer";
-import type { PipelineDeps } from "@/daemon/pipeline";
 import { determineDailyBias } from "@/filters/daily-direction";
 import type { MockExchangeAdapter } from "./mock-adapter";
 
@@ -121,13 +125,13 @@ function buildWatchSession(
  * @param exchange The exchange label matching the adapter's config.
  * @param db       A real DbInstance for read-only operations (candles, etc.)
  *                 or a stub object for purely in-memory tests.
- * @returns        { deps: PipelineDeps, collectors: BacktestCollectors }
+ * @returns        { deps, collectors: BacktestCollectors }
  */
 export function createBacktestPipelineDeps(
   adapter: MockExchangeAdapter,
   exchange: Exchange,
   db: DbInstance,
-): { deps: PipelineDeps; collectors: BacktestCollectors } {
+) {
   const collectors: BacktestCollectors = {
     tickets: [],
     vectors: [],
@@ -173,7 +177,7 @@ export function createBacktestPipelineDeps(
 
   async function openWatchSession(
     _db: DbInstance,
-    params: Parameters<PipelineDeps["openWatchSession"]>[1],
+    params: OpenWatchSessionParams,
   ): Promise<WatchSession> {
     const key = watchSessionKey(params.symbol, params.exchange);
 
@@ -249,7 +253,7 @@ export function createBacktestPipelineDeps(
   // ---------------------------------------------------------------------------
   async function createTicket(
     _db: DbInstance,
-    params: Parameters<PipelineDeps["createTicket"]>[1],
+    params: CreateTicketParams,
   ): Promise<Ticket> {
     const now = new Date();
     const ticket: Ticket = {
@@ -295,7 +299,7 @@ export function createBacktestPipelineDeps(
   // ---------------------------------------------------------------------------
   async function insertVectorBacktest(
     _db: DbInstance,
-    params: Parameters<PipelineDeps["insertVector"]>[1],
+    params: InsertVectorParams,
   ): Promise<VectorRow> {
     const now = new Date();
     const row: VectorRow = {
@@ -388,10 +392,10 @@ export function createBacktestPipelineDeps(
   // computeEntrySize — uses balance from adapter + default symbol info
   // ---------------------------------------------------------------------------
   async function computeEntrySize(
-    adapterArg: Parameters<PipelineDeps["computeEntrySize"]>[0],
+    adapterArg: ExchangeAdapter,
     symbol: string,
     _exchange: string,
-    evidence: Parameters<PipelineDeps["computeEntrySize"]>[3],
+    evidence: EvidenceResult,
   ) {
     const { available: balance } = await adapterArg.fetchBalance();
     const symbolInfo = await adapterArg.getExchangeInfo(symbol);
@@ -416,7 +420,7 @@ export function createBacktestPipelineDeps(
   // ---------------------------------------------------------------------------
   // Assemble PipelineDeps
   // ---------------------------------------------------------------------------
-  const deps: PipelineDeps = {
+  const deps = {
     db,
     adapters: adaptersMap as ReadonlyMap<Exchange, ExchangeAdapter>,
 
@@ -428,12 +432,12 @@ export function createBacktestPipelineDeps(
     calcBB4,
 
     // Symbol state
-    getSymbolState: async (_db, _symbol, _exchange) => null,
+    getSymbolState: async (_db: DbInstance, _symbol: string, _exchange: string) => null,
 
     // Filters
     determineDailyBias,
-    updateDailyBias: async (_db, _symbol, _exchange, _bias: DailyBias, _dailyOpen) => {},
-    isTradeBlocked: async (_db, _now) => ({ blocked: false }),
+    updateDailyBias: async (_db: DbInstance, _symbol: string, _exchange: string, _bias: DailyBias, _dailyOpen: Decimal) => {},
+    isTradeBlocked: async (_db: DbInstance, _now: Date) => ({ blocked: false as const }),
 
     // Watch sessions
     detectWatching,
@@ -452,21 +456,21 @@ export function createBacktestPipelineDeps(
     insertVector: insertVectorBacktest,
 
     // KNN
-    searchKnn: async (_db, _embedding, _options) => [],
+    searchKnn: async (_db: DbInstance, _embedding: Float32Array, _options: KnnSearchOptions) => [] as KnnNeighbor[],
     applyTimeDecay,
     loadTimeDecayConfig,
     makeDecision,
-    loadKnnConfig: async (_db) => ({ topK: 50, distanceMetric: "cosine" } as ReturnType<typeof loadKnnConfig> extends Promise<infer T> ? T : never),
+    loadKnnConfig: async (_db: DbInstance) => ({ topK: 50, distanceMetric: "cosine" } as ReturnType<typeof loadKnnConfig> extends Promise<infer T> ? T : never),
 
     // Positions
-    getActiveTicket: async (_db, _symbol, _exchange) => null,
+    getActiveTicket: async (_db: DbInstance, _symbol: string, _exchange: string) => null as Ticket | null,
     canPyramid: canPyramidBacktest,
     computeEntrySize,
     createTicket,
 
     // Orders
     executeEntry,
-    loadSlippageConfig: async (_db) => ({ maxSpreadPct: d("0.05") }),
+    loadSlippageConfig: async (_db: DbInstance) => ({ maxSpreadPct: d("0.05") }),
 
     // Exits — real implementations
     checkExit,
@@ -477,7 +481,7 @@ export function createBacktestPipelineDeps(
 
     // Loss limits
     checkLossLimit,
-    loadLossLimitConfig: async (_db) => ({
+    loadLossLimitConfig: async (_db: DbInstance) => ({
       maxDailyLossPct: d("1"), // 100% — effectively no daily limit
       maxSessionLosses: 999,
       maxHourly5m: 999,
@@ -485,7 +489,7 @@ export function createBacktestPipelineDeps(
     }),
 
     // Notifications
-    sendSlackAlert: async () => {},
+    sendSlackAlert: async (_eventType: SlackEventType, _details: SlackAlertDetails, _db?: DbInstance) => {},
 
     // Event log
     insertEvent: insertEventBacktest,

@@ -13,7 +13,7 @@
  *   L4  filters, knn
  *   L5  signals, positions, limits
  *   L6  orders, exits, labeling
- *   L7  reconciliation, notifications
+ *   L7  reconciliation, notifications, transfer
  *   L8  api, backtest
  *   L9  daemon
  */
@@ -42,6 +42,7 @@ export const LAYER_MAP: Record<string, number> = {
   labeling: 6,
   reconciliation: 7,
   notifications: 7,
+  transfer: 7,
   api: 8,
   backtest: 8,
   daemon: 9,

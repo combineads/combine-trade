@@ -14,9 +14,9 @@
 
 ## Non-goals
 - 개별 파이프라인 모듈 구현 (EP-02~EP-08에서 완료)
-- 웹 서버 / API 엔드포인트 (EP-10 담당)
-- 백테스트 실행 (EP-11)
-- `GET /api/health` 엔드포인트 (EP-10 M2에서 구현)
+- 웹 서버 / API 엔드포인트 (EP-11 담당)
+- 백테스트 실행 (EP-12)
+- `GET /api/health` 엔드포인트 (EP-11 M2에서 구현)
 - systemd/pm2 설정 파일 (운영 가이드 문서로 별도 관리)
 
 ## Prerequisites
@@ -131,8 +131,8 @@
 - 파이프라인은 캔들 마감 이벤트에 동기적으로 실행 (비동기 큐 불필요 — 단일 프로세스)
 - daemon.ts를 `src/daemon/` 디렉토리로 분리 — 파일 소유권 충돌 방지 (7태스크→4파일). `src/daemon.ts`는 진입점, `src/daemon/*.ts`는 하위 모듈
 - 킬 스위치는 데몬 프로세스와 무관한 독립 스크립트 (CLI 트리거)
-- 웹 UI 킬 스위치 버튼과 API 엔드포인트는 EP-10에서 구현 (이 에픽은 CLI만)
-- 헬스체크 엔드포인트 (`GET /api/health`)는 EP-10 M2에서 구현
+- 웹 UI 킬 스위치 버튼과 API 엔드포인트는 EP-11에서 구현 (이 에픽은 CLI만)
+- 헬스체크 엔드포인트 (`GET /api/health`)는 EP-11 M2에서 구현
 - 크래시 복구는 EP-08 `comparePositions()` + EP-06 `emergencyClose()` 재사용 — 코드 중복 방지
 - 실행 모드 하드 가드는 EP-06에서 이미 구현 (`ExecutionModeError`) — daemon은 CommonCode에서 모드를 읽어 executor에 전달만
 - CandleManager (EP-04)가 히스토리 동기화 + 실시간 수집 + 갭 복구 + 1M rolling 정리를 모두 처리 — daemon에서 별도 구현 불필요

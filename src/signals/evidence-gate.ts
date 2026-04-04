@@ -21,6 +21,8 @@ export type EvidenceResult = {
   direction: Direction;
   entryPrice: Decimal;
   slPrice: Decimal;
+  /** true when 1H BB4 touch was detected simultaneously — eligible for a_grade promotion */
+  aGrade: boolean;
   details: Record<string, Decimal | string>;
 };
 
@@ -54,6 +56,7 @@ function calcSlPrice(candle: Candle, direction: Direction, atr: Decimal | null):
  * - BB4 is not available
  * - No BB4 touch occurred
  * - Candle direction does not match the session direction
+ * - Signal is ONE_B and the MA20 slope does not match the signal direction
  */
 export function checkEvidence(
   candle: Candle,
@@ -90,11 +93,38 @@ export function checkEvidence(
     }
   }
 
+  // ONE_B MA20 slope validation:
+  // When signal_type is ONE_B, verify that the MA20 slope matches the signal direction.
+  // LONG requires MA20 slope > 0 (sma20 > prevSma20).
+  // SHORT requires MA20 slope < 0 (sma20 < prevSma20).
+  // If slope data is unavailable (null), the filter is skipped.
+  // DOUBLE_B signals bypass this check — they have stronger confluence evidence.
+  if (signalType === "ONE_B" && indicators.sma20 !== null && indicators.prevSma20 !== null) {
+    const slopePositive = indicators.sma20.greaterThan(indicators.prevSma20);
+    if (touchDirection === "LONG" && !slopePositive) return null;
+    if (touchDirection === "SHORT" && slopePositive) return null;
+    // Flat slope (sma20 === prevSma20): SHORT requires slope < 0, so flat = fail for SHORT
+    if (touchDirection === "SHORT" && indicators.sma20.equals(indicators.prevSma20)) return null;
+  }
+
   // entry_price = candle.close
   const entryPrice = candle.close;
 
   // SL price
   const slPrice = calcSlPrice(candle, touchDirection, indicators.atr14);
+
+  // a_grade: true when the 1H BB4 band is also touched simultaneously.
+  // The 1H BB4 data is supplied via indicators.bb4_1h by the daemon pipeline.
+  // If bb4_1h is not available, a_grade defaults to false.
+  let aGrade = false;
+  if (indicators.bb4_1h) {
+    const { upper: bb4_1h_upper, lower: bb4_1h_lower } = indicators.bb4_1h;
+    if (touchDirection === "LONG" && lte(candle.low, bb4_1h_lower)) {
+      aGrade = true;
+    } else if (touchDirection === "SHORT" && gte(candle.high, bb4_1h_upper)) {
+      aGrade = true;
+    }
+  }
 
   // Build details record
   const details: Record<string, Decimal | string> = {
@@ -132,6 +162,7 @@ export function checkEvidence(
     direction: touchDirection,
     entryPrice,
     slPrice,
+    aGrade,
     details,
   };
 }
@@ -168,7 +199,7 @@ function rowToSignal(row: typeof signalTable.$inferSelect): Signal {
  * evidence.details. Returns the created Signal.
  *
  * - knn_decision = null (filled later by KNN stage)
- * - a_grade = false
+ * - a_grade = evidence.aGrade (true when 1H BB4 touch is detected; KNN stage may override)
  * - safety_passed = false (filled later by Safety Gate)
  * - vector_id = null
  */
@@ -192,7 +223,7 @@ export async function createSignal(
       sl_price: evidence.slPrice.toString(),
       safety_passed: false,
       knn_decision: null,
-      a_grade: false,
+      a_grade: evidence.aGrade,
       vector_id: null,
     })
     .returning();

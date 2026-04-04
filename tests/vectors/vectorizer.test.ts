@@ -40,7 +40,9 @@ function nullIndicators(): AllIndicators {
   return {
     bb20: null,
     bb4: null,
+    bb4_1h: null,
     sma20: null,
+    prevSma20: null,
     sma60: null,
     sma120: null,
     ema20: null,

@@ -49,7 +49,10 @@ function makeIndicators(overrides: Partial<AllIndicators> = {}): AllIndicators {
       bandwidth: new Decimal("0.03"),
       percentB: new Decimal("0.5"),
     },
-    sma20: new Decimal("50000"),
+    bb4_1h: null,
+    // Default: sma20 > prevSma20 → positive slope (LONG friendly)
+    sma20: new Decimal("50100"),
+    prevSma20: new Decimal("50000"),
     sma60: new Decimal("49500"),
     sma120: new Decimal("49000"),
     ema20: new Decimal("50100"),
@@ -178,8 +181,12 @@ describe("evidence-gate — checkEvidence — SHORT ONE_B", () => {
   it("returns ONE_B SHORT when candle.high >= BB4 upper (no BB20 touch)", () => {
     // BB4 upper = 51000, BB20 upper = 52000
     // candle.high = 51200 — touches BB4 but not BB20
+    // Use negative MA20 slope (required for SHORT ONE_B)
     const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
-    const indicators = makeIndicators();
+    const indicators = makeIndicators({
+      sma20: new Decimal("49900"),
+      prevSma20: new Decimal("50000"),
+    });
     const session = makeWatchSession({ direction: "SHORT" });
 
     const result = checkEvidence(candle, indicators, session);
@@ -192,7 +199,11 @@ describe("evidence-gate — checkEvidence — SHORT ONE_B", () => {
   it("sl_price for SHORT = candle.high + ATR*0.5", () => {
     // high=51200, atr14=400 → sl = 51200 + 200 = 51400
     const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
-    const indicators = makeIndicators({ atr14: new Decimal("400") });
+    const indicators = makeIndicators({
+      atr14: new Decimal("400"),
+      sma20: new Decimal("49900"),
+      prevSma20: new Decimal("50000"),
+    });
     const session = makeWatchSession({ direction: "SHORT" });
 
     const result = checkEvidence(candle, indicators, session);
@@ -202,7 +213,10 @@ describe("evidence-gate — checkEvidence — SHORT ONE_B", () => {
 
   it("details include bb4_touch_price and bb4_upper for SHORT", () => {
     const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
-    const indicators = makeIndicators();
+    const indicators = makeIndicators({
+      sma20: new Decimal("49900"),
+      prevSma20: new Decimal("50000"),
+    });
     const session = makeWatchSession({ direction: "SHORT" });
 
     const result = checkEvidence(candle, indicators, session);
@@ -318,6 +332,296 @@ describe("evidence-gate — checkEvidence — no touch / mismatches", () => {
     const result = checkEvidence(candle, indicators, session);
 
     expect(result!.details.daily_bias).toBe("LONG_ONLY");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// evidence-gate — checkEvidence — ONE_B MA20 slope validation (T-10-003)
+// ---------------------------------------------------------------------------
+
+describe("evidence-gate — checkEvidence — ONE_B MA20 slope LONG", () => {
+  it("passes ONE_B LONG when MA20 slope > 0 (sma20 > prevSma20)", () => {
+    // BB4 lower=49500, candle.low=49400 → BB4 touch LONG
+    // sma20=50100 > prevSma20=50000 → positive slope → passes
+    const candle = makeCandle({ low: new Decimal("49400"), high: new Decimal("50800") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("50100"),
+      prevSma20: new Decimal("50000"),
+    });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("ONE_B");
+    expect(result!.direction).toBe("LONG");
+  });
+
+  it("returns null for ONE_B LONG when MA20 slope < 0 (sma20 < prevSma20)", () => {
+    // sma20=49900 < prevSma20=50000 → negative slope → reject LONG
+    const candle = makeCandle({ low: new Decimal("49400"), high: new Decimal("50800") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("49900"),
+      prevSma20: new Decimal("50000"),
+    });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).toBeNull();
+  });
+
+  it("returns null for ONE_B LONG when MA20 slope = 0 (flat slope fails LONG)", () => {
+    // Flat: sma20 === prevSma20 — slope not > 0 → reject
+    const candle = makeCandle({ low: new Decimal("49400"), high: new Decimal("50800") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("50000"),
+      prevSma20: new Decimal("50000"),
+    });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).toBeNull();
+  });
+
+  it("passes ONE_B LONG when prevSma20 is null (slope filter skipped)", () => {
+    // No previous data → slope filter is skipped → ONE_B passes
+    const candle = makeCandle({ low: new Decimal("49400"), high: new Decimal("50800") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("50000"),
+      prevSma20: null,
+    });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("ONE_B");
+  });
+
+  it("passes ONE_B LONG when sma20 is null (slope filter skipped)", () => {
+    // No SMA20 data at all → slope filter skipped
+    const candle = makeCandle({ low: new Decimal("49400"), high: new Decimal("50800") });
+    const indicators = makeIndicators({
+      sma20: null,
+      prevSma20: new Decimal("50000"),
+    });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("ONE_B");
+  });
+});
+
+describe("evidence-gate — checkEvidence — ONE_B MA20 slope SHORT", () => {
+  it("passes ONE_B SHORT when MA20 slope < 0 (sma20 < prevSma20)", () => {
+    // BB4 upper=51000, candle.high=51200 → BB4 touch SHORT
+    // sma20=49900 < prevSma20=50000 → negative slope → passes
+    const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("49900"),
+      prevSma20: new Decimal("50000"),
+    });
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("ONE_B");
+    expect(result!.direction).toBe("SHORT");
+  });
+
+  it("returns null for ONE_B SHORT when MA20 slope > 0 (sma20 > prevSma20)", () => {
+    // sma20=50100 > prevSma20=50000 → positive slope → reject SHORT
+    const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("50100"),
+      prevSma20: new Decimal("50000"),
+    });
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).toBeNull();
+  });
+
+  it("returns null for ONE_B SHORT when MA20 slope = 0 (flat slope fails SHORT)", () => {
+    // Flat: sma20 === prevSma20 — slope not < 0 → reject
+    const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("50000"),
+      prevSma20: new Decimal("50000"),
+    });
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).toBeNull();
+  });
+
+  it("passes ONE_B SHORT when prevSma20 is null (slope filter skipped)", () => {
+    const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("50000"),
+      prevSma20: null,
+    });
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("ONE_B");
+  });
+});
+
+describe("evidence-gate — checkEvidence — DOUBLE_B bypasses MA20 slope", () => {
+  it("DOUBLE_B LONG passes regardless of MA20 slope direction (negative slope)", () => {
+    // low=47500 → touches BB4 (49500) AND BB20 (48000) → DOUBLE_B
+    // MA20 slope is negative but DOUBLE_B should bypass this filter
+    const candle = makeCandle({ low: new Decimal("47500"), high: new Decimal("50500") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("49900"),  // < prevSma20 → negative slope
+      prevSma20: new Decimal("50000"),
+    });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("DOUBLE_B");
+    expect(result!.direction).toBe("LONG");
+  });
+
+  it("DOUBLE_B SHORT passes regardless of MA20 slope direction (positive slope)", () => {
+    // high=52500 → touches BB4 (51000) AND BB20 (52000) → DOUBLE_B
+    // MA20 slope is positive but DOUBLE_B should bypass this filter
+    const candle = makeCandle({ high: new Decimal("52500"), low: new Decimal("50200") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("50100"),  // > prevSma20 → positive slope
+      prevSma20: new Decimal("50000"),
+    });
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.signalType).toBe("DOUBLE_B");
+    expect(result!.direction).toBe("SHORT");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// evidence-gate — checkEvidence — a_grade 1H BB4 touch (T-10-003)
+// ---------------------------------------------------------------------------
+
+describe("evidence-gate — checkEvidence — a_grade 1H BB4 touch", () => {
+  it("aGrade=false when bb4_1h is null (no 1H data)", () => {
+    const candle = makeCandle({ low: new Decimal("49400"), high: new Decimal("50800") });
+    const indicators = makeIndicators({ bb4_1h: null });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.aGrade).toBe(false);
+  });
+
+  it("aGrade=true for LONG when candle.low <= bb4_1h.lower", () => {
+    // candle.low=49400, bb4_1h.lower=49500 → 49400 <= 49500 → 1H BB4 LONG touch
+    const candle = makeCandle({ low: new Decimal("49400"), high: new Decimal("50800") });
+    const indicators = makeIndicators({
+      bb4_1h: {
+        upper: new Decimal("51000"),
+        middle: new Decimal("50000"),
+        lower: new Decimal("49500"),  // candle.low=49400 <= 49500 → touch
+        bandwidth: new Decimal("0.03"),
+        percentB: new Decimal("0.2"),
+      },
+    });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.aGrade).toBe(true);
+  });
+
+  it("aGrade=false for LONG when candle.low > bb4_1h.lower (no 1H touch)", () => {
+    // candle.low=49600, bb4_1h.lower=49500 → 49600 > 49500 → no 1H touch
+    const candle = makeCandle({ low: new Decimal("49600"), high: new Decimal("50800") });
+    // Set bb4 lower to 49700 to ensure 5M touch (49600 <= 49700)
+    const indicators = makeIndicators({
+      bb4: {
+        upper: new Decimal("51000"),
+        middle: new Decimal("50000"),
+        lower: new Decimal("49700"),
+        bandwidth: new Decimal("0.026"),
+        percentB: new Decimal("0.5"),
+      },
+      bb4_1h: {
+        upper: new Decimal("51000"),
+        middle: new Decimal("50000"),
+        lower: new Decimal("49500"),  // candle.low=49600 > 49500 → no 1H touch
+        bandwidth: new Decimal("0.03"),
+        percentB: new Decimal("0.5"),
+      },
+    });
+    const session = makeWatchSession({ direction: "LONG" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.aGrade).toBe(false);
+  });
+
+  it("aGrade=true for SHORT when candle.high >= bb4_1h.upper", () => {
+    // candle.high=51200, bb4_1h.upper=51000 → 51200 >= 51000 → 1H BB4 SHORT touch
+    // Use negative MA20 slope (required for SHORT ONE_B to pass)
+    const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("49900"),   // negative slope for SHORT
+      prevSma20: new Decimal("50000"),
+      bb4_1h: {
+        upper: new Decimal("51000"),  // candle.high=51200 >= 51000 → touch
+        middle: new Decimal("50000"),
+        lower: new Decimal("49000"),
+        bandwidth: new Decimal("0.04"),
+        percentB: new Decimal("0.8"),
+      },
+    });
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.aGrade).toBe(true);
+  });
+
+  it("aGrade=false for SHORT when candle.high < bb4_1h.upper (no 1H touch)", () => {
+    // candle.high=51200 touches 5M BB4 upper (51000) → SHORT ONE_B
+    // bb4_1h.upper=51500 → 51200 < 51500 → no 1H touch → aGrade=false
+    // Use negative MA20 slope (required for SHORT ONE_B to pass)
+    const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
+    const indicators = makeIndicators({
+      sma20: new Decimal("49900"),   // negative slope for SHORT
+      prevSma20: new Decimal("50000"),
+      bb4_1h: {
+        upper: new Decimal("51500"),  // candle.high=51200 < 51500 → no 1H touch
+        middle: new Decimal("50500"),
+        lower: new Decimal("49500"),
+        bandwidth: new Decimal("0.039"),
+        percentB: new Decimal("0.7"),
+      },
+    });
+    const session = makeWatchSession({ direction: "SHORT" });
+
+    const result = checkEvidence(candle, indicators, session);
+
+    expect(result).not.toBeNull();
+    expect(result!.aGrade).toBe(false);
   });
 });
 

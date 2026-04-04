@@ -15,7 +15,11 @@ export type SqueezeState = "squeeze" | "expansion" | "normal";
 export type AllIndicators = {
   bb20: BollingerResult | null;
   bb4: BollingerResult | null;
+  /** 1H-timeframe BB4 bands — used by evidence gate for a_grade determination. */
+  bb4_1h: BollingerResult | null;
   sma20: Decimal | null;
+  /** Previous period SMA20 — used to compute MA20 slope for ONE_B direction validation. */
+  prevSma20: Decimal | null;
   sma60: Decimal | null;
   sma120: Decimal | null;
   ema20: Decimal | null;

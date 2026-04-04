@@ -8,7 +8,7 @@ export type { AllIndicators, BollingerResult, SqueezeState } from "@/indicators/
 import type { Candle } from "@/core/types";
 import { calcATR } from "@/indicators/atr";
 import { calcBB4, calcBB20, candlesToCloses } from "@/indicators/bollinger";
-import { calcEMA, calcSMA } from "@/indicators/ma";
+import { calcEMA, calcSMA, calcSMASeries } from "@/indicators/ma";
 import { calcRSI } from "@/indicators/rsi";
 import { detectSqueeze } from "@/indicators/squeeze";
 import type { AllIndicators } from "@/indicators/types";
@@ -31,6 +31,10 @@ export function calcAllIndicators(candles: Candle[]): AllIndicators {
   const ema60 = calcEMA(closes, 60);
   const ema120 = calcEMA(closes, 120);
 
+  // prevSma20: second-to-last value in the SMA20 series — used for slope direction in evidence gate.
+  const sma20Series = calcSMASeries(closes, 20);
+  const prevSma20 = sma20Series.length >= 2 ? (sma20Series[sma20Series.length - 2] ?? null) : null;
+
   // RSI & ATR
   const rsi14 = calcRSI(closes);
   const atr14 = calcATR(highs, lows, closes);
@@ -45,7 +49,11 @@ export function calcAllIndicators(candles: Candle[]): AllIndicators {
   return {
     bb20,
     bb4,
+    // bb4_1h is not available from same-timeframe candles — the daemon pipeline
+    // must supply this separately from 1H candle indicators when calling checkEvidence.
+    bb4_1h: null,
     sma20,
+    prevSma20,
     sma60,
     sma120,
     ema20,

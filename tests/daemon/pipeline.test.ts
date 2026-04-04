@@ -133,7 +133,9 @@ function makeIndicators(): AllIndicators {
   return {
     bb20: null,
     bb4: null,
+    bb4_1h: null,
     sma20: new Decimal("40000"),
+    prevSma20: new Decimal("39900"),
     sma60: new Decimal("39000"),
     sma120: new Decimal("38000"),
     ema20: new Decimal("40000"),
@@ -151,6 +153,7 @@ function makeEvidence(): EvidenceResult {
     direction: "LONG",
     entryPrice: new Decimal("40050"),
     slPrice: new Decimal("39500"),
+    aGrade: false,
     details: {},
   };
 }

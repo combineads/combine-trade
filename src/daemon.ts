@@ -8,11 +8,13 @@
  *   4. CandleManager.start() — history sync + WebSocket collection
  *   5. onCandleClose()    — register candle-close callback (routes to pipeline)
  *   6. startReconciliation() — 60 s reconciliation worker
- *   7. SIGTERM / SIGINT   — graceful shutdown
+ *   7. apiServer.start()  — HTTP API + static file serving (if provided)
+ *   8. SIGTERM / SIGINT   — graceful shutdown
  *
  * Layer: L9 — may import any lower layer.
  */
 
+import type { ApiServerHandle } from "@/api/types";
 import type { CandleManager, CandleManagerConfig } from "@/candles/index";
 import { createLogger } from "@/core/logger";
 import type { ExchangeAdapter } from "@/core/ports";
@@ -93,6 +95,13 @@ export type DaemonDeps = {
    * is performed for backward compatibility.
    */
   shutdownDeps?: ShutdownDeps;
+
+  /**
+   * API server handle (optional). When provided, the daemon starts the HTTP
+   * server after reconciliation and stops it during shutdown.
+   * Backward compatible — omit to skip API server entirely.
+   */
+  apiServer?: ApiServerHandle;
 };
 
 /**
@@ -179,6 +188,12 @@ export async function startDaemon(deps: DaemonDeps): Promise<DaemonHandle> {
   });
   log.info("reconciliation_started");
 
+  // ---- Step 7: Start API server (if provided) ----
+  if (deps.apiServer !== undefined) {
+    await deps.apiServer.start();
+    log.info("api_server_started");
+  }
+
   // ---- Build stop() ----
   async function stop(): Promise<void> {
     if (shutting_down) {
@@ -188,6 +203,12 @@ export async function startDaemon(deps: DaemonDeps): Promise<DaemonHandle> {
     shutting_down = true;
 
     log.info("daemon_stopping");
+
+    // Stop API server first (stop accepting new requests)
+    if (deps.apiServer !== undefined) {
+      await deps.apiServer.stop();
+      log.info("api_server_stopped");
+    }
 
     if (deps.shutdownDeps !== undefined) {
       // Use enhanced graceful shutdown with order cancellation, DB pool close, Slack alert
@@ -208,7 +229,7 @@ export async function startDaemon(deps: DaemonDeps): Promise<DaemonHandle> {
     log.info("daemon_shutdown_complete");
   }
 
-  // ---- Step 7: Signal handlers ----
+  // ---- Step 8: Signal handlers ----
   const onSignal = () => {
     stop().catch((err: unknown) => {
       log.error("stop_failed", { details: { error: String(err) } });

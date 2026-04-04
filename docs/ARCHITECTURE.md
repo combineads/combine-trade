@@ -133,11 +133,11 @@ L9  daemon                     — orchestrates all layers
 | `filters` | L4 | Direction filter, trade block | `DailyDirectionFilter`, `TradeBlockManager` | core, config, indicators |
 | `knn` | L4 | KNN engine, distance, time decay | `KnnEngine.query(vector): KnnResult` | core, db, vectors |
 | `signals` | L5 | WATCHING, Evidence Gate, Safety Gate | `WatchingDetector`, `EvidenceGate`, `SafetyGate` | core, indicators, filters |
-| `positions` | L5 | FSM, ticket manager, position sizer | `canTransition()`, `validateTransition()`, `createTicket()`, `closeTicket()`, `calculateSize()` | core, db |
+| `positions` | L5 | FSM, ticket manager, position sizer, pyramid | `canTransition()`, `createTicket()`, `closeTicket()`, `calculateSize()`, `canPyramid()`, `executePyramid()` | core, db |
 | `limits` | L5 | Loss limit (daily/session/hourly) | `checkLossLimit()`, `recordLoss()`, `resetAllExpired()` | core, db (schema direct — no positions import) |
-| `orders` | L6 | Order executor, slippage check | `executeEntry()`, `emergencyClose()`, `checkSlippage()` | core, db, orders/slippage (local) |
-| `exits` | L6 | 3-stage exit, trailing stop | `ExitManager.check(ticket, candle): ExitAction` | core, positions, indicators |
-| `labeling` | L6 | Trade result recording (into Ticket) | `LabelingEngine.finalize(ticket): void` | core, db, positions |
+| `orders` | L6 | Order executor, slippage check | `executeEntry()`, `emergencyClose()`, `recordOrder()`, `checkSlippage()` | core, db |
+| `exits` | L6 | 3-stage exit checker, trailing stop, exit manager | `checkExit()`, `processExit()`, `processTrailing()`, `calculateTrailingSl()` | core, db, orders |
+| `labeling` | L6 | Trade result classification, Vector label | `classifyResult()`, `classifyGrade()`, `finalizeLabel()` | core, db |
 | `reconciliation` | L7 | DB↔exchange sync, panic close | `ReconciliationWorker.run()` | core, db, positions, exchanges |
 | `notifications` | L7 | Slack webhook | `SlackNotifier.send(event)` | core, config |
 | `api` | L8 | REST routes | `createRouter(): Router` | core, positions, candles, signals, knn, limits, labeling, config |

@@ -18,7 +18,7 @@ import type Decimal from "decimal.js";
 import { d, max as decMax, sub } from "@/core/decimal";
 import { createLogger } from "@/core/logger";
 import type { ExchangeAdapter } from "@/core/ports";
-import type { Direction, Exchange, OrderSide } from "@/core/types";
+import { closeSide, type Direction, type Exchange } from "@/core/types";
 import type { NewOrderRow } from "@/db/schema";
 import { type RecordOrderParams, recordOrder } from "@/orders/executor";
 import type { ExitAction, ExitActionType } from "./checker";
@@ -106,11 +106,6 @@ export type MfeMaeUpdateResult = {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/** Close side: LONG positions close with SELL, SHORT with BUY */
-function closeSide(direction: Direction): OrderSide {
-  return direction === "LONG" ? "SELL" : "BUY";
-}
 
 /** Maps ExitActionType to OrderType for DB recording */
 function actionTypeToOrderType(actionType: ExitActionType): string {

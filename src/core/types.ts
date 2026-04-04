@@ -53,6 +53,11 @@ export type OrderStatus = "PENDING" | "FILLED" | "PARTIALLY_FILLED" | "CANCELLED
 
 export type OrderSide = "BUY" | "SELL";
 
+/** Returns the close-side for a given direction: LONG→SELL, SHORT→BUY */
+export function closeSide(direction: Direction): OrderSide {
+  return direction === "LONG" ? "SELL" : "BUY";
+}
+
 export type BlockType = "ECONOMIC" | "FUNDING" | "MANUAL" | "MARKET_OPEN";
 
 export type BacktestRunType = "BACKTEST" | "WFO";

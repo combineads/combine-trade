@@ -380,7 +380,9 @@ describe('integration/imports — @/db/pool', () => {
     expect(typeof isHealthy).toBe('function');
   });
 
-  it('getDb throws before initialization (verifies the module is loaded)', () => {
+  it('getDb throws before initialization (verifies the module is loaded)', async () => {
+    // Close pool first — other test files may have initialized it in parallel
+    await closePool();
     expect(() => getDb()).toThrow();
   });
 

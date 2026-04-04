@@ -13,8 +13,8 @@
 
 import type Decimal from "decimal.js";
 import { and, eq, sql } from "drizzle-orm";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { d, gte, mul } from "@/core/decimal";
+import type { DbInstance } from "@/db/pool";
 import { commonCodeTable, symbolStateTable } from "@/db/schema";
 
 // ---------------------------------------------------------------------------
@@ -149,7 +149,7 @@ export function checkLossLimit(
  * - losses_this_1h_1m += 1 (if timeframe is '1M')
  */
 export async function recordLoss(
-  db: NodePgDatabase,
+  db: DbInstance,
   symbol: string,
   exchange: string,
   lossAmount: Decimal | string,
@@ -185,7 +185,7 @@ export async function recordLoss(
  *
  * Falls back to defaults for any missing code.
  */
-export async function loadLossLimitConfig(db: NodePgDatabase): Promise<LossLimitConfig> {
+export async function loadLossLimitConfig(db: DbInstance): Promise<LossLimitConfig> {
   const rows = await db
     .select({
       code: commonCodeTable.code,
@@ -269,7 +269,7 @@ export function shouldResetHourly(now: Date, lastResetTime: Date): boolean {
  * Resets the daily loss counter (losses_today) to '0' for the given symbol.
  */
 export async function resetDailyLosses(
-  db: NodePgDatabase,
+  db: DbInstance,
   symbol: string,
   exchange: string,
 ): Promise<void> {
@@ -290,7 +290,7 @@ export async function resetDailyLosses(
  * Resets the session loss counter (losses_session) to 0 for the given symbol.
  */
 export async function resetSessionLosses(
-  db: NodePgDatabase,
+  db: DbInstance,
   symbol: string,
   exchange: string,
 ): Promise<void> {
@@ -312,7 +312,7 @@ export async function resetSessionLosses(
  * to 0 for the given symbol.
  */
 export async function resetHourlyLosses(
-  db: NodePgDatabase,
+  db: DbInstance,
   symbol: string,
   exchange: string,
 ): Promise<void> {
@@ -337,7 +337,7 @@ export async function resetHourlyLosses(
  * Session reset only fires when sessionStartTime is provided.
  */
 export async function resetAllExpired(
-  db: NodePgDatabase,
+  db: DbInstance,
   symbol: string,
   exchange: string,
   now: Date,

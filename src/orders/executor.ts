@@ -19,13 +19,14 @@ import type Decimal from "decimal.js";
 import { sub } from "@/core/decimal";
 import { createLogger } from "@/core/logger";
 import type { ExchangeAdapter, OrderResult } from "@/core/ports";
-import type {
-  Direction,
-  Exchange,
-  ExecutionMode,
-  OrderSide,
-  OrderStatus,
-  OrderType,
+import {
+  closeSide,
+  type Direction,
+  type Exchange,
+  type ExecutionMode,
+  type OrderSide,
+  type OrderStatus,
+  type OrderType,
 } from "@/core/types";
 import type { NewOrderRow } from "@/db/schema";
 import { checkSlippage, type SlippageConfig } from "./slippage";
@@ -118,10 +119,6 @@ export type RecordOrderParams = {
 
 function entrySide(direction: Direction): OrderSide {
   return direction === "LONG" ? "BUY" : "SELL";
-}
-
-function closeSide(direction: Direction): OrderSide {
-  return direction === "LONG" ? "SELL" : "BUY";
 }
 
 function decimalToStr(v: Decimal | undefined | null): string | null {

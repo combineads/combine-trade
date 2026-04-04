@@ -7,21 +7,9 @@
  */
 
 import type { ExchangePosition } from "@/core/ports";
-import type { Direction, Exchange } from "@/core/types";
+import type { TicketSnapshot } from "@/core/types";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/** Minimal ticket projection needed for reconciliation comparison */
-export type TicketSnapshot = {
-  id: string;
-  symbol: string;
-  exchange: Exchange;
-  direction: Direction;
-  state: string;
-  created_at: Date;
-};
+export type { TicketSnapshot };
 
 /** Exchange position matched with a DB ticket */
 export type MatchedPair = {

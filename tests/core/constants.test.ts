@@ -33,7 +33,7 @@ describe("core/constants — Bollinger Band anchors", () => {
   it("BB4_CONFIG has correct length and stddev", () => {
     expect(BB4_CONFIG.length).toBe(4);
     expect(BB4_CONFIG.stddev).toBe(4);
-    expect(BB4_CONFIG.source).toBe("close");
+    expect(BB4_CONFIG.source).toBe("open");
   });
 });
 

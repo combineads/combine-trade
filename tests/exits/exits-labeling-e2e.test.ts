@@ -482,11 +482,11 @@ describe.skipIf(!dbAvailable)(
         Date.now(),
       );
       expect(action2.type).toBe("TP2");
-      // TP2 closes remaining/3 = 0.5/3
-      const expectedTp2Close = d("0.5").dividedBy(d("3"));
+      // TP2 closes remaining/2 = 0.5/2 = 0.25
+      const expectedTp2Close = d("0.5").dividedBy(d("2"));
       expect(action2.closeSize.toString()).toBe(expectedTp2Close.toString());
 
-      // 7. processExit(TP2): remaining/3 close, state -> TP2_HIT
+      // 7. processExit(TP2): remaining/2 close, state -> TP2_HIT
       const exitResult2 = await processExit({
         adapter,
         ticket: {

@@ -18,7 +18,7 @@
 
 import { createLogger } from "@/core/logger";
 import type { ExchangeAdapter, ExchangePosition } from "@/core/ports";
-import type { Exchange } from "@/core/types";
+import type { DailyBias, Exchange, WatchSession } from "@/core/types";
 import type { EmergencyCloseParams } from "@/orders/executor";
 import type { ReconciliationResult, TicketSnapshot } from "@/reconciliation/comparator";
 
@@ -38,6 +38,8 @@ export type CrashRecoveryResult = {
   unmatched: number;
   orphaned: number;
   slReRegistered: number;
+  watchSessionsRestored: number;
+  watchSessionsInvalidated: number;
   errors: string[];
   durationMs: number;
 };
@@ -110,6 +112,21 @@ export type CrashRecoveryDeps = {
     meta?: { symbol?: string; exchange?: string },
   ) => Promise<void>;
 
+  /** Fetch all active (non-invalidated) WatchSessions from DB */
+  getActiveWatchSessions: () => Promise<WatchSession[]>;
+
+  /**
+   * Fetch the current daily bias for a (symbol, exchange) pair.
+   * Returns null if no bias row exists yet.
+   */
+  getSymbolDailyBias: (symbol: string, exchange: string) => Promise<DailyBias | null>;
+
+  /**
+   * Mark a WatchSession as invalidated.
+   * Called for sessions that fail bias-match or age checks during recovery.
+   */
+  invalidateWatchSession: (id: string, reason: string) => Promise<void>;
+
   /** Send a Slack alert (fire-and-forget — never throws) */
   sendSlackAlert: (details: Record<string, string | number | boolean | undefined>) => Promise<void>;
 };
@@ -128,6 +145,8 @@ export async function recoverFromCrash(deps: CrashRecoveryDeps): Promise<CrashRe
   const startMs = Date.now();
   const errors: string[] = [];
   let slReRegistered = 0;
+  let watchSessionsRestored = 0;
+  let watchSessionsInvalidated = 0;
 
   log.info("crash_recovery_starting");
 
@@ -295,7 +314,95 @@ export async function recoverFromCrash(deps: CrashRecoveryDeps): Promise<CrashRe
     errors.push(msg);
   }
 
-  // ---- Step 8: EventLog + Slack alert ----
+  // ---- Step 8: WatchSession recovery ----
+  const WATCH_SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+  const nowMs = Date.now();
+
+  try {
+    const activeSessions = await deps.getActiveWatchSessions();
+
+    for (const session of activeSessions) {
+      let isValid = false;
+
+      try {
+        const bias = await deps.getSymbolDailyBias(session.symbol, session.exchange);
+        const ageMs = nowMs - session.detected_at.getTime();
+        const withinAge = ageMs < WATCH_SESSION_MAX_AGE_MS;
+
+        const biasMatch =
+          (session.direction === "LONG" && bias === "LONG_ONLY") ||
+          (session.direction === "SHORT" && bias === "SHORT_ONLY");
+
+        isValid = biasMatch && withinAge;
+      } catch (biasErr) {
+        const biasErrMsg = biasErr instanceof Error ? biasErr.message : String(biasErr);
+        log.error("watch_session_bias_check_failed", {
+          sessionId: session.id,
+          symbol: session.symbol,
+          exchange: session.exchange,
+          error: biasErrMsg,
+        });
+        // Conservative: treat as invalid if we cannot confirm bias
+        isValid = false;
+      }
+
+      if (isValid) {
+        watchSessionsRestored++;
+        log.info("watch_session_restored", {
+          sessionId: session.id,
+          symbol: session.symbol,
+          exchange: session.exchange,
+          direction: session.direction,
+        });
+        try {
+          await deps.insertEvent(
+            "WATCH_SESSION_RESTORED",
+            { sessionId: session.id, direction: session.direction },
+            { symbol: session.symbol, exchange: session.exchange },
+          );
+        } catch {
+          // Non-critical logging failure — do not propagate
+        }
+      } else {
+        watchSessionsInvalidated++;
+        log.warn("watch_session_invalidated_crash", {
+          sessionId: session.id,
+          symbol: session.symbol,
+          exchange: session.exchange,
+          direction: session.direction,
+        });
+        try {
+          await deps.invalidateWatchSession(session.id, "crash_recovery_stale");
+        } catch (invErr) {
+          const invErrMsg = invErr instanceof Error ? invErr.message : String(invErr);
+          const msg = `${session.symbol}:${session.exchange}: invalidateWatchSession failed: ${invErrMsg}`;
+          log.error("invalidate_watch_session_failed", {
+            sessionId: session.id,
+            symbol: session.symbol,
+            exchange: session.exchange,
+            error: invErrMsg,
+          });
+          errors.push(msg);
+        }
+        try {
+          await deps.insertEvent(
+            "WATCH_SESSION_INVALIDATED_CRASH",
+            { sessionId: session.id, direction: session.direction, reason: "crash_recovery_stale" },
+            { symbol: session.symbol, exchange: session.exchange },
+          );
+        } catch {
+          // Non-critical logging failure — do not propagate
+        }
+      }
+    }
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    const msg = `getActiveWatchSessions failed: ${errorMsg}`;
+    log.error("get_active_watch_sessions_failed", { error: errorMsg });
+    errors.push(msg);
+  }
+
+  // ---- Step 9: EventLog + Slack alert ----
   const durationMs = Date.now() - startMs;
 
   const result: CrashRecoveryResult = {
@@ -303,6 +410,8 @@ export async function recoverFromCrash(deps: CrashRecoveryDeps): Promise<CrashRe
     unmatched: comparison.unmatched.length,
     orphaned: comparison.orphaned.length,
     slReRegistered,
+    watchSessionsRestored,
+    watchSessionsInvalidated,
     errors,
     durationMs,
   };
@@ -313,6 +422,8 @@ export async function recoverFromCrash(deps: CrashRecoveryDeps): Promise<CrashRe
       unmatched: result.unmatched,
       orphaned: result.orphaned,
       slReRegistered: result.slReRegistered,
+      watchSessionsRestored: result.watchSessionsRestored,
+      watchSessionsInvalidated: result.watchSessionsInvalidated,
       errorCount: result.errors.length,
       durationMs: result.durationMs,
     });
@@ -328,6 +439,8 @@ export async function recoverFromCrash(deps: CrashRecoveryDeps): Promise<CrashRe
       unmatched: result.unmatched,
       orphaned: result.orphaned,
       slReRegistered: result.slReRegistered,
+      watchSessionsRestored: result.watchSessionsRestored,
+      watchSessionsInvalidated: result.watchSessionsInvalidated,
       errors: result.errors.length,
       durationMs: result.durationMs,
     });
@@ -340,6 +453,8 @@ export async function recoverFromCrash(deps: CrashRecoveryDeps): Promise<CrashRe
     unmatched: result.unmatched.toString(),
     orphaned: result.orphaned.toString(),
     slReRegistered: result.slReRegistered.toString(),
+    watchSessionsRestored: result.watchSessionsRestored.toString(),
+    watchSessionsInvalidated: result.watchSessionsInvalidated.toString(),
     errors: result.errors.length.toString(),
     durationMs: result.durationMs.toString(),
   });

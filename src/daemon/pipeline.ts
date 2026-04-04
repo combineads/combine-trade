@@ -47,7 +47,7 @@ import type {
   TpUpdateResult,
   TrailingUpdateResult,
 } from "@/exits/manager";
-import type { AllIndicators } from "@/indicators/types";
+import type { AllIndicators, BollingerResult } from "@/indicators/types";
 import type { KnnDecisionConfig, KnnDecisionResult } from "@/knn/decision";
 import type { KnnConfig, KnnSearchOptions } from "@/knn/engine";
 import type { KnnNeighbor, TimeDecayConfig, WeightedNeighbor } from "@/knn/time-decay";
@@ -110,6 +110,12 @@ export type PipelineDeps = {
   // ---- Indicators ----
   /** Compute all indicators from candle history */
   calcAllIndicators: (candles: Candle[]) => AllIndicators;
+  /**
+   * Compute BB4 (4-period, 4-stddev, source="open") Bollinger Bands.
+   * Used by processEntry() to inject 1H BB4 data into indicators.bb4_1h
+   * before calling checkEvidence(). Returns null when candles < 4.
+   */
+  calcBB4: (candles: Candle[]) => BollingerResult | null;
 
   // ---- Symbol state ----
   /** Fetch the current SymbolState row for a symbol, or null if not found */
@@ -161,6 +167,13 @@ export type PipelineDeps = {
     session: WatchSession,
     currentBias?: DailyBias,
   ) => string | null;
+  /** Update tp1_price / tp2_price in the watch_sessions table */
+  updateWatchSessionTp: (
+    db: DbInstance,
+    sessionId: string,
+    tp1: Decimal,
+    tp2: Decimal,
+  ) => Promise<void>;
 
   // ---- Signals ----
   /** Check BB4 evidence for an entry signal */
@@ -179,6 +192,7 @@ export type PipelineDeps = {
       session_box_low: Decimal | null;
       daily_bias: DailyBias | null;
     },
+    recentCandles?: Candle[],
   ) => SafetyResult;
 
   // ---- Vectors ----
@@ -469,6 +483,67 @@ async function process1D(
 }
 
 // ---------------------------------------------------------------------------
+// refreshWatchSessionTp — TP recalculation helper for process1H
+// ---------------------------------------------------------------------------
+
+/**
+ * Recalculates tp1/tp2 for an active WatchSession based on current 1H
+ * indicators and detection_type, then persists the updated values to DB.
+ *
+ * Recalculation rules (per detection_type):
+ *   SQUEEZE_BREAKOUT — tp1 = BB20 opposite band (LONG → upper, SHORT → lower)
+ *   BB4_TOUCH        — tp1 = SMA20, tp2 = BB20 opposite band
+ *   SR_CONFLUENCE    — no recalculation (S/R levels don't change with indicators)
+ *
+ * If indicators.bb20 or indicators.sma20 is null (insufficient candle history),
+ * the function is a no-op and the existing TP values are preserved.
+ *
+ * Only writes to DB when at least one TP value has changed, avoiding
+ * unnecessary UPDATE operations on unchanged sessions.
+ */
+async function refreshWatchSessionTp(
+  _candle: Candle,
+  indicators: AllIndicators,
+  session: WatchSession,
+  deps: PipelineDeps,
+): Promise<void> {
+  const { bb20, sma20 } = indicators;
+
+  // Guard: insufficient indicator data — keep existing TP
+  if (!bb20 || !sma20) return;
+
+  const { upper: bb20Upper, lower: bb20Lower } = bb20;
+  const { detection_type, direction } = session;
+
+  let newTp1: Decimal | null = null;
+  let newTp2: Decimal | null = null;
+
+  if (detection_type === "SQUEEZE_BREAKOUT") {
+    // tp1 = BB20 opposite band (price target after breakout retrace)
+    newTp1 = direction === "LONG" ? bb20Upper : bb20Lower;
+    // tp2 unchanged — keep existing value
+    newTp2 = session.tp2_price;
+  } else if (detection_type === "BB4_TOUCH") {
+    // tp1 = SMA20 (mean reversion first target)
+    // tp2 = BB20 opposite band (extended target)
+    newTp1 = sma20;
+    newTp2 = direction === "LONG" ? bb20Upper : bb20Lower;
+  } else {
+    // SR_CONFLUENCE: S/R levels are structural — no recalculation
+    return;
+  }
+
+  if (newTp1 === null || newTp2 === null) return;
+
+  // Only write when values actually changed
+  const tp1Unchanged = session.tp1_price !== null && newTp1.equals(session.tp1_price);
+  const tp2Unchanged = session.tp2_price !== null && newTp2.equals(session.tp2_price);
+  if (tp1Unchanged && tp2Unchanged) return;
+
+  await deps.updateWatchSessionTp(deps.db, session.id, newTp1, newTp2);
+}
+
+// ---------------------------------------------------------------------------
 // process1H — watch session management
 // ---------------------------------------------------------------------------
 
@@ -496,6 +571,9 @@ async function process1H(
         details: { reason: invalidReason, sessionId: activeSession.id },
       });
     } else {
+      // Recalculate and persist TP prices based on current 1H indicators
+      await refreshWatchSessionTp(candle, indicators, activeSession, deps);
+
       // Update TP prices in memory (syncs watch session TP into the ticket state)
       deps.updateTpPrices({
         tp1Price: activeSession.tp1_price,
@@ -597,6 +675,19 @@ async function processEntry(
     return;
   }
 
+  // ---- 3b. Inject 1H BB4 into indicators for a_grade determination ----
+  // Load 1H candles and compute BB4(period=4, stddev=4, source="open").
+  // The result is injected into indicators.bb4_1h so that checkEvidence()
+  // can set aGrade=true when the 1H BB4 band is simultaneously touched.
+  // If fewer than 4 candles are available, bb4_1h stays null (existing default).
+  const candles1H = await deps.getCandles(deps.db, symbol, exchange, "1H", 10);
+  if (candles1H.length >= 4) {
+    const bb4_1h = deps.calcBB4(candles1H);
+    if (bb4_1h !== null) {
+      indicators.bb4_1h = bb4_1h;
+    }
+  }
+
   // ---- 4. Evidence check (BB4 touch) ----
   const evidence = deps.checkEvidence(candle, indicators, activeSession);
   if (evidence === null) {
@@ -616,6 +707,7 @@ async function processEntry(
     indicators,
     { direction: evidence.direction, timeframe },
     safetySymbolState,
+    candles,
   );
 
   if (!safetyResult.passed) {
@@ -676,6 +768,28 @@ async function processEntry(
       details: { timeframe, decision: knnDecision.decision },
     });
     return;
+  }
+
+  // ---- 9b. daily_bias cross-validation ----
+  const dailyBias = symbolState?.daily_bias ?? null;
+  if (dailyBias !== null && dailyBias !== "NEUTRAL") {
+    const biasDirection = dailyBias === "LONG_ONLY" ? "LONG" : "SHORT";
+    if (evidence.direction !== biasDirection) {
+      log.info("pipeline_daily_bias_mismatch", {
+        symbol,
+        exchange,
+        details: { timeframe, evidenceDirection: evidence.direction, dailyBias },
+      });
+      await deps.insertEvent(deps.db, {
+        event_type: "DAILY_BIAS_MISMATCH",
+        symbol,
+        exchange,
+        ref_id: null,
+        ref_type: null,
+        data: { timeframe, evidenceDirection: evidence.direction, dailyBias },
+      });
+      return;
+    }
   }
 
   // ---- 10. Skip execution in analysis mode ----

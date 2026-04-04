@@ -31,17 +31,38 @@ export type EvidenceResult = {
 // ---------------------------------------------------------------------------
 
 /**
- * Computes SL price for LONG or SHORT.
- * LONG:  candle.low  - ATR * 0.5
- * SHORT: candle.high + ATR * 0.5
- * Falls back to candle range (high - low) when ATR is null.
+ * Computes SL price for LONG or SHORT using the PRD tail-length formula.
+ *
+ * LONG:  tailLength = min(open, close) - low
+ *        SL = low - tailLength × 0.15
+ * SHORT: tailLength = high - max(open, close)
+ *        SL = high + tailLength × 0.15
+ *
+ * Fallbacks:
+ * - tailLength = 0 (doji) → use (high - low) × 0.15 as buffer
+ * - range = 0 (fully flat candle) → SL = close
  */
-function calcSlPrice(candle: Candle, direction: Direction, atr: Decimal | null): Decimal {
-  const fallback = candle.high.minus(candle.low);
-  const buffer = atr != null ? atr.times("0.5") : fallback.times("0.5");
+export function calcSlPrice(candle: Candle, direction: Direction): Decimal {
+  const range = candle.high.minus(candle.low);
 
   if (direction === "LONG") {
+    const bodyBottom = Decimal.min(candle.open, candle.close);
+    const tailLength = bodyBottom.minus(candle.low);
+    const buffer = tailLength.isZero() ? range.times("0.15") : tailLength.times("0.15");
+    if (buffer.isZero()) {
+      // Fully flat candle: range=0 and tailLength=0
+      return candle.close;
+    }
     return candle.low.minus(buffer);
+  }
+
+  // SHORT
+  const bodyTop = Decimal.max(candle.open, candle.close);
+  const tailLength = candle.high.minus(bodyTop);
+  const buffer = tailLength.isZero() ? range.times("0.15") : tailLength.times("0.15");
+  if (buffer.isZero()) {
+    // Fully flat candle: range=0 and tailLength=0
+    return candle.close;
   }
   return candle.high.plus(buffer);
 }
@@ -111,7 +132,7 @@ export function checkEvidence(
   const entryPrice = candle.close;
 
   // SL price
-  const slPrice = calcSlPrice(candle, touchDirection, indicators.atr14);
+  const slPrice = calcSlPrice(candle, touchDirection);
 
   // a_grade: true when the 1H BB4 band is also touched simultaneously.
   // The 1H BB4 data is supplied via indicators.bb4_1h by the daemon pipeline.

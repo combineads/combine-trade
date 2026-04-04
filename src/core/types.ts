@@ -237,6 +237,16 @@ export type Vector = {
   created_at: Date;
 };
 
+/** Minimal ticket projection needed for reconciliation comparison */
+export type TicketSnapshot = {
+  id: string;
+  symbol: string;
+  exchange: Exchange;
+  direction: Direction;
+  state: string;
+  created_at: Date;
+};
+
 export type Ticket = {
   id: string;
   symbol: string;

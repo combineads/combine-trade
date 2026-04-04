@@ -836,62 +836,305 @@ function extractTimeSeries(ctx: VectorizerCtx): number[] {
 }
 
 // ---------------------------------------------------------------------------
-// Feature extraction: time_session (12)
+// Feature extraction: strategy (12)
+// Double-BB strategy-specific derived features — indices 190–201.
+// Part 1 implements indices 190–193; Part 2 implements 194–197; 198–201 are 0.5 placeholder (Part 3).
 // ---------------------------------------------------------------------------
 
-function extractSession(ctx: VectorizerCtx): number[] {
-  const { candles } = ctx;
-  const n = candles.length;
-  const openTime = n > 0 ? (candles[n - 1]?.open_time ?? new Date(0)) : new Date(0);
+function extractStrategy(ctx: VectorizerCtx): number[] {
+  const { ind, opens, sma20Series, highs, lows, rsi14Series, candles } = ctx;
+  const n = opens.length;
 
-  const utcHour = openTime.getUTCHours();
-  const utcMin = openTime.getUTCMinutes();
-  const utcDow = openTime.getUTCDay(); // 0=Sunday, 1=Monday, ...
+  // Current open price (used for bb4_position)
+  const open = n > 0 ? (opens[n - 1] ?? 0) : 0;
 
-  const hourSin = Math.sin((2 * Math.PI * utcHour) / 24);
-  const hourCos = Math.cos((2 * Math.PI * utcHour) / 24);
-  const dowSin = Math.sin((2 * Math.PI * utcDow) / 7);
-  const dowCos = Math.cos((2 * Math.PI * utcDow) / 7);
+  // Current close price (used for bb20_position)
+  const close = n > 0 ? (ctx.closes[n - 1] ?? 0) : 0;
 
-  const minSin = Math.sin((2 * Math.PI * utcMin) / 60);
-  const minCos = Math.cos((2 * Math.PI * utcMin) / 60);
+  // ---- [190] bb20_position: (close - bb20.lower) / bb20.width, width=0 → 0.5, null → 0.5 ----
+  let bb20Position: number;
+  const bb20 = ind.bb20;
+  if (bb20 === null) {
+    bb20Position = 0.5;
+  } else {
+    const bb20Lower = bb20.lower.toNumber();
+    const bb20Upper = bb20.upper.toNumber();
+    const bb20Width = bb20Upper - bb20Lower;
+    if (bb20Width === 0) {
+      bb20Position = 0.5;
+    } else {
+      bb20Position = (close - bb20Lower) / bb20Width;
+    }
+  }
 
-  const totalMinutes = utcHour * 60 + utcMin;
+  // ---- [191] bb4_position: (open - bb4.lower) / bb4.width, width=0 → 0.5, null → 0.5 ----
+  let bb4Position: number;
+  const bb4 = ind.bb4;
+  if (bb4 === null) {
+    bb4Position = 0.5;
+  } else {
+    const bb4Lower = bb4.lower.toNumber();
+    const bb4Upper = bb4.upper.toNumber();
+    const bb4Width = bb4Upper - bb4Lower;
+    if (bb4Width === 0) {
+      bb4Position = 0.5;
+    } else {
+      bb4Position = (open - bb4Lower) / bb4Width;
+    }
+  }
 
-  // Session windows (UTC)
-  const isAsia = totalMinutes >= 0 && totalMinutes < 8 * 60 ? 1 : 0; // 00:00–08:00
-  const isEurope = totalMinutes >= 8 * 60 && totalMinutes < 16 * 60 ? 1 : 0; // 08:00–16:00
-  const isUs = totalMinutes >= 13 * 60 + 30 && totalMinutes < 22 * 60 ? 1 : 0; // 13:30–22:00
+  // ---- [192] ma_ordering: (sma20>sma60?1:0 + sma60>sma120?1:0) / 2, null MA → 0.5 ----
+  let maOrdering: number;
+  const sma20 = ind.sma20;
+  const sma60 = ind.sma60;
+  const sma120 = ind.sma120;
+  if (sma20 === null || sma60 === null || sma120 === null) {
+    maOrdering = 0.5;
+  } else {
+    const s20 = sma20.toNumber();
+    const s60 = sma60.toNumber();
+    const s120 = sma120.toNumber();
+    maOrdering = ((s20 > s60 ? 1 : 0) + (s60 > s120 ? 1 : 0)) / 2;
+  }
 
-  // Funding window: within 15min of 00:00, 08:00, 16:00 UTC
-  const fundingHours = [0, 8, 16];
-  const isFunding = fundingHours.some((fh) => {
-    const fMin = fh * 60;
-    return Math.abs(totalMinutes - fMin) <= 15;
-  })
-    ? 1
-    : 0;
+  // ---- [193] ma20_slope: (sma20[0] - sma20[3]) / sma20[3], null/zero → 0.5 ----
+  let ma20Slope: number;
+  const sma20_curr = getLag(sma20Series, 0);
+  const sma20_lag3 = getLag(sma20Series, 3);
+  if (sma20_curr === 0 || sma20_lag3 === 0) {
+    ma20Slope = 0.5;
+  } else {
+    const raw = (sma20_curr - sma20_lag3) / sma20_lag3;
+    const v = safe(raw);
+    ma20Slope = Number.isFinite(v) ? v : 0.5;
+  }
 
-  // Market open window: within 2h of any session open (00:00, 08:00, 13:30)
-  const sessionOpens = [0, 8 * 60, 13 * 60 + 30];
-  const isMarketOpen = sessionOpens.some((so) => Math.abs(totalMinutes - so) <= 120) ? 1 : 0;
+  // ---- [194] atr_separation: abs(close - sma20) / atr14, atr14=0/null → 0.5 ----
+  let atrSeparation: number;
+  {
+    const atr14 = ind.atr14?.toNumber() ?? null;
+    const sma20Val = getLag(sma20Series, 0);
+    if (atr14 === null || atr14 === 0 || sma20Val === 0) {
+      atrSeparation = 0.5;
+    } else {
+      const raw = Math.abs(close - sma20Val) / atr14;
+      const v = safe(raw);
+      atrSeparation = Number.isFinite(v) ? v : 0.5;
+    }
+  }
 
-  // Top of hour: minute < 5 or minute >= 55
-  const isTopOfHour = utcMin < 5 || utcMin >= 55 ? 1 : 0;
+  // ---- [195] pivot_distance: (close - nearest_pivot) / atr14, atr14=0/null → 0.5 ----
+  // nearest_pivot = closer of highest_high or lowest_low in last 20 candles
+  let pivotDistance: number;
+  {
+    const atr14 = ind.atr14?.toNumber() ?? null;
+    if (atr14 === null || atr14 === 0 || n === 0) {
+      pivotDistance = 0.5;
+    } else {
+      const slice20Start = Math.max(0, n - 20);
+      let highestH = -Infinity;
+      let lowestL = Infinity;
+      for (let i = slice20Start; i < n; i++) {
+        const h = highs[i] ?? 0;
+        const l = lows[i] ?? 0;
+        if (h > highestH) highestH = h;
+        if (l < lowestL) lowestL = l;
+      }
+      const distToHigh = Math.abs(close - highestH);
+      const distToLow = Math.abs(close - lowestL);
+      const nearestPivot = distToHigh <= distToLow ? highestH : lowestL;
+      const raw = (close - nearestPivot) / atr14;
+      const v = safe(raw);
+      pivotDistance = Number.isFinite(v) ? v : 0.5;
+    }
+  }
+
+  // ---- [196] rsi_normalized: (rsi14 - 50) / 50 → [-1, 1], null → 0.5 ----
+  let rsiNormalized: number;
+  {
+    const rsi14 = ind.rsi14?.toNumber() ?? null;
+    if (rsi14 === null) {
+      rsiNormalized = 0.5;
+    } else {
+      const raw = (rsi14 - 50) / 50;
+      const v = safe(raw);
+      rsiNormalized = Number.isFinite(v) ? v : 0.5;
+    }
+  }
+
+  // ---- [197] rsi_extreme_count: count(RSI<30 or RSI>70 in last 20 bars) / 20
+  // rsi14Series stores RSI/100, so thresholds are 0.3 and 0.7.
+  // Insufficient data (<= 0 bars) → 0.5
+  let rsiExtremeCount: number;
+  if (n === 0 || rsi14Series.length === 0) {
+    rsiExtremeCount = 0.5;
+  } else {
+    const rsiSlice20Start = Math.max(0, n - 20);
+    const rsiAvailable = n - rsiSlice20Start; // actual bars available
+    if (rsiAvailable === 0) {
+      rsiExtremeCount = 0.5;
+    } else {
+      let extremeCount = 0;
+      for (let i = rsiSlice20Start; i < n; i++) {
+        const rsiVal = rsi14Series[i] ?? 0; // already /100
+        if (rsiVal < 0.3 || rsiVal > 0.7) extremeCount++;
+      }
+      rsiExtremeCount = extremeCount / rsiAvailable;
+    }
+  }
+
+  // ---- [198] breakout_intensity: (close - bb20_upper) / atr14 if above upper,
+  // (bb20_lower - close) / atr14 (negative) if below lower, else 0.
+  // bb20=null or atr14=null/0 → 0.5
+  let breakoutIntensity: number;
+  {
+    const atr14 = ind.atr14?.toNumber() ?? null;
+    if (bb20 === null || atr14 === null || atr14 === 0) {
+      breakoutIntensity = 0.5;
+    } else {
+      const bb20Upper = bb20.upper.toNumber();
+      const bb20Lower = bb20.lower.toNumber();
+      let raw: number;
+      if (close > bb20Upper) {
+        raw = (close - bb20Upper) / atr14;
+      } else if (close < bb20Lower) {
+        raw = (bb20Lower - close) / atr14; // positive magnitude, but per spec negative sign
+        raw = -raw; // close < lower → negative
+      } else {
+        raw = 0;
+      }
+      const v = safe(raw);
+      breakoutIntensity = Number.isFinite(v) ? v : 0.5;
+    }
+  }
+
+  // ---- [199] disparity_divergence: bb4_pct_b - bb20_pct_b
+  // bb4_pct_b = (close - bb4_lower) / bb4_width
+  // bb20_pct_b = (close - bb20_lower) / bb20_width
+  // Either null or width=0 → 0.5
+  let disparityDivergence: number;
+  {
+    const bb4 = ind.bb4;
+    if (bb4 === null || bb20 === null) {
+      disparityDivergence = 0.5;
+    } else {
+      const bb4Lower = bb4.lower.toNumber();
+      const bb4Upper = bb4.upper.toNumber();
+      const bb4Width = bb4Upper - bb4Lower;
+      const bb20Lower = bb20.lower.toNumber();
+      const bb20Upper = bb20.upper.toNumber();
+      const bb20Width = bb20Upper - bb20Lower;
+      if (bb4Width === 0 || bb20Width === 0) {
+        disparityDivergence = 0.5;
+      } else {
+        const bb4PctB = (close - bb4Lower) / bb4Width;
+        const bb20PctB = (close - bb20Lower) / bb20Width;
+        const raw = bb4PctB - bb20PctB;
+        const v = safe(raw);
+        disparityDivergence = Number.isFinite(v) ? v : 0.5;
+      }
+    }
+  }
+
+  // ---- [200] daily_open_distance: (close - daily_open) / atr14
+  // daily_open = open of the first candle of the current UTC day.
+  // If no same-day candle found or atr14=null/0 → 0.5
+  let dailyOpenDistance: number;
+  {
+    const atr14 = ind.atr14?.toNumber() ?? null;
+    if (atr14 === null || atr14 === 0 || n === 0) {
+      dailyOpenDistance = 0.5;
+    } else {
+      const lastCandle = candles[n - 1];
+      if (lastCandle === undefined) {
+        dailyOpenDistance = 0.5;
+      } else {
+        const lastDate = lastCandle.open_time;
+        const lastDayUTC =
+          lastDate.getUTCFullYear() * 10000 +
+          (lastDate.getUTCMonth() + 1) * 100 +
+          lastDate.getUTCDate();
+        // Find the first candle of the same UTC day (candles are newest-last, so iterate from oldest)
+        let dailyOpen: number | null = null;
+        for (let i = 0; i < n; i++) {
+          const c = candles[i];
+          if (c === undefined) continue;
+          const cDate = c.open_time;
+          const cDayUTC =
+            cDate.getUTCFullYear() * 10000 + (cDate.getUTCMonth() + 1) * 100 + cDate.getUTCDate();
+          if (cDayUTC === lastDayUTC) {
+            dailyOpen = c.open.toNumber();
+            break; // first same-day candle found (oldest = daily open)
+          }
+        }
+        if (dailyOpen === null) {
+          dailyOpenDistance = 0.5;
+        } else {
+          const raw = (close - dailyOpen) / atr14;
+          const v = safe(raw);
+          dailyOpenDistance = Number.isFinite(v) ? v : 0.5;
+        }
+      }
+    }
+  }
+
+  // ---- [201] session_box_position: (close - session_low) / (session_high - session_low)
+  // session_high = max of highs of same-day candles
+  // session_low = min of lows of same-day candles
+  // range=0 or no same-day candles → 0.5
+  let sessionBoxPosition: number;
+  if (n === 0) {
+    sessionBoxPosition = 0.5;
+  } else {
+    const lastCandleSbp = candles[n - 1];
+    if (lastCandleSbp === undefined) {
+      sessionBoxPosition = 0.5;
+    } else {
+      const lastDateSbp = lastCandleSbp.open_time;
+      const lastDayUTCSbp =
+        lastDateSbp.getUTCFullYear() * 10000 +
+        (lastDateSbp.getUTCMonth() + 1) * 100 +
+        lastDateSbp.getUTCDate();
+      let sessionHigh = -Infinity;
+      let sessionLow = Infinity;
+      let found = false;
+      for (let i = 0; i < n; i++) {
+        const c = candles[i];
+        if (c === undefined) continue;
+        const cDate = c.open_time;
+        const cDayUTC =
+          cDate.getUTCFullYear() * 10000 + (cDate.getUTCMonth() + 1) * 100 + cDate.getUTCDate();
+        if (cDayUTC === lastDayUTCSbp) {
+          const h = c.high.toNumber();
+          const l = c.low.toNumber();
+          if (h > sessionHigh) sessionHigh = h;
+          if (l < sessionLow) sessionLow = l;
+          found = true;
+        }
+      }
+      if (!found || sessionHigh === sessionLow) {
+        sessionBoxPosition = 0.5;
+      } else {
+        const raw = (close - sessionLow) / (sessionHigh - sessionLow);
+        const v = safe(raw);
+        sessionBoxPosition = Number.isFinite(v) ? v : 0.5;
+      }
+    }
+  }
 
   return [
-    safe(hourSin), // 190
-    safe(hourCos), // 191
-    safe(dowSin), // 192
-    safe(dowCos), // 193
-    isAsia, // 194
-    isEurope, // 195
-    isUs, // 196
-    isFunding, // 197
-    isMarketOpen, // 198
-    safe(minSin), // 199
-    safe(minCos), // 200
-    isTopOfHour, // 201
+    safe(bb20Position) !== bb20Position ? 0.5 : bb20Position, // 190: bb20_position
+    safe(bb4Position) !== bb4Position ? 0.5 : bb4Position, // 191: bb4_position
+    maOrdering, // 192: ma_ordering
+    ma20Slope, // 193: ma20_slope
+    atrSeparation, // 194: atr_separation
+    pivotDistance, // 195: pivot_distance
+    rsiNormalized, // 196: rsi_normalized
+    rsiExtremeCount, // 197: rsi_extreme_count
+    breakoutIntensity, // 198: breakout_intensity
+    disparityDivergence, // 199: disparity_divergence
+    dailyOpenDistance, // 200: daily_open_distance
+    sessionBoxPosition, // 201: session_box_position
   ];
 }
 
@@ -919,9 +1162,9 @@ export function vectorize(
   const volatility = extractVolatility(ctx); // 30
   const trend = extractTrend(ctx); // 40
   const timeSeries = extractTimeSeries(ctx); // 50
-  const session = extractSession(ctx); // 12
+  const strategy = extractStrategy(ctx); // 12
 
-  const all = [...pricePosition, ...momentum, ...volatility, ...trend, ...timeSeries, ...session];
+  const all = [...pricePosition, ...momentum, ...volatility, ...trend, ...timeSeries, ...strategy];
 
   if (all.length !== VECTOR_DIM) {
     throw new Error(`vectorize: dimension mismatch — got ${all.length}, expected ${VECTOR_DIM}`);

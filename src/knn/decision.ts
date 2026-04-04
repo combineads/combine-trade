@@ -37,7 +37,7 @@ export type KnnDecisionConfig = {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_WINRATE_THRESHOLD = 0.55;
-const DEFAULT_MIN_SAMPLES = 20;
+const DEFAULT_MIN_SAMPLES = 30;
 const DEFAULT_A_GRADE_WINRATE_THRESHOLD = 0.5;
 
 /** Round-trip fee rate (0.08%) deducted from raw expectancy. Hard-coded — exchange fees are structurally fixed. */
@@ -164,7 +164,7 @@ export async function updateSignalKnnDecision(
  *
  * Reads:
  *  - `KNN.winrate_threshold`       → default 0.55
- *  - `KNN.min_samples`             → default 20
+ *  - `KNN.min_samples`             → default 30
  *  - `KNN.a_grade_winrate_threshold` → default 0.50
  *
  * Falls back to the hard-coded default for any row that is absent, inactive,

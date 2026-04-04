@@ -32,7 +32,7 @@ import {
 
 const DEFAULT_CONFIG: KnnDecisionConfig = {
   winrateThreshold: 0.55,
-  minSamples: 20,
+  minSamples: 30,
   aGradeWinrateThreshold: 0.5,
 };
 
@@ -78,8 +78,8 @@ describe("knn-decision: makeDecision — SKIP when sample count < minSamples", (
     expect(result.aGrade).toBe(false);
   });
 
-  it("returns SKIP when sample count is below minSamples (10 < 20)", () => {
-    // winRate 0.70, but only 10 samples — below the new DEFAULT_MIN_SAMPLES=20
+  it("returns SKIP when sample count is below minSamples (10 < 30)", () => {
+    // winRate 0.70, but only 10 samples — below the new DEFAULT_MIN_SAMPLES=30
     const neighbors = makeNeighbors(10, 7); // 7 of 10 WIN → winRate 0.70
     const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
     expect(result.decision).toBe("SKIP");
@@ -339,43 +339,50 @@ describe("knn-decision: makeDecision — fee deduction", () => {
     expect(result.decision).toBe("FAIL");
   });
 
-  it("makeDecision with 15 samples → SKIP (below new DEFAULT_MIN_SAMPLES=20)", () => {
+  it("makeDecision with 15 samples → SKIP (below new DEFAULT_MIN_SAMPLES=30)", () => {
     const neighbors = makeNeighbors(15, 12); // 80% win but only 15 samples
     const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
     expect(result.decision).toBe("SKIP");
     expect(result.sampleCount).toBe(15);
   });
 
-  it("makeDecision with exactly 20 samples → not SKIP (proceeds to PASS or FAIL)", () => {
-    const neighbors = makeNeighbors(20, 14); // 14/20=0.70 winRate
+  it("makeDecision with exactly 29 samples → SKIP (below new DEFAULT_MIN_SAMPLES=30)", () => {
+    const neighbors = makeNeighbors(29, 20); // 29 samples — below threshold of 30
+    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
+    expect(result.decision).toBe("SKIP");
+    expect(result.sampleCount).toBe(29);
+  });
+
+  it("makeDecision with exactly 30 samples → not SKIP (proceeds to PASS or FAIL)", () => {
+    const neighbors = makeNeighbors(30, 21); // 21/30=0.70 winRate
     const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
     expect(result.decision).not.toBe("SKIP");
-    expect(result.sampleCount).toBe(20);
+    expect(result.sampleCount).toBe(30);
   });
 });
 
 describe("knn-decision: makeDecision — A-grade threshold calibration (0.50)", () => {
-  it("A-grade: winrate=0.55, samples=25, DOUBLE_B, safety=true → aGrade=true (0.55 >= 0.50)", () => {
+  it("A-grade: winrate=0.55, samples=30, DOUBLE_B, safety=true → aGrade=true (0.55 >= 0.50)", () => {
     const config: KnnDecisionConfig = {
       winrateThreshold: 0.55,
-      minSamples: 20,
+      minSamples: 30,
       aGradeWinrateThreshold: 0.5,
     };
-    // 14 WIN, 11 LOSS of 25 → winRate ≈ 0.56
-    const neighbors = makeNeighbors(25, 14);
+    // 17 WIN, 13 LOSS of 30 → winRate ≈ 0.567
+    const neighbors = makeNeighbors(30, 17);
     const result = makeDecision(neighbors, "DOUBLE_B", true, config);
     expect(result.winRate).toBeGreaterThanOrEqual(0.5);
     expect(result.aGrade).toBe(true);
   });
 
-  it("A-grade: winrate=0.45, samples=25, DOUBLE_B, safety=true → aGrade=false (0.45 < 0.50)", () => {
+  it("A-grade: winrate=0.45, samples=30, DOUBLE_B, safety=true → aGrade=false (0.45 < 0.50)", () => {
     const config: KnnDecisionConfig = {
       winrateThreshold: 0.55,
-      minSamples: 20,
+      minSamples: 30,
       aGradeWinrateThreshold: 0.5,
     };
-    // 11 WIN, 14 LOSS of 25 → winRate ≈ 0.44
-    const neighbors = makeNeighbors(25, 11);
+    // 13 WIN, 17 LOSS of 30 → winRate ≈ 0.433
+    const neighbors = makeNeighbors(30, 13);
     const result = makeDecision(neighbors, "DOUBLE_B", true, config);
     expect(result.winRate).toBeLessThan(0.5);
     expect(result.aGrade).toBe(false);
@@ -652,7 +659,7 @@ describe.skipIf(!dbAvailable)("knn-decision: loadKnnDecisionConfig — DB integr
     const config = await loadKnnDecisionConfig(db);
     expect(config).toEqual({
       winrateThreshold: 0.55,
-      minSamples: 20,
+      minSamples: 30,
       aGradeWinrateThreshold: 0.5,
     });
   });
@@ -666,7 +673,7 @@ describe.skipIf(!dbAvailable)("knn-decision: loadKnnDecisionConfig — DB integr
     });
     const config = await loadKnnDecisionConfig(db);
     expect(config.winrateThreshold).toBe(0.60);
-    expect(config.minSamples).toBe(20);
+    expect(config.minSamples).toBe(30);
     expect(config.aGradeWinrateThreshold).toBe(0.5);
   });
 
@@ -723,7 +730,7 @@ describe.skipIf(!dbAvailable)("knn-decision: loadKnnDecisionConfig — DB integr
       is_active: true,
     });
     const config = await loadKnnDecisionConfig(db);
-    expect(config.minSamples).toBe(20);
+    expect(config.minSamples).toBe(30);
   });
 
   it("floors min_samples to integer", async () => {

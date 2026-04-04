@@ -10,7 +10,7 @@ import { describe, expect, it, mock } from "bun:test";
 
 import { d } from "@/core/decimal";
 import type { ExchangeAdapter, ExchangePosition } from "@/core/ports";
-import type { Direction, Exchange } from "@/core/types";
+import type { DailyBias, DetectionType, Direction, Exchange, WatchSession } from "@/core/types";
 import type { EmergencyCloseParams } from "@/orders/executor";
 import type { TicketSnapshot } from "@/reconciliation/comparator";
 import { comparePositions } from "@/reconciliation/comparator";
@@ -104,6 +104,24 @@ function createMockAdapter(overrides: Partial<ExchangeAdapter> = {}): ExchangeAd
   };
 }
 
+function makeWatchSession(overrides: Partial<WatchSession> = {}): WatchSession {
+  return {
+    id: crypto.randomUUID(),
+    symbol: "BTCUSDT",
+    exchange: "binance" as Exchange,
+    detection_type: "SQUEEZE_BREAKOUT" as DetectionType,
+    direction: "LONG" as Direction,
+    tp1_price: null,
+    tp2_price: null,
+    detected_at: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2h ago
+    invalidated_at: null,
+    invalidation_reason: null,
+    context_data: null,
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    ...overrides,
+  };
+}
+
 function createMockDeps(overrides: Partial<CrashRecoveryDeps> = {}): CrashRecoveryDeps {
   return {
     adapters: new Map<Exchange, ExchangeAdapter>(),
@@ -115,6 +133,9 @@ function createMockDeps(overrides: Partial<CrashRecoveryDeps> = {}): CrashRecove
     checkSlOnExchange: mock(() => Promise.resolve(true)),
     reRegisterSl: mock(() => Promise.resolve()),
     restoreLossCounters: mock(() => Promise.resolve()),
+    getActiveWatchSessions: mock(() => Promise.resolve([] as WatchSession[])),
+    getSymbolDailyBias: mock(() => Promise.resolve(null as DailyBias | null)),
+    invalidateWatchSession: mock(() => Promise.resolve()),
     insertEvent: mock(() => Promise.resolve()),
     sendSlackAlert: mock(() => Promise.resolve()),
     ...overrides,
@@ -761,5 +782,252 @@ describe("recoverFromCrash — result shape", () => {
     for (const err of result.errors) {
       expect(typeof err).toBe("string");
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// WatchSession recovery — bias match + age validation
+// ---------------------------------------------------------------------------
+
+describe("recoverFromCrash — WatchSession recovery", () => {
+  it("2 valid sessions (LONG+LONG_ONLY, SHORT+SHORT_ONLY) → restored=2, invalidated=0", async () => {
+    const longSession = makeWatchSession({
+      id: "ws-long",
+      symbol: "BTCUSDT",
+      exchange: "binance",
+      direction: "LONG",
+      detected_at: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2h ago
+    });
+    const shortSession = makeWatchSession({
+      id: "ws-short",
+      symbol: "ETHUSDT",
+      exchange: "binance",
+      direction: "SHORT",
+      detected_at: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2h ago
+    });
+
+    const getSymbolDailyBiasMock = mock((symbol: string) => {
+      if (symbol === "BTCUSDT") return Promise.resolve("LONG_ONLY" as DailyBias);
+      if (symbol === "ETHUSDT") return Promise.resolve("SHORT_ONLY" as DailyBias);
+      return Promise.resolve(null);
+    });
+
+    const deps = createMockDeps({
+      getActiveWatchSessions: mock(() => Promise.resolve([longSession, shortSession])),
+      getSymbolDailyBias: getSymbolDailyBiasMock,
+    });
+
+    const result = await recoverFromCrash(deps);
+
+    expect(result.watchSessionsRestored).toBe(2);
+    expect(result.watchSessionsInvalidated).toBe(0);
+    expect(deps.invalidateWatchSession).not.toHaveBeenCalled();
+  });
+
+  it("1 valid (LONG+LONG_ONLY, 2h ago) + 1 invalid (LONG+SHORT_ONLY) → restored=1, invalidated=1", async () => {
+    const validSession = makeWatchSession({
+      id: "ws-valid",
+      symbol: "BTCUSDT",
+      exchange: "binance",
+      direction: "LONG",
+      detected_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    });
+    const invalidSession = makeWatchSession({
+      id: "ws-invalid",
+      symbol: "ETHUSDT",
+      exchange: "binance",
+      direction: "LONG",
+      detected_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    });
+
+    const getSymbolDailyBiasMock = mock((symbol: string) => {
+      if (symbol === "BTCUSDT") return Promise.resolve("LONG_ONLY" as DailyBias);
+      if (symbol === "ETHUSDT") return Promise.resolve("SHORT_ONLY" as DailyBias); // mismatch
+      return Promise.resolve(null);
+    });
+
+    const invalidateMock = mock(() => Promise.resolve());
+
+    const deps = createMockDeps({
+      getActiveWatchSessions: mock(() => Promise.resolve([validSession, invalidSession])),
+      getSymbolDailyBias: getSymbolDailyBiasMock,
+      invalidateWatchSession: invalidateMock,
+    });
+
+    const result = await recoverFromCrash(deps);
+
+    expect(result.watchSessionsRestored).toBe(1);
+    expect(result.watchSessionsInvalidated).toBe(1);
+    expect(invalidateMock).toHaveBeenCalledTimes(1);
+
+    const call = (invalidateMock as ReturnType<typeof mock>).mock.calls[0] as [string, string];
+    expect(call[0]).toBe("ws-invalid");
+    expect(call[1]).toBe("crash_recovery_stale");
+  });
+
+  it("no active sessions → restored=0, invalidated=0", async () => {
+    const deps = createMockDeps({
+      getActiveWatchSessions: mock(() => Promise.resolve([])),
+    });
+
+    const result = await recoverFromCrash(deps);
+
+    expect(result.watchSessionsRestored).toBe(0);
+    expect(result.watchSessionsInvalidated).toBe(0);
+    expect(deps.invalidateWatchSession).not.toHaveBeenCalled();
+  });
+
+  it("session older than 24h → invalidated regardless of bias match", async () => {
+    const staleSession = makeWatchSession({
+      id: "ws-stale",
+      symbol: "BTCUSDT",
+      exchange: "binance",
+      direction: "LONG",
+      detected_at: new Date(Date.now() - 25 * 60 * 60 * 1000), // 25h ago
+    });
+
+    const invalidateMock = mock(() => Promise.resolve());
+
+    const deps = createMockDeps({
+      getActiveWatchSessions: mock(() => Promise.resolve([staleSession])),
+      getSymbolDailyBias: mock(() => Promise.resolve("LONG_ONLY" as DailyBias)), // bias matches, but stale
+      invalidateWatchSession: invalidateMock,
+    });
+
+    const result = await recoverFromCrash(deps);
+
+    expect(result.watchSessionsRestored).toBe(0);
+    expect(result.watchSessionsInvalidated).toBe(1);
+    expect(invalidateMock).toHaveBeenCalledWith("ws-stale", "crash_recovery_stale");
+  });
+
+  it("session with null daily_bias → invalidated (conservative)", async () => {
+    const session = makeWatchSession({
+      id: "ws-null-bias",
+      symbol: "BTCUSDT",
+      exchange: "binance",
+      direction: "LONG",
+    });
+
+    const invalidateMock = mock(() => Promise.resolve());
+
+    const deps = createMockDeps({
+      getActiveWatchSessions: mock(() => Promise.resolve([session])),
+      getSymbolDailyBias: mock(() => Promise.resolve(null)),
+      invalidateWatchSession: invalidateMock,
+    });
+
+    const result = await recoverFromCrash(deps);
+
+    expect(result.watchSessionsRestored).toBe(0);
+    expect(result.watchSessionsInvalidated).toBe(1);
+    expect(invalidateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("session with NEUTRAL daily_bias → invalidated (conservative)", async () => {
+    const session = makeWatchSession({
+      id: "ws-neutral",
+      symbol: "BTCUSDT",
+      exchange: "binance",
+      direction: "LONG",
+    });
+
+    const invalidateMock = mock(() => Promise.resolve());
+
+    const deps = createMockDeps({
+      getActiveWatchSessions: mock(() => Promise.resolve([session])),
+      getSymbolDailyBias: mock(() => Promise.resolve("NEUTRAL" as DailyBias)),
+      invalidateWatchSession: invalidateMock,
+    });
+
+    const result = await recoverFromCrash(deps);
+
+    expect(result.watchSessionsRestored).toBe(0);
+    expect(result.watchSessionsInvalidated).toBe(1);
+    expect(invalidateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("EventLog: WATCH_SESSION_RESTORED and WATCH_SESSION_INVALIDATED_CRASH events emitted", async () => {
+    const validSession = makeWatchSession({
+      id: "ws-valid",
+      symbol: "BTCUSDT",
+      exchange: "binance",
+      direction: "LONG",
+    });
+    const invalidSession = makeWatchSession({
+      id: "ws-invalid",
+      symbol: "ETHUSDT",
+      exchange: "binance",
+      direction: "LONG",
+    });
+
+    const getSymbolDailyBiasMock = mock((symbol: string) => {
+      if (symbol === "BTCUSDT") return Promise.resolve("LONG_ONLY" as DailyBias);
+      return Promise.resolve("SHORT_ONLY" as DailyBias);
+    });
+
+    const insertEventMock = mock(() => Promise.resolve());
+
+    const deps = createMockDeps({
+      getActiveWatchSessions: mock(() => Promise.resolve([validSession, invalidSession])),
+      getSymbolDailyBias: getSymbolDailyBiasMock,
+      insertEvent: insertEventMock,
+    });
+
+    await recoverFromCrash(deps);
+
+    const calls = (insertEventMock as ReturnType<typeof mock>).mock.calls as [string, Record<string, unknown>][];
+    const eventTypes = calls.map((c) => c[0]);
+
+    expect(eventTypes).toContain("WATCH_SESSION_RESTORED");
+    expect(eventTypes).toContain("WATCH_SESSION_INVALIDATED_CRASH");
+    // Also includes the final CRASH_RECOVERY event
+    expect(eventTypes).toContain("CRASH_RECOVERY");
+  });
+
+  it("getActiveWatchSessions failure → error recorded, recovery continues", async () => {
+    const deps = createMockDeps({
+      getActiveWatchSessions: mock(() => Promise.reject(new Error("db timeout"))),
+    });
+
+    const result = await recoverFromCrash(deps);
+
+    expect(result.errors.some((e) => e.includes("getActiveWatchSessions failed"))).toBe(true);
+    expect(result.watchSessionsRestored).toBe(0);
+    expect(result.watchSessionsInvalidated).toBe(0);
+  });
+
+  it("invalidateWatchSession failure → error recorded, processing continues to next session", async () => {
+    const session1 = makeWatchSession({ id: "ws-1", symbol: "BTCUSDT", direction: "LONG" });
+    const session2 = makeWatchSession({ id: "ws-2", symbol: "ETHUSDT", direction: "LONG" });
+
+    const invalidateMock = mock((id: string) => {
+      if (id === "ws-1") return Promise.reject(new Error("db error"));
+      return Promise.resolve();
+    });
+
+    const deps = createMockDeps({
+      getActiveWatchSessions: mock(() => Promise.resolve([session1, session2])),
+      getSymbolDailyBias: mock(() => Promise.resolve("SHORT_ONLY" as DailyBias)), // both mismatch → invalidate
+      invalidateWatchSession: invalidateMock,
+    });
+
+    const result = await recoverFromCrash(deps);
+
+    // Both sessions processed as invalid
+    expect(result.watchSessionsInvalidated).toBe(2);
+    // First one failed, so error recorded
+    expect(result.errors.some((e) => e.includes("invalidateWatchSession failed"))).toBe(true);
+    // Second one succeeded
+    expect(invalidateMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("result includes watchSessionsRestored and watchSessionsInvalidated counters", async () => {
+    const deps = createMockDeps();
+
+    const result = await recoverFromCrash(deps);
+
+    expect(typeof result.watchSessionsRestored).toBe("number");
+    expect(typeof result.watchSessionsInvalidated).toBe("number");
   });
 });

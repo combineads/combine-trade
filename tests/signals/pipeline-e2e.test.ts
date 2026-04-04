@@ -326,15 +326,17 @@ describe.skipIf(!dbAvailable)("[E2E] LONG 전체 흐름: bias=LONG_ONLY → WATC
 
     // 8. Safety Gate — pass (normal candle: low wick ratio acceptable)
     //    evidenceCandle had wick ratio > 0.6; use a cleaner candle for safety check.
-    //    low=40800, open=41100, close=41200, high=42500
-    //    lower wick = (41100-40800)/(42500-40800) = 300/1700 ≈ 0.176 → passes
+    //    low=40800, open=41500, close=41600, high=42500
+    //    wick bypass: LONG + LONG_ONLY → trend-following, wick filter skipped
+    //    box range: close=41600, sma20=42100, range_20=4000, margin=600 → bounds=[41500,42700]
+    //    41600 ∈ [41500,42700] ✓
     const safeLongCandle = makeTestCandle({
       open_time: new Date(baseTime.getTime() + 5 * 60 * 1000),
-      low: new Decimal("40800"),   // touches BB4 lower (41000? No, 40800 < 41000 ✓)
+      low: new Decimal("40800"),   // touches BB4 lower (41000) ✓
       high: new Decimal("42500"),
-      open: new Decimal("41100"),
-      close: new Decimal("41200"),
-      // lower wick = (min(41100,41200) - 40800) / (42500-40800) = 300/1700 ≈ 0.176 ✓
+      open: new Decimal("41500"),
+      close: new Decimal("41600"),
+      // box range passes: 41600 ∈ [sma20 ± margin] = [41500, 42700] ✓
     });
 
     const safetyResult = checkSafety(safeLongCandle, indicators, { direction: "LONG", timeframe: "5M" }, { session_box_high: null, session_box_low: null, daily_bias: "LONG_ONLY" });
@@ -458,10 +460,17 @@ describe.skipIf(!dbAvailable)("[E2E] SHORT A-grade 흐름: bias=SHORT_ONLY → W
     expect(signal.signal_type).toBe("DOUBLE_B");
 
     // 7. Safety Gate — pass for SHORT
-    //    SHORT: upper wick = (high - max(open,close)) / range
-    //    high=44500, max(open,close)=43800, range=44500-43200=1300
-    //    upper wick = (44500 - 43800) / 1300 = 700/1300 ≈ 0.538 < 0.6 → passes
-    const safetyResult = checkSafety(evidenceCandle, indicators, { direction: "SHORT", timeframe: "5M" }, { session_box_high: null, session_box_low: null, daily_bias: "SHORT_ONLY" });
+    //    wick bypass: SHORT + SHORT_ONLY → trend-following, wick filter skipped
+    //    box range: close must be in [sma20 ± margin] = [42100 ± 600] = [41500, 42700]
+    //    Use a separate safety candle with close=42200 ∈ [41500, 42700] ✓
+    const safeShortCandle = makeTestCandle({
+      open_time: new Date(baseTime.getTime() + 5 * 60 * 1000),
+      high: new Decimal("44500"),   // >= BB20 upper (44000) — same as evidence candle
+      low: new Decimal("43200"),
+      open: new Decimal("42500"),
+      close: new Decimal("42200"),  // ∈ [41500, 42700] → box range passes ✓
+    });
+    const safetyResult = checkSafety(safeShortCandle, indicators, { direction: "SHORT", timeframe: "5M" }, { session_box_high: null, session_box_low: null, daily_bias: "SHORT_ONLY" });
     expect(safetyResult.passed).toBe(true);
 
     await updateSignalSafety(db, signal.id, safetyResult);
@@ -607,10 +616,11 @@ describe.skipIf(!dbAvailable)("[E2E] Safety 실패: Evidence 통과 → 윅 비�
     // 4. Create Signal
     const signal = await createSignal(db, evidenceResult!, session, "5M");
 
-    // 5. Safety Gate with a candle that has HIGH lower-wick ratio (> 0.6) → FAIL
+    // 5. Safety Gate with a candle that has HIGH lower-wick ratio (> threshold) → FAIL
     //    LONG wick: lower wick = (min(open,close) - low) / range
     //    Craft: low=40800, open=42800, close=42900, high=43000
-    //    wick = (min(42800,42900) - 40800) / (43000 - 40800) = 2000/2200 ≈ 0.909 > 0.6 → FAIL
+    //    wick = (min(42800,42900) - 40800) / (43000 - 40800) = 2000/2200 ≈ 0.909 > 0.1 (5M threshold) → FAIL
+    //    daily_bias=NEUTRAL so trend-following bypass does NOT apply → wick check runs
     const highWickCandle = makeTestCandle({
       low: new Decimal("40800"),
       high: new Decimal("43000"),
@@ -622,7 +632,7 @@ describe.skipIf(!dbAvailable)("[E2E] Safety 실패: Evidence 통과 → 윅 비�
       highWickCandle,
       indicators,
       { direction: "LONG", timeframe: "5M" },
-      { session_box_high: null, session_box_low: null, daily_bias: "LONG_ONLY" },
+      { session_box_high: null, session_box_low: null, daily_bias: "NEUTRAL" },
     );
     expect(safetyResult.passed).toBe(false);
     expect(safetyResult.reasons).toContain("wick_ratio_exceeded");
@@ -677,15 +687,16 @@ describe.skipIf(!dbAvailable)("[E2E] KNN SKIP: labeled 벡터 부족 → knn_dec
       contextData: watchingResult!.contextData,
     });
 
-    // 4. Evidence: BB4 touch LONG — safe candle (low wick < 0.6)
-    //    low=40800, open=41100, close=41200, high=42500
-    //    wick = (41100-40800)/(42500-40800) = 300/1700 ≈ 0.176 → safety passes
+    // 4. Evidence: BB4 touch LONG — safe candle
+    //    low=40800 ≤ BB4 lower (41000) → ONE_B LONG evidence ✓
+    //    close=41600: wick bypass (LONG+LONG_ONLY trend-following)
+    //    box range: close=41600 ∈ [sma20 ± margin] = [42100 ± 600] = [41500, 42700] ✓
     const evidenceCandle = makeTestCandle({
       open_time: new Date(baseTime.getTime() + 5 * 60 * 1000),
       low: new Decimal("40800"),
       high: new Decimal("42500"),
-      open: new Decimal("41100"),
-      close: new Decimal("41200"),
+      open: new Decimal("41500"),
+      close: new Decimal("41600"),
     });
     const evidenceResult = checkEvidence(evidenceCandle, indicators, session);
     expect(evidenceResult).not.toBeNull();
@@ -693,7 +704,7 @@ describe.skipIf(!dbAvailable)("[E2E] KNN SKIP: labeled 벡터 부족 → knn_dec
     // 5. Create Signal
     const signal = await createSignal(db, evidenceResult!, session, "5M");
 
-    // 6. Safety: passes (wick ratio OK)
+    // 6. Safety: passes (wick bypassed via LONG+LONG_ONLY; box range close=41600 ∈ [41500,42700])
     const safetyResult = checkSafety(
       evidenceCandle,
       indicators,

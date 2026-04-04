@@ -19,8 +19,8 @@ const TIME_EXIT_THRESHOLD_MS = 60 * 3600 * 1000;
 /** TP1 closes 50% of total size */
 const TP1_CLOSE_RATIO = "0.5";
 
-/** TP2 closes 1/3 of remaining size */
-const TP2_CLOSE_DIVISOR = "3";
+/** TP2 closes 1/2 of remaining size */
+const TP2_CLOSE_DIVISOR = "2";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -131,7 +131,7 @@ export function checkExit(ticket: CheckExitInput, currentPrice: string, nowMs: n
  * Calculates the size to close for a given exit action type.
  *
  * - TP1: total_size × 0.50
- * - TP2: remaining_size × (1/3)
+ * - TP2: remaining_size × (1/2)
  * - TIME_EXIT: full remaining_size
  * - NONE: 0
  */

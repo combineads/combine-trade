@@ -57,12 +57,26 @@ type SymbolStateInput = {
  *
  * Threshold is timeframe-specific: 5M = 0.1, 1M = 1.0.
  * Doji (range == 0) always passes.
+ *
+ * Counter-trend bypass: when the trade direction aligns with dailyBias
+ * (LONG + LONG_ONLY, or SHORT + SHORT_ONLY), the filter is skipped entirely.
+ * NEUTRAL and null bias are treated conservatively (filter applied).
  */
 function checkWickRatio(
   candle: Candle,
   direction: Direction,
   timeframe: VectorTimeframe,
+  dailyBias: DailyBias | null,
 ): string | null {
+  // 순추세 (trend-following) bypass: direction matches bias → skip wick filter
+  const isTrendFollowing =
+    (direction === "LONG" && dailyBias === "LONG_ONLY") ||
+    (direction === "SHORT" && dailyBias === "SHORT_ONLY");
+
+  if (isTrendFollowing) {
+    return null;
+  }
+
   const range = candle.high.minus(candle.low);
 
   if (range.isZero()) {
@@ -121,18 +135,43 @@ function checkBoxRange(candle: Candle, indicators: AllIndicators): string | null
 /**
  * Abnormal candle filter.
  *
- * If (high - low) > ATR * ABNORMAL_CANDLE_MULTIPLE → abnormal.
- * Passes when ATR is null.
+ * Computes avg_range_5 from the last 5 candles in recentCandles and blocks
+ * counter-trend entries where (high - low) > avg_range_5 × ABNORMAL_CANDLE_MULTIPLE.
+ *
+ * Bypass conditions (returns null):
+ *   - Fewer than 5 recentCandles available
+ *   - Trend-following entry: direction matches dailyBias
+ *     (LONG + LONG_ONLY, or SHORT + SHORT_ONLY)
+ *
+ * Counter-trend / NEUTRAL / null bias: filter is applied.
  */
-function checkAbnormalCandle(candle: Candle, indicators: AllIndicators): string | null {
-  const { atr14 } = indicators;
-
-  if (atr14 === null) {
+function checkAbnormalCandle(
+  candle: Candle,
+  recentCandles: Candle[],
+  dailyBias: DailyBias | null,
+  direction: Direction,
+): string | null {
+  // Bypass: insufficient history
+  if (recentCandles.length < 5) {
     return null;
   }
 
+  // Bypass: trend-following (순추세)
+  const isTrendFollowing =
+    (direction === "LONG" && dailyBias === "LONG_ONLY") ||
+    (direction === "SHORT" && dailyBias === "SHORT_ONLY");
+
+  if (isTrendFollowing) {
+    return null;
+  }
+
+  // Compute avg_range_5 from last 5 candles
+  const last5 = recentCandles.slice(-5);
+  const totalRange = last5.reduce((sum, c) => sum.plus(c.high.minus(c.low)), d("0"));
+  const avgRange5 = totalRange.dividedBy(5);
+
   const range = candle.high.minus(candle.low);
-  const threshold = atr14.times(ABNORMAL_CANDLE_MULTIPLE);
+  const threshold = avgRange5.times(ABNORMAL_CANDLE_MULTIPLE);
 
   if (gt(range, threshold)) {
     return "abnormal_candle";
@@ -198,22 +237,37 @@ function checkNoise1M(
  * All conditions must pass for SafetyResult.passed to be true.
  *
  * Filter thresholds use module-level constants (see top of file).
+ *
+ * @param recentCandles - Candles preceding the entry candle, used to compute
+ *   avg_range_5 for the abnormal candle filter. Defaults to [] (bypass).
+ *   Pipeline callers should pass the full candles array for the symbol.
  */
 export function checkSafety(
   candle: Candle,
   indicators: AllIndicators,
   signal: SignalInput,
   symbolState: SymbolStateInput,
+  recentCandles: Candle[] = [],
 ): SafetyResult {
   const reasons: string[] = [];
 
-  const wickFailure = checkWickRatio(candle, signal.direction, signal.timeframe);
+  const wickFailure = checkWickRatio(
+    candle,
+    signal.direction,
+    signal.timeframe,
+    symbolState.daily_bias,
+  );
   if (wickFailure) reasons.push(wickFailure);
 
   const boxFailure = checkBoxRange(candle, indicators);
   if (boxFailure) reasons.push(boxFailure);
 
-  const abnormalFailure = checkAbnormalCandle(candle, indicators);
+  const abnormalFailure = checkAbnormalCandle(
+    candle,
+    recentCandles,
+    symbolState.daily_bias,
+    signal.direction,
+  );
   if (abnormalFailure) reasons.push(abnormalFailure);
 
   const noiseFailure = checkNoise1M(candle, indicators, signal, symbolState);

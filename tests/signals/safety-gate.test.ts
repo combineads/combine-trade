@@ -342,81 +342,208 @@ describe("safety-gate — box range filter", () => {
 });
 
 // ---------------------------------------------------------------------------
-// safety-gate — checkSafety — abnormal candle filter (threshold = 2x ATR)
+// safety-gate — checkSafety — abnormal candle filter (threshold = 2x avg_range_5)
+//
+// avg_range_5 = average (high - low) over last 5 candles.
+// Candle is blocked only when: counter-trend (역추세/NEUTRAL) AND range > avg_range_5 × 2.0
+// Trend-following (순추세): bypass regardless of candle size.
+// Fewer than 5 recentCandles: bypass (null).
+//
+// Helper: makeRecentCandles(n, rangeSize) — creates n candles each with range=rangeSize
 // ---------------------------------------------------------------------------
 
-describe("safety-gate — abnormal candle filter", () => {
-  it("passes when ATR is null", () => {
-    const candle = makeCandle({
-      high: new Decimal("60000"),
-      low: new Decimal("40000"),
-    });
-    const result = checkSafety(
-      candle,
-      makeIndicators({ atr14: null }),
-      makeSignal(),
-      makeSymbolState(),
-    );
-    expect(result.reasons).not.toContain("abnormal_candle");
-  });
-
-  it("passes when candle range is 1.5x ATR (below threshold 2x)", () => {
-    // atr=400, range=600 (1.5x), threshold=800 → passes
-    const candle = makeCandle({
-      high: new Decimal("50600"),
+function makeRecentCandles(count: number, rangeSize: number): Candle[] {
+  return Array.from({ length: count }, (_, i) =>
+    makeCandle({
+      open: new Decimal("50000"),
+      close: new Decimal("50100"),
       low: new Decimal("50000"),
-    });
-    const result = checkSafety(
-      candle,
-      makeIndicators({ atr14: new Decimal("400") }),
-      makeSignal(),
-      makeSymbolState(),
-    );
-    expect(result.reasons).not.toContain("abnormal_candle");
-  });
+      high: new Decimal(50000 + rangeSize),
+      open_time: new Date(Date.UTC(2024, 0, 1, 0, i * 5)),
+    }),
+  );
+}
 
-  it("fails when candle range is 3x ATR (above threshold 2x)", () => {
-    // atr=400, range=1200 (3x), threshold=800 → fails
+describe("safety-gate — abnormal candle filter — avg_range_5", () => {
+  // avg_range_5 = 400 (5 candles each with range 400)
+  // threshold = 400 × 2.0 = 800
+
+  it("역추세 + range > avg_range_5 × 2.0 → abnormal_candle", () => {
+    // LONG direction, SHORT_ONLY bias → counter-trend
+    // candle range = 1000 > 800 → blocked
     const candle = makeCandle({
-      high: new Decimal("51200"),
+      high: new Decimal("51000"),
       low: new Decimal("50000"),
+      open: new Decimal("50100"),
+      close: new Decimal("50500"),
     });
+    const recentCandles = makeRecentCandles(5, 400);
     const result = checkSafety(
       candle,
-      makeIndicators({ atr14: new Decimal("400") }),
-      makeSignal(),
-      makeSymbolState(),
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "SHORT_ONLY" }),
+      recentCandles,
     );
     expect(result.passed).toBe(false);
     expect(result.reasons).toContain("abnormal_candle");
   });
 
-  it("passes when candle range equals exactly 2x ATR (at threshold)", () => {
-    // atr=400, range=800 (2x), threshold=800 → passes (must be GREATER than threshold)
+  it("역추세 + range < avg_range_5 × 2.0 → null (passes)", () => {
+    // LONG direction, SHORT_ONLY bias → counter-trend
+    // candle range = 600 < 800 → passes
     const candle = makeCandle({
-      high: new Decimal("50800"),
+      high: new Decimal("50600"),
       low: new Decimal("50000"),
+      open: new Decimal("50100"),
+      close: new Decimal("50400"),
     });
+    const recentCandles = makeRecentCandles(5, 400);
     const result = checkSafety(
       candle,
-      makeIndicators({ atr14: new Decimal("400") }),
-      makeSignal(),
-      makeSymbolState(),
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "SHORT_ONLY" }),
+      recentCandles,
     );
     expect(result.reasons).not.toContain("abnormal_candle");
   });
 
-  it("fails when candle range is just above 2x ATR", () => {
-    // atr=400, range=801 (just over 2x threshold of 800) → fails
+  it("순추세 + range > avg_range_5 × 2.0 → null (bypass)", () => {
+    // LONG direction, LONG_ONLY bias → trend-following → bypassed
+    // candle range = 2000 >> 800 — would fail if filter applied, but bypassed
     const candle = makeCandle({
-      high: new Decimal("50801"),
+      high: new Decimal("52000"),
       low: new Decimal("50000"),
+      open: new Decimal("50100"),
+      close: new Decimal("50500"),
+    });
+    const recentCandles = makeRecentCandles(5, 400);
+    const result = checkSafety(
+      candle,
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "LONG_ONLY" }),
+      recentCandles,
+    );
+    expect(result.reasons).not.toContain("abnormal_candle");
+  });
+
+  it("5봉 미만 recentCandles → bypass (null)", () => {
+    // Only 4 candles provided — not enough to compute avg_range_5 → bypass
+    const candle = makeCandle({
+      high: new Decimal("52000"),
+      low: new Decimal("50000"),
+      open: new Decimal("50100"),
+      close: new Decimal("50500"),
+    });
+    const recentCandles = makeRecentCandles(4, 400);
+    const result = checkSafety(
+      candle,
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "SHORT_ONLY" }),
+      recentCandles,
+    );
+    expect(result.reasons).not.toContain("abnormal_candle");
+  });
+
+  it("NEUTRAL bias + big candle → abnormal_candle (NEUTRAL treated as counter-trend)", () => {
+    // NEUTRAL bias → conservative → filter applied
+    // candle range = 1000 > avg_range_5 × 2.0 = 800 → blocked
+    const candle = makeCandle({
+      high: new Decimal("51000"),
+      low: new Decimal("50000"),
+      open: new Decimal("50100"),
+      close: new Decimal("50500"),
+    });
+    const recentCandles = makeRecentCandles(5, 400);
+    const result = checkSafety(
+      candle,
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "NEUTRAL" }),
+      recentCandles,
+    );
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("abnormal_candle");
+  });
+
+  it("null bias + big candle → abnormal_candle (null treated as counter-trend)", () => {
+    // null bias → conservative → filter applied
+    const candle = makeCandle({
+      high: new Decimal("51000"),
+      low: new Decimal("50000"),
+      open: new Decimal("50100"),
+      close: new Decimal("50500"),
+    });
+    const recentCandles = makeRecentCandles(5, 400);
+    const result = checkSafety(
+      candle,
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: null }),
+      recentCandles,
+    );
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("abnormal_candle");
+  });
+
+  it("empty recentCandles (default []) → bypass", () => {
+    // No recentCandles passed → checkSafety default param [] → 0 < 5 → bypass
+    const candle = makeCandle({
+      high: new Decimal("52000"),
+      low: new Decimal("50000"),
+      open: new Decimal("50100"),
+      close: new Decimal("50500"),
     });
     const result = checkSafety(
       candle,
-      makeIndicators({ atr14: new Decimal("400") }),
-      makeSignal(),
-      makeSymbolState(),
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "SHORT_ONLY" }),
+    );
+    expect(result.reasons).not.toContain("abnormal_candle");
+  });
+
+  it("range exactly at threshold (avg_range_5 × 2.0) → passes (must be strictly greater)", () => {
+    // avg_range_5 = 400, threshold = 800, candle range = 800 → exactly at → pass
+    const candle = makeCandle({
+      high: new Decimal("50800"),
+      low: new Decimal("50000"),
+      open: new Decimal("50100"),
+      close: new Decimal("50500"),
+    });
+    const recentCandles = makeRecentCandles(5, 400);
+    const result = checkSafety(
+      candle,
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "SHORT_ONLY" }),
+      recentCandles,
+    );
+    expect(result.reasons).not.toContain("abnormal_candle");
+  });
+
+  it("uses only last 5 candles even when more are provided (slice(-5))", () => {
+    // 10 candles: first 5 have range=2000, last 5 have range=100
+    // avg_range_5 of last 5 = 100 → threshold = 200
+    // candle range = 500 > 200 → abnormal
+    const bigCandles = makeRecentCandles(5, 2000);
+    const smallCandles = makeRecentCandles(5, 100);
+    const recentCandles = [...bigCandles, ...smallCandles];
+    const candle = makeCandle({
+      high: new Decimal("50500"),
+      low: new Decimal("50000"),
+      open: new Decimal("50100"),
+      close: new Decimal("50300"),
+    });
+    const result = checkSafety(
+      candle,
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "SHORT_ONLY" }),
+      recentCandles,
     );
     expect(result.passed).toBe(false);
     expect(result.reasons).toContain("abnormal_candle");
@@ -531,19 +658,11 @@ describe("safety-gate — 1M noise filter", () => {
 describe("safety-gate — combined scenarios", () => {
   it("returns passed=true and empty reasons when all conditions pass (5M)", () => {
     // Candle setup for 5M with tight wick threshold (0.1):
-    //   range = 200 (49900 to 50100)
-    //   lower wick: body bottom = min(open=49990, close=50000) = 49990
-    //   wick = (49990 - 49900) / 200 = 90/200 = 0.45 → FAILS 0.1 threshold
-    //   Use zero wick: open=close=high=50000, low=50000 (doji) → passes wick
-    //   Actually use: open=50050, close=50080, low=50040, high=50100
-    //   lower wick = (50050 - 50040) / 60 = 10/60 ≈ 0.167 → still > 0.1
-    //
-    // Simplest: use close exactly at sma20 center, with no lower wick.
-    //   open=50000, close=50050, low=50000, high=50100 (range=100)
+    //   range = 100 (50000 to 50100)
     //   lower wick = (50000 - 50000)/100 = 0 → passes
     //   Box (MA20-based): sma20=50000, range_20=4000, margin=600
     //     bounds=[49400, 50600] → close=50050 → inside → passes
-    //   Abnormal: range=100, atr=400, threshold=800 → 100 < 800 → passes
+    //   Abnormal (avg_range_5): recentCandles not passed → default [] → bypass
     //   Timeframe = 5M → skip noise filter
     const candle = makeCandle({
       open: new Decimal("50000"),
@@ -553,7 +672,7 @@ describe("safety-gate — combined scenarios", () => {
     });
     const result = checkSafety(
       candle,
-      makeIndicators({ atr14: new Decimal("400") }),
+      makeIndicators(),
       makeSignal({ direction: "LONG", timeframe: "5M" }),
       makeSymbolState(),
     );
@@ -562,33 +681,150 @@ describe("safety-gate — combined scenarios", () => {
   });
 
   it("accumulates multiple failure reasons when multiple conditions fail", () => {
-    // Candle: large range → abnormal candle
-    //   range = 2000 (48000 to 50000), atr=400, threshold = 2*400=800 → 2000 > 800 → abnormal
+    // Candle: large range → abnormal candle (counter-trend + enough recentCandles)
+    //   recentCandles: 5 candles with range=200 → avg_range_5=200, threshold=400
+    //   candle range = 2000 (48000 to 50000) → 2000 > 400 → abnormal
     // Wick (5M LONG): lower wick = (body_bottom - 48000) / 2000
-    //   open=49800, close=49900 → body_bottom=49800
-    //   wick = (49800-48000)/2000 = 1800/2000 = 0.9 → > 0.1 → fail
+    //   open=49800, close=49000 → body_bottom=49000
+    //   wick = (49000-48000)/2000 = 1000/2000 = 0.5 → > 0.1 → fail
     // Box (MA20): sma20=50000, range_20=4000, margin=600, bounds=[49400, 50600]
-    //   close=49900 → inside → passes
-    // Set close outside box: close=49000 < 49400 → fails
+    //   close=49000 < 49400 → fails
+    // daily_bias=SHORT_ONLY, direction=LONG → counter-trend → abnormal filter applied
     const candle = makeCandle({
       open: new Decimal("49800"),
       close: new Decimal("49000"),
       low: new Decimal("48000"),
       high: new Decimal("50000"),
     });
+    const recentCandles = makeRecentCandles(5, 200);
     const result = checkSafety(
       candle,
-      makeIndicators({ atr14: new Decimal("400") }),
+      makeIndicators(),
       makeSignal({ direction: "LONG", timeframe: "5M" }),
-      makeSymbolState(),
+      makeSymbolState({ daily_bias: "SHORT_ONLY" }),
+      recentCandles,
     );
     expect(result.passed).toBe(false);
-    // wick_ratio: wick = (49800-48000)/2000 = 0.9 > 0.1 → fail
+    // wick_ratio: wick = (49000-48000)/2000 = 0.5 > 0.1 → fail
     expect(result.reasons).toContain("wick_ratio_exceeded");
     // outside_box: close=49000 < 49400 → fail
     expect(result.reasons).toContain("outside_box_range");
-    // abnormal: range=2000, atr=400, threshold=800 → 2000>800 → fail
+    // abnormal: range=2000, avg_range_5=200, threshold=400 → 2000 > 400 → fail
     expect(result.reasons).toContain("abnormal_candle");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// safety-gate — checkSafety — wick ratio filter — counter-trend bypass
+//
+// Trend-following (순추세): direction matches bias → wick filter bypassed
+// Counter-trend (역추세): direction ≠ bias, or NEUTRAL, or null → filter applied
+//
+// Test candle for all counter-trend bypass tests:
+//   open=49150, close=49300, low=49000, high=50000
+//   range=1000, lower wick=(49150-49000)/1000=0.15 → exceeds 5M threshold 0.1
+//   upper wick=(50000-49300)/1000=0.7 → exceeds 5M threshold 0.1
+// ---------------------------------------------------------------------------
+
+describe("safety-gate — wick ratio — counter-trend bypass (순추세/역추세)", () => {
+  // Candle with high lower wick (0.15) that would normally fail 5M threshold
+  const highLowerWickCandle = makeCandle({
+    open: new Decimal("49150"),
+    close: new Decimal("49300"),
+    low: new Decimal("49000"),
+    high: new Decimal("50000"),
+  });
+
+  // Candle with high upper wick (0.15) that would normally fail 5M threshold
+  const highUpperWickCandle = makeCandle({
+    open: new Decimal("49700"),
+    close: new Decimal("49550"),
+    low: new Decimal("49000"),
+    high: new Decimal("50000"),
+  });
+
+  it("LONG + LONG_ONLY bias (순추세) → bypasses wick filter even with wick=0.15", () => {
+    const result = checkSafety(
+      highLowerWickCandle,
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "LONG_ONLY" }),
+    );
+    expect(result.reasons).not.toContain("wick_ratio_exceeded");
+  });
+
+  it("SHORT + SHORT_ONLY bias (순추세) → bypasses wick filter even with upper wick=0.15", () => {
+    const result = checkSafety(
+      highUpperWickCandle,
+      makeIndicators(),
+      makeSignal({ direction: "SHORT", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "SHORT_ONLY" }),
+    );
+    expect(result.reasons).not.toContain("wick_ratio_exceeded");
+  });
+
+  it("LONG + SHORT_ONLY bias (역추세) → applies wick filter → wick_ratio_exceeded", () => {
+    const result = checkSafety(
+      highLowerWickCandle,
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "SHORT_ONLY" }),
+    );
+    expect(result.reasons).toContain("wick_ratio_exceeded");
+  });
+
+  it("SHORT + LONG_ONLY bias (역추세) → applies wick filter → wick_ratio_exceeded", () => {
+    const result = checkSafety(
+      highUpperWickCandle,
+      makeIndicators(),
+      makeSignal({ direction: "SHORT", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "LONG_ONLY" }),
+    );
+    expect(result.reasons).toContain("wick_ratio_exceeded");
+  });
+
+  it("LONG + NEUTRAL bias → conservative: applies wick filter → wick_ratio_exceeded", () => {
+    const result = checkSafety(
+      highLowerWickCandle,
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "NEUTRAL" }),
+    );
+    expect(result.reasons).toContain("wick_ratio_exceeded");
+  });
+
+  it("LONG + null bias → applies wick filter → wick_ratio_exceeded", () => {
+    const result = checkSafety(
+      highLowerWickCandle,
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: null }),
+    );
+    expect(result.reasons).toContain("wick_ratio_exceeded");
+  });
+
+  it("LONG + LONG_ONLY bias (순추세) with other filters also passing → passed=true", () => {
+    // Wick filter is bypassed (순추세). Ensure remaining filters pass:
+    //   Box (MA20): sma20=50000, range_20=4000, margin=600 → bounds=[49400,50600]
+    //     close=49500 → inside → passes
+    //   Abnormal (avg_range_5): no recentCandles passed → defaults to [] → bypass
+    //   lower wick: (49550-49400)/200 = 0.75 → would normally fail 5M 0.1 threshold
+    //     but LONG_ONLY bias → bypass → irrelevant
+    //   Noise 1M: timeframe=5M → skipped
+    const insideBoxCandle = makeCandle({
+      open: new Decimal("49550"),
+      close: new Decimal("49500"), // inside [49400, 50600]
+      low: new Decimal("49400"),
+      high: new Decimal("49600"),
+    });
+    const result = checkSafety(
+      insideBoxCandle,
+      makeIndicators(),
+      makeSignal({ direction: "LONG", timeframe: "5M" }),
+      makeSymbolState({ daily_bias: "LONG_ONLY" }),
+    );
+    expect(result.passed).toBe(true);
+    expect(result.reasons).toHaveLength(0);
   });
 });
 

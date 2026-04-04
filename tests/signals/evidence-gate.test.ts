@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 import Decimal from "decimal.js";
-import { checkEvidence, createSignal } from "@/signals/evidence-gate";
+import { calcSlPrice, checkEvidence, createSignal } from "@/signals/evidence-gate";
 import { getDb, getPool } from "@/db/pool";
 import type { AllIndicators } from "@/indicators/types";
 import type { Candle, WatchSession } from "@/core/types";
@@ -84,6 +84,115 @@ function makeWatchSession(overrides: Partial<WatchSession> = {}): WatchSession {
 }
 
 // ---------------------------------------------------------------------------
+// calcSlPrice — unit tests (T-12-003: tail-length formula)
+// ---------------------------------------------------------------------------
+
+describe("calcSlPrice — LONG normal candle", () => {
+  it("SL = low - (min(open,close) - low) × 0.15", () => {
+    // Task scenario: open=100, close=105, low=98, high=106
+    // bodyBottom = min(100, 105) = 100
+    // tailLength = 100 - 98 = 2
+    // buffer = 2 × 0.15 = 0.3
+    // sl = 98 - 0.3 = 97.7
+    const candle = makeCandle({
+      open: new Decimal("100"),
+      close: new Decimal("105"),
+      low: new Decimal("98"),
+      high: new Decimal("106"),
+    });
+
+    const sl = calcSlPrice(candle, "LONG");
+
+    expect(sl.toString()).toBe("97.7");
+  });
+});
+
+describe("calcSlPrice — SHORT normal candle", () => {
+  it("SL = high + (high - max(open,close)) × 0.15", () => {
+    // Task scenario: open=105, close=100, high=106, low=98
+    // bodyTop = max(105, 100) = 105
+    // tailLength = 106 - 105 = 1
+    // buffer = 1 × 0.15 = 0.15
+    // sl = 106 + 0.15 = 106.15
+    const candle = makeCandle({
+      open: new Decimal("105"),
+      close: new Decimal("100"),
+      high: new Decimal("106"),
+      low: new Decimal("98"),
+    });
+
+    const sl = calcSlPrice(candle, "SHORT");
+
+    expect(sl.toString()).toBe("106.15");
+  });
+});
+
+describe("calcSlPrice — doji (open === close)", () => {
+  it("LONG doji with lower tail: tailLength > 0, uses tail formula", () => {
+    // open=close=100, low=99, high=101
+    // bodyBottom = min(100, 100) = 100
+    // tailLength = 100 - 99 = 1
+    // buffer = 1 × 0.15 = 0.15
+    // sl = 99 - 0.15 = 98.85
+    const candle = makeCandle({
+      open: new Decimal("100"),
+      close: new Decimal("100"),
+      low: new Decimal("99"),
+      high: new Decimal("101"),
+    });
+
+    const sl = calcSlPrice(candle, "LONG");
+
+    expect(sl.toString()).toBe("98.85");
+  });
+
+  it("LONG doji with body at low: tailLength=0 → fallback to range × 0.15", () => {
+    // open=close=low=99, high=101 → tailLength = 99 - 99 = 0
+    // fallback: range = 101 - 99 = 2, buffer = 2 × 0.15 = 0.3
+    // sl = 99 - 0.3 = 98.7
+    const candle = makeCandle({
+      open: new Decimal("99"),
+      close: new Decimal("99"),
+      low: new Decimal("99"),
+      high: new Decimal("101"),
+    });
+
+    const sl = calcSlPrice(candle, "LONG");
+
+    expect(sl.toString()).toBe("98.7");
+  });
+});
+
+describe("calcSlPrice — fully flat candle (range=0)", () => {
+  it("LONG fully flat: all OHLC equal → SL = close (defensive)", () => {
+    // open=close=high=low=100 → range=0, tailLength=0 → buffer=0 → SL=close
+    const candle = makeCandle({
+      open: new Decimal("100"),
+      close: new Decimal("100"),
+      low: new Decimal("100"),
+      high: new Decimal("100"),
+    });
+
+    const sl = calcSlPrice(candle, "LONG");
+
+    expect(sl.toString()).toBe("100");
+  });
+
+  it("SHORT fully flat: all OHLC equal → SL = close (defensive)", () => {
+    const candle = makeCandle({
+      open: new Decimal("100"),
+      close: new Decimal("100"),
+      low: new Decimal("100"),
+      high: new Decimal("100"),
+    });
+
+    const sl = calcSlPrice(candle, "SHORT");
+
+    expect(sl.toString()).toBe("100");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // evidence-gate — checkEvidence — pure function tests
 // ---------------------------------------------------------------------------
 
@@ -116,26 +225,17 @@ describe("evidence-gate — checkEvidence — LONG ONE_B", () => {
     expect(result!.entryPrice.toString()).toBe("49700");
   });
 
-  it("sl_price for LONG = candle.low - ATR*0.5", () => {
-    // low=49400, atr14=400 → sl = 49400 - 200 = 49200
+  it("sl_price for LONG = low - tailLength×0.15 (tail-length formula)", () => {
+    // open=50000, close=50200, low=49400
+    // tailLength = min(50000, 50200) - 49400 = 50000 - 49400 = 600
+    // sl = 49400 - 600*0.15 = 49400 - 90 = 49310
     const candle = makeCandle({ low: new Decimal("49400") });
-    const indicators = makeIndicators({ atr14: new Decimal("400") });
+    const indicators = makeIndicators();
     const session = makeWatchSession({ direction: "LONG" });
 
     const result = checkEvidence(candle, indicators, session);
 
-    expect(result!.slPrice.toString()).toBe("49200");
-  });
-
-  it("sl_price falls back to candle range when ATR is null", () => {
-    // low=49400, high=50800 → range=1400, buffer=700 → sl=49400-700=48700
-    const candle = makeCandle({ low: new Decimal("49400"), high: new Decimal("50800") });
-    const indicators = makeIndicators({ atr14: null });
-    const session = makeWatchSession({ direction: "LONG" });
-
-    const result = checkEvidence(candle, indicators, session);
-
-    expect(result!.slPrice.toString()).toBe("48700");
+    expect(result!.slPrice.toString()).toBe("49310");
   });
 
   it("details include bb4_touch_price and bb4_lower for LONG", () => {
@@ -196,11 +296,13 @@ describe("evidence-gate — checkEvidence — SHORT ONE_B", () => {
     expect(result!.direction).toBe("SHORT");
   });
 
-  it("sl_price for SHORT = candle.high + ATR*0.5", () => {
-    // high=51200, atr14=400 → sl = 51200 + 200 = 51400
+  it("sl_price for SHORT = high + tailLength×0.15 (tail-length formula)", () => {
+    // open=50000, close=50200, high=51200
+    // bodyTop = max(50000, 50200) = 50200
+    // tailLength = 51200 - 50200 = 1000
+    // sl = 51200 + 1000*0.15 = 51200 + 150 = 51350
     const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
     const indicators = makeIndicators({
-      atr14: new Decimal("400"),
       sma20: new Decimal("49900"),
       prevSma20: new Decimal("50000"),
     });
@@ -208,7 +310,7 @@ describe("evidence-gate — checkEvidence — SHORT ONE_B", () => {
 
     const result = checkEvidence(candle, indicators, session);
 
-    expect(result!.slPrice.toString()).toBe("51400");
+    expect(result!.slPrice.toString()).toBe("51350");
   });
 
   it("details include bb4_touch_price and bb4_upper for SHORT", () => {
@@ -732,15 +834,19 @@ describe.skipIf(!dbAvailable)("evidence-gate — DB integration", () => {
       low: new Decimal("49400.123456789"),
       close: new Decimal("49750.987654321"),
     });
-    const indicators = makeIndicators({ atr14: new Decimal("400.5") });
+    const indicators = makeIndicators();
 
     const evidence = checkEvidence(candle, indicators, session);
     const signal = await createSignal(db, evidence!, session, "5M");
 
     // entry_price = candle.close
     expect(signal.entry_price.toString()).toBe("49750.987654321");
-    // sl_price = low - atr*0.5 = 49400.123456789 - 200.25 = 49199.873456789
-    expect(signal.sl_price.toString()).toBe("49199.873456789");
+    // sl_price: LONG tail-length formula
+    // bodyBottom = min(open=50000, close=49750.987654321) = 49750.987654321
+    // tailLength = 49750.987654321 - 49400.123456789 = 350.864197532
+    // buffer = 350.864197532 × 0.15 = 52.6296296298
+    // sl = 49400.123456789 - 52.6296296298 = 49347.4938271592
+    expect(signal.sl_price.toString()).toBe("49347.4938271592");
   });
 
   it("createSignal inserts SignalDetail rows including bb4_touch_price", async () => {
@@ -811,8 +917,12 @@ describe.skipIf(!dbAvailable)("evidence-gate — DB integration", () => {
 
     const session = makeWatchSession({ id: sessionId, direction: "SHORT" });
     // SHORT ONE_B: high >= BB4 upper (51000), high < BB20 upper (52000)
+    // Negative MA20 slope required for SHORT ONE_B to pass the slope filter
     const candle = makeCandle({ high: new Decimal("51200"), low: new Decimal("49600") });
-    const indicators = makeIndicators();
+    const indicators = makeIndicators({
+      sma20: new Decimal("49900"),
+      prevSma20: new Decimal("50000"),
+    });
 
     const evidence = checkEvidence(candle, indicators, session);
     expect(evidence!.signalType).toBe("ONE_B");

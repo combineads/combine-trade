@@ -99,7 +99,7 @@ describe("exit-checker / checkExit", () => {
 
   // ── TP2 (state = TP1_HIT) ──────────────────────────────────────────────
 
-  it("TP1_HIT, LONG close >= tp2_price → TP2 action with remaining×(1/3)", () => {
+  it("TP1_HIT, LONG close >= tp2_price → TP2 action with remaining×(1/2)", () => {
     const ticket = makeTicket({
       direction: "LONG",
       state: "TP1_HIT",
@@ -110,8 +110,8 @@ describe("exit-checker / checkExit", () => {
 
     expect(result.type).toBe("TP2");
     expect(result.closeReason).toBe("TP2");
-    // remaining(0.5) × (1/3) ≈ 0.16666...
-    const expected = d("0.5").dividedBy(d("3"));
+    // remaining(0.5) × (1/2) = 0.25
+    const expected = d("0.5").dividedBy(d("2"));
     expect(result.closeSize.equals(expected)).toBe(true);
   });
 
@@ -284,11 +284,11 @@ describe("exit-checker / calcCloseSize", () => {
     expect(result.equals(d("1.2"))).toBe(true);
   });
 
-  it("TP2 → remaining × (1/3)", () => {
+  it("TP2 → remaining × (1/2)", () => {
     const ticket = makeTicket({ size: "2.4", remaining_size: "1.2" });
     const result = calcCloseSize(ticket, "TP2");
 
-    const expected = d("1.2").dividedBy(d("3"));
+    const expected = d("1.2").dividedBy(d("2"));
     expect(result.equals(expected)).toBe(true);
   });
 

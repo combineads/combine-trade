@@ -425,6 +425,26 @@ export async function invalidateWatchSession(
 }
 
 /**
+ * Updates tp1_price and tp2_price for an active WatchSession.
+ * Called by process1H() on every 1H close to refresh TP targets based on
+ * the current BB20 band values.
+ */
+export async function updateWatchSessionTp(
+  db: DbInstance,
+  sessionId: string,
+  tp1: Decimal,
+  tp2: Decimal,
+): Promise<void> {
+  await db
+    .update(watchSessionTable)
+    .set({
+      tp1_price: tp1.toString(),
+      tp2_price: tp2.toString(),
+    })
+    .where(eq(watchSessionTable.id, sessionId));
+}
+
+/**
  * Returns the currently active WatchSession for a symbol × exchange,
  * or null if none exists.
  */

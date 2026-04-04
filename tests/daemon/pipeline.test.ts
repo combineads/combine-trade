@@ -254,6 +254,7 @@ function buildDeps(overrides?: Partial<PipelineDeps>): PipelineDeps {
 
     getCandles: mock(async () => [makeCandle()]),
     calcAllIndicators: mock(() => makeIndicators()),
+    calcBB4: mock(() => null),
     getSymbolState: mock(async () => makeSymbolState()),
 
     determineDailyBias: mock(() => "NEUTRAL" as const),
@@ -265,6 +266,7 @@ function buildDeps(overrides?: Partial<PipelineDeps>): PipelineDeps {
     openWatchSession: mock(async () => makeWatchSession()),
     invalidateWatchSession: mock(async () => {}),
     checkInvalidation: mock(() => null),
+    updateWatchSessionTp: mock(async () => {}),
 
     checkEvidence: mock(() => null),
     checkSafety: mock(() => makeSafetyPassed()),
@@ -1057,6 +1059,657 @@ describe("handleCandleClose", () => {
       await handleCandleClose(candle, "1D", [makeActiveSymbol()], deps);
 
       expect(callCount(deps.checkExit)).toBe(1);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // 1H BB4 injection into processEntry()
+  // ---------------------------------------------------------------------------
+
+  describe("1H BB4 injection — a_grade activation", () => {
+    // Helper: make a realistic candle array (>=4) to simulate 1H history
+    function make1HCandles(count: number): Candle[] {
+      return Array.from({ length: count }, (_, i) =>
+        makeCandle({ timeframe: "1H", id: `1h-candle-${i}` }),
+      );
+    }
+
+    const bb4_1h_result = {
+      upper: new Decimal("41000"),
+      middle: new Decimal("40500"),
+      lower: new Decimal("40000"),
+      bandwidth: new Decimal("0.025"),
+      percentB: new Decimal("0.5"),
+    };
+
+    it("injects bb4_1h into indicators when 1H candles >= 4 and calcBB4 returns a value", async () => {
+      // Use a unique symbol to avoid recent1MFired module-level state contamination
+      const symbol = "BB4_INJECT_TEST_1";
+      let capturedIndicators: AllIndicators | null = null;
+
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        // Return 4 1H candles for the "1H" timeframe call; regular candles otherwise
+        getCandles: mock(async (_db: unknown, _symbol: unknown, _exchange: unknown, tf: unknown) => {
+          if (tf === "1H") return make1HCandles(4);
+          return [makeCandle({ symbol })];
+        }),
+        calcBB4: mock(() => bb4_1h_result),
+        checkEvidence: mock((_c: unknown, indicators: AllIndicators) => {
+          capturedIndicators = indicators;
+          return null; // stop pipeline early
+        }),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(candle, "5M", [makeActiveSymbol({ symbol })], deps);
+
+      expect(capturedIndicators).not.toBeNull();
+      expect((capturedIndicators as AllIndicators).bb4_1h).not.toBeNull();
+      expect((capturedIndicators as AllIndicators).bb4_1h?.upper.toString()).toBe("41000");
+      expect((capturedIndicators as AllIndicators).bb4_1h?.lower.toString()).toBe("40000");
+    });
+
+    it("leaves bb4_1h as null when 1H candles < 4", async () => {
+      const symbol = "BB4_INJECT_TEST_2";
+      let capturedIndicators: AllIndicators | null = null;
+
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        // Return only 3 1H candles — insufficient for BB4
+        getCandles: mock(async (_db: unknown, _symbol: unknown, _exchange: unknown, tf: unknown) => {
+          if (tf === "1H") return make1HCandles(3);
+          return [makeCandle({ symbol })];
+        }),
+        calcBB4: mock(() => bb4_1h_result),
+        checkEvidence: mock((_c: unknown, indicators: AllIndicators) => {
+          capturedIndicators = indicators;
+          return null;
+        }),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(candle, "5M", [makeActiveSymbol({ symbol })], deps);
+
+      expect(capturedIndicators).not.toBeNull();
+      expect((capturedIndicators as AllIndicators).bb4_1h).toBeNull();
+    });
+
+    it("leaves bb4_1h as null when calcBB4 returns null despite sufficient candles", async () => {
+      const symbol = "BB4_INJECT_TEST_3";
+      let capturedIndicators: AllIndicators | null = null;
+
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        getCandles: mock(async (_db: unknown, _symbol: unknown, _exchange: unknown, tf: unknown) => {
+          if (tf === "1H") return make1HCandles(6);
+          return [makeCandle({ symbol })];
+        }),
+        calcBB4: mock(() => null), // calcBB4 returns null (warm-up / NaN guard)
+        checkEvidence: mock((_c: unknown, indicators: AllIndicators) => {
+          capturedIndicators = indicators;
+          return null;
+        }),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(candle, "5M", [makeActiveSymbol({ symbol })], deps);
+
+      expect(capturedIndicators).not.toBeNull();
+      expect((capturedIndicators as AllIndicators).bb4_1h).toBeNull();
+    });
+
+    it("passes indicators with bb4_1h to checkEvidence — enabling aGrade=true for LONG BB4 lower touch", async () => {
+      const symbol = "BB4_INJECT_TEST_4";
+      // Candle with low <= bb4_1h_lower (40000) — pipeline wires bb4_1h so evidence gate can set aGrade=true
+      const candle = makeCandle({
+        symbol,
+        timeframe: "5M",
+        low: new Decimal("39999"), // touches bb4_1h lower
+        close: new Decimal("40050"),
+      });
+
+      let capturedIndicators: AllIndicators | null = null;
+
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol, direction: "LONG" })),
+        getCandles: mock(async (_db: unknown, _symbol: unknown, _exchange: unknown, tf: unknown) => {
+          if (tf === "1H") return make1HCandles(5);
+          return [makeCandle({ symbol })];
+        }),
+        calcBB4: mock(() => bb4_1h_result),
+        checkEvidence: mock((_c: unknown, indicators: AllIndicators) => {
+          capturedIndicators = indicators;
+          return null; // stop — we only need to verify indicators contain bb4_1h
+        }),
+      });
+
+      await handleCandleClose(candle, "5M", [makeActiveSymbol({ symbol })], deps);
+
+      // Verify bb4_1h was injected before checkEvidence was called
+      expect((capturedIndicators as AllIndicators | null)?.bb4_1h).not.toBeNull();
+      expect((capturedIndicators as AllIndicators | null)?.bb4_1h?.lower.toString()).toBe("40000");
+    });
+
+    it("does not inject bb4_1h when processEntry returns early before watch session check", async () => {
+      // Trade blocked → returns before reaching bb4_1h injection code
+      let calcBB4CallCount = 0;
+
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: true, reason: "funding_window" })),
+        calcBB4: mock(() => {
+          calcBB4CallCount++;
+          return bb4_1h_result;
+        }),
+      });
+
+      const candle = makeCandle({ timeframe: "5M" });
+      await handleCandleClose(candle, "5M", [makeActiveSymbol()], deps);
+
+      expect(calcBB4CallCount).toBe(0);
+    });
+
+    it("works identically for 1M timeframe entries", async () => {
+      let capturedIndicators: AllIndicators | null = null;
+      const symbol = "BB4_1M_TEST";
+
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        getCandles: mock(async (_db: unknown, _symbol: unknown, _exchange: unknown, tf: unknown) => {
+          if (tf === "1H") return make1HCandles(4);
+          return [makeCandle({ symbol })];
+        }),
+        calcBB4: mock(() => bb4_1h_result),
+        checkEvidence: mock((c: unknown, indicators: AllIndicators) => {
+          capturedIndicators = indicators;
+          return null;
+        }),
+      });
+
+      const candle = makeCandle({ timeframe: "1M", symbol });
+      await handleCandleClose(candle, "1M", [makeActiveSymbol({ symbol })], deps);
+
+      expect((capturedIndicators as AllIndicators | null)?.bb4_1h).not.toBeNull();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // 1H TP refresh — DB persistence
+  // ---------------------------------------------------------------------------
+
+  describe("1H TP refresh — updateWatchSessionTp", () => {
+    const bb20WithBands = {
+      upper: new Decimal("42000"),
+      middle: new Decimal("41000"),
+      lower: new Decimal("40000"),
+      bandwidth: new Decimal("0.05"),
+      percentB: new Decimal("0.5"),
+    };
+
+    it("calls updateWatchSessionTp for SQUEEZE_BREAKOUT LONG session with new tp1=bb20Upper", async () => {
+      const session = makeWatchSession({
+        detection_type: "SQUEEZE_BREAKOUT",
+        direction: "LONG",
+        tp1_price: new Decimal("39000"), // old value — will change
+        tp2_price: new Decimal("38000"),
+      });
+
+      const updateWatchSessionTpMock = mock(async () => {});
+
+      const deps = buildDeps({
+        getActiveWatchSession: mock(async () => session),
+        checkInvalidation: mock(() => null),
+        calcAllIndicators: mock(() => ({
+          ...makeIndicators(),
+          bb20: bb20WithBands,
+          sma20: new Decimal("41000"),
+        })),
+        updateWatchSessionTp: updateWatchSessionTpMock,
+      });
+
+      const candle = makeCandle({ timeframe: "1H" });
+      await handleCandleClose(candle, "1H", [makeActiveSymbol()], deps);
+
+      expect(callCount(updateWatchSessionTpMock)).toBe(1);
+      const args = callArgs(updateWatchSessionTpMock);
+      // args[1] = sessionId, args[2] = tp1, args[3] = tp2
+      expect(args[1]).toBe("session-1");
+      // tp1 = bb20Upper (LONG → upper) = 42000
+      expect((args[2] as Decimal).toString()).toBe("42000");
+    });
+
+    it("calls updateWatchSessionTp for SQUEEZE_BREAKOUT SHORT session with new tp1=bb20Lower", async () => {
+      const session = makeWatchSession({
+        detection_type: "SQUEEZE_BREAKOUT",
+        direction: "SHORT",
+        tp1_price: new Decimal("43000"), // old value
+        tp2_price: new Decimal("44000"),
+      });
+
+      const updateWatchSessionTpMock = mock(async () => {});
+
+      const deps = buildDeps({
+        getActiveWatchSession: mock(async () => session),
+        checkInvalidation: mock(() => null),
+        calcAllIndicators: mock(() => ({
+          ...makeIndicators(),
+          bb20: bb20WithBands,
+          sma20: new Decimal("41000"),
+        })),
+        updateWatchSessionTp: updateWatchSessionTpMock,
+      });
+
+      const candle = makeCandle({ timeframe: "1H" });
+      await handleCandleClose(candle, "1H", [makeActiveSymbol()], deps);
+
+      expect(callCount(updateWatchSessionTpMock)).toBe(1);
+      const args = callArgs(updateWatchSessionTpMock);
+      // tp1 = bb20Lower (SHORT → lower) = 40000
+      expect((args[2] as Decimal).toString()).toBe("40000");
+    });
+
+    it("calls updateWatchSessionTp for BB4_TOUCH session with tp1=sma20 and tp2=bb20Upper", async () => {
+      const session = makeWatchSession({
+        detection_type: "BB4_TOUCH",
+        direction: "LONG",
+        tp1_price: new Decimal("39500"), // old value
+        tp2_price: new Decimal("40000"), // old value
+      });
+
+      const updateWatchSessionTpMock = mock(async () => {});
+
+      const deps = buildDeps({
+        getActiveWatchSession: mock(async () => session),
+        checkInvalidation: mock(() => null),
+        calcAllIndicators: mock(() => ({
+          ...makeIndicators(),
+          bb20: bb20WithBands,
+          sma20: new Decimal("41000"),
+        })),
+        updateWatchSessionTp: updateWatchSessionTpMock,
+      });
+
+      const candle = makeCandle({ timeframe: "1H" });
+      await handleCandleClose(candle, "1H", [makeActiveSymbol()], deps);
+
+      expect(callCount(updateWatchSessionTpMock)).toBe(1);
+      const args = callArgs(updateWatchSessionTpMock);
+      // tp1 = sma20 = 41000, tp2 = bb20Upper (LONG) = 42000
+      expect((args[2] as Decimal).toString()).toBe("41000");
+      expect((args[3] as Decimal).toString()).toBe("42000");
+    });
+
+    it("does NOT call updateWatchSessionTp for SR_CONFLUENCE session", async () => {
+      const session = makeWatchSession({
+        detection_type: "SR_CONFLUENCE",
+        direction: "LONG",
+        tp1_price: new Decimal("41000"),
+        tp2_price: new Decimal("42000"),
+      });
+
+      const updateWatchSessionTpMock = mock(async () => {});
+
+      const deps = buildDeps({
+        getActiveWatchSession: mock(async () => session),
+        checkInvalidation: mock(() => null),
+        calcAllIndicators: mock(() => ({
+          ...makeIndicators(),
+          bb20: bb20WithBands,
+          sma20: new Decimal("41000"),
+        })),
+        updateWatchSessionTp: updateWatchSessionTpMock,
+      });
+
+      const candle = makeCandle({ timeframe: "1H" });
+      await handleCandleClose(candle, "1H", [makeActiveSymbol()], deps);
+
+      expect(callCount(updateWatchSessionTpMock)).toBe(0);
+    });
+
+    it("does NOT call updateWatchSessionTp when indicators.bb20 is null", async () => {
+      const session = makeWatchSession({
+        detection_type: "SQUEEZE_BREAKOUT",
+        direction: "LONG",
+        tp1_price: new Decimal("41000"),
+        tp2_price: new Decimal("42000"),
+      });
+
+      const updateWatchSessionTpMock = mock(async () => {});
+
+      const deps = buildDeps({
+        getActiveWatchSession: mock(async () => session),
+        checkInvalidation: mock(() => null),
+        calcAllIndicators: mock(() => ({
+          ...makeIndicators(),
+          bb20: null, // insufficient data
+          sma20: new Decimal("41000"),
+        })),
+        updateWatchSessionTp: updateWatchSessionTpMock,
+      });
+
+      const candle = makeCandle({ timeframe: "1H" });
+      await handleCandleClose(candle, "1H", [makeActiveSymbol()], deps);
+
+      expect(callCount(updateWatchSessionTpMock)).toBe(0);
+    });
+
+    it("does NOT call updateWatchSessionTp when indicators.sma20 is null", async () => {
+      const session = makeWatchSession({
+        detection_type: "BB4_TOUCH",
+        direction: "LONG",
+        tp1_price: new Decimal("41000"),
+        tp2_price: new Decimal("42000"),
+      });
+
+      const updateWatchSessionTpMock = mock(async () => {});
+
+      const deps = buildDeps({
+        getActiveWatchSession: mock(async () => session),
+        checkInvalidation: mock(() => null),
+        calcAllIndicators: mock(() => ({
+          ...makeIndicators(),
+          bb20: bb20WithBands,
+          sma20: null, // insufficient data
+        })),
+        updateWatchSessionTp: updateWatchSessionTpMock,
+      });
+
+      const candle = makeCandle({ timeframe: "1H" });
+      await handleCandleClose(candle, "1H", [makeActiveSymbol()], deps);
+
+      expect(callCount(updateWatchSessionTpMock)).toBe(0);
+    });
+
+    it("does NOT call updateWatchSessionTp when no active session exists", async () => {
+      const updateWatchSessionTpMock = mock(async () => {});
+
+      const deps = buildDeps({
+        getActiveWatchSession: mock(async () => null),
+        updateWatchSessionTp: updateWatchSessionTpMock,
+      });
+
+      const candle = makeCandle({ timeframe: "1H" });
+      await handleCandleClose(candle, "1H", [makeActiveSymbol()], deps);
+
+      expect(callCount(updateWatchSessionTpMock)).toBe(0);
+    });
+
+    it("does NOT call updateWatchSessionTp when TP values are unchanged", async () => {
+      // Session already has the current computed TP values — skip the write
+      const session = makeWatchSession({
+        detection_type: "BB4_TOUCH",
+        direction: "LONG",
+        tp1_price: new Decimal("41000"), // matches sma20
+        tp2_price: new Decimal("42000"), // matches bb20Upper
+      });
+
+      const updateWatchSessionTpMock = mock(async () => {});
+
+      const deps = buildDeps({
+        getActiveWatchSession: mock(async () => session),
+        checkInvalidation: mock(() => null),
+        calcAllIndicators: mock(() => ({
+          ...makeIndicators(),
+          bb20: bb20WithBands,
+          sma20: new Decimal("41000"),
+        })),
+        updateWatchSessionTp: updateWatchSessionTpMock,
+      });
+
+      const candle = makeCandle({ timeframe: "1H" });
+      await handleCandleClose(candle, "1H", [makeActiveSymbol()], deps);
+
+      expect(callCount(updateWatchSessionTpMock)).toBe(0);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // daily_bias cross-validation (step 9b) — after KNN PASS, before analysis mode
+  // ---------------------------------------------------------------------------
+
+  describe("daily_bias cross-validation — post-KNN PASS", () => {
+    // Shared helper: build deps that reach the daily_bias check.
+    // KNN always PASSes; execution mode is "analysis" so executeEntry is never called.
+    function buildBiasCheckDeps(
+      dailyBias: SymbolState["daily_bias"],
+      evidenceDirection: "LONG" | "SHORT",
+    ): PipelineDeps {
+      const symbol = `BIAS_CHECK_${dailyBias}_${evidenceDirection}`;
+      return buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getSymbolState: mock(async () => makeSymbolState({ symbol, daily_bias: dailyBias })),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        checkEvidence: mock(() => ({ ...makeEvidence(), direction: evidenceDirection })),
+        checkSafety: mock(() => makeSafetyPassed()),
+        makeDecision: mock(() => makeKnnPass()),
+      });
+    }
+
+    it("skips entry when daily_bias=LONG_ONLY and evidence.direction=SHORT (KNN PASS)", async () => {
+      const symbol = "BIAS_CHECK_LONG_ONLY_SHORT";
+      const deps = buildBiasCheckDeps("LONG_ONLY", "SHORT");
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(
+        candle,
+        "5M",
+        [makeActiveSymbol({ symbol, executionMode: "live" })],
+        deps,
+      );
+
+      // executeEntry must NOT be called — pipeline returned before analysis mode check
+      expect(callCount(deps.executeEntry)).toBe(0);
+    });
+
+    it("inserts DAILY_BIAS_MISMATCH event when LONG_ONLY + SHORT evidence", async () => {
+      const symbol = "BIAS_EVENT_LONG_ONLY_SHORT";
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getSymbolState: mock(async () =>
+          makeSymbolState({ symbol, daily_bias: "LONG_ONLY" }),
+        ),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        checkEvidence: mock(() => ({ ...makeEvidence(), direction: "SHORT" as const })),
+        checkSafety: mock(() => makeSafetyPassed()),
+        makeDecision: mock(() => makeKnnPass()),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(candle, "5M", [makeActiveSymbol({ symbol })], deps);
+
+      const insertEventMock = deps.insertEvent as ReturnType<typeof mock>;
+      const mismatchCall = insertEventMock.mock.calls.find(
+        (args) => (args[1] as { event_type: string }).event_type === "DAILY_BIAS_MISMATCH",
+      );
+      expect(mismatchCall).toBeDefined();
+    });
+
+    it("skips entry when daily_bias=SHORT_ONLY and evidence.direction=LONG (KNN PASS)", async () => {
+      const symbol = "BIAS_CHECK_SHORT_ONLY_LONG";
+      const deps = buildBiasCheckDeps("SHORT_ONLY", "LONG");
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(
+        candle,
+        "5M",
+        [makeActiveSymbol({ symbol, executionMode: "live" })],
+        deps,
+      );
+
+      expect(callCount(deps.executeEntry)).toBe(0);
+    });
+
+    it("proceeds to execution when daily_bias=LONG_ONLY and evidence.direction=LONG", async () => {
+      const symbol = "BIAS_CHECK_LONG_ONLY_LONG";
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getSymbolState: mock(async () =>
+          makeSymbolState({ symbol, daily_bias: "LONG_ONLY" }),
+        ),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        checkEvidence: mock(() => ({ ...makeEvidence(), direction: "LONG" as const })),
+        checkSafety: mock(() => makeSafetyPassed()),
+        makeDecision: mock(() => makeKnnPass()),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(
+        candle,
+        "5M",
+        [makeActiveSymbol({ symbol, executionMode: "analysis" })],
+        deps,
+      );
+
+      // Pipeline proceeds past bias check; analysis mode skip prevents executeEntry,
+      // but executeEntry call count of 0 is ambiguous — verify no DAILY_BIAS_MISMATCH event.
+      const insertEventMock = deps.insertEvent as ReturnType<typeof mock>;
+      const mismatchCall = insertEventMock.mock.calls.find(
+        (args) => (args[1] as { event_type: string }).event_type === "DAILY_BIAS_MISMATCH",
+      );
+      expect(mismatchCall).toBeUndefined();
+    });
+
+    it("proceeds to execution when daily_bias=SHORT_ONLY and evidence.direction=SHORT", async () => {
+      const symbol = "BIAS_CHECK_SHORT_ONLY_SHORT";
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getSymbolState: mock(async () =>
+          makeSymbolState({ symbol, daily_bias: "SHORT_ONLY" }),
+        ),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        checkEvidence: mock(() => ({
+          ...makeEvidence(),
+          direction: "SHORT" as const,
+          slPrice: new Decimal("40500"),
+        })),
+        checkSafety: mock(() => makeSafetyPassed()),
+        makeDecision: mock(() => makeKnnPass()),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(
+        candle,
+        "5M",
+        [makeActiveSymbol({ symbol, executionMode: "analysis" })],
+        deps,
+      );
+
+      const insertEventMock = deps.insertEvent as ReturnType<typeof mock>;
+      const mismatchCall = insertEventMock.mock.calls.find(
+        (args) => (args[1] as { event_type: string }).event_type === "DAILY_BIAS_MISMATCH",
+      );
+      expect(mismatchCall).toBeUndefined();
+    });
+
+    it("proceeds when daily_bias=NEUTRAL regardless of evidence direction", async () => {
+      const symbol = "BIAS_CHECK_NEUTRAL";
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getSymbolState: mock(async () =>
+          makeSymbolState({ symbol, daily_bias: "NEUTRAL" }),
+        ),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        checkEvidence: mock(() => ({ ...makeEvidence(), direction: "SHORT" as const })),
+        checkSafety: mock(() => makeSafetyPassed()),
+        makeDecision: mock(() => makeKnnPass()),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(
+        candle,
+        "5M",
+        [makeActiveSymbol({ symbol, executionMode: "analysis" })],
+        deps,
+      );
+
+      const insertEventMock = deps.insertEvent as ReturnType<typeof mock>;
+      const mismatchCall = insertEventMock.mock.calls.find(
+        (args) => (args[1] as { event_type: string }).event_type === "DAILY_BIAS_MISMATCH",
+      );
+      expect(mismatchCall).toBeUndefined();
+    });
+
+    it("proceeds when daily_bias=null regardless of evidence direction", async () => {
+      const symbol = "BIAS_CHECK_NULL";
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getSymbolState: mock(async () =>
+          makeSymbolState({ symbol, daily_bias: null }),
+        ),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        checkEvidence: mock(() => ({ ...makeEvidence(), direction: "SHORT" as const })),
+        checkSafety: mock(() => makeSafetyPassed()),
+        makeDecision: mock(() => makeKnnPass()),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(
+        candle,
+        "5M",
+        [makeActiveSymbol({ symbol, executionMode: "analysis" })],
+        deps,
+      );
+
+      const insertEventMock = deps.insertEvent as ReturnType<typeof mock>;
+      const mismatchCall = insertEventMock.mock.calls.find(
+        (args) => (args[1] as { event_type: string }).event_type === "DAILY_BIAS_MISMATCH",
+      );
+      expect(mismatchCall).toBeUndefined();
+    });
+
+    it("proceeds when symbolState is null (no bias available)", async () => {
+      const symbol = "BIAS_CHECK_NO_STATE";
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getSymbolState: mock(async () => null),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        checkEvidence: mock(() => ({ ...makeEvidence(), direction: "SHORT" as const })),
+        checkSafety: mock(() => makeSafetyPassed()),
+        makeDecision: mock(() => makeKnnPass()),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(
+        candle,
+        "5M",
+        [makeActiveSymbol({ symbol, executionMode: "analysis" })],
+        deps,
+      );
+
+      const insertEventMock = deps.insertEvent as ReturnType<typeof mock>;
+      const mismatchCall = insertEventMock.mock.calls.find(
+        (args) => (args[1] as { event_type: string }).event_type === "DAILY_BIAS_MISMATCH",
+      );
+      expect(mismatchCall).toBeUndefined();
+    });
+
+    it("bias check does not fire when KNN decision is FAIL (check is post-KNN)", async () => {
+      const symbol = "BIAS_CHECK_AFTER_KNN_FAIL";
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getSymbolState: mock(async () =>
+          makeSymbolState({ symbol, daily_bias: "LONG_ONLY" }),
+        ),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        checkEvidence: mock(() => ({ ...makeEvidence(), direction: "SHORT" as const })),
+        checkSafety: mock(() => makeSafetyPassed()),
+        makeDecision: mock(() => makeKnnFail()),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(candle, "5M", [makeActiveSymbol({ symbol })], deps);
+
+      // Pipeline exits at KNN check — no DAILY_BIAS_MISMATCH event should be inserted
+      const insertEventMock = deps.insertEvent as ReturnType<typeof mock>;
+      const mismatchCall = insertEventMock.mock.calls.find(
+        (args) => (args[1] as { event_type: string }).event_type === "DAILY_BIAS_MISMATCH",
+      );
+      expect(mismatchCall).toBeUndefined();
     });
   });
 });

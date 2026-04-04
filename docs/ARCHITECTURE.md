@@ -84,7 +84,11 @@ The reconciliation worker runs on a separate 60-second interval timer, independe
 │   ├── backtest/               # L8: backtest runner, WFO optimizer
 │   ├── web/                    # standalone: React UI (Vite build → ./public)
 │   │                            # Design tokens: docs/assets/tokens.css (import in app entry)
-│   └── daemon.ts               # L9: main entry point, orchestration, shutdown
+│   ├── daemon.ts               # L9: main entry point, start/stop
+│   └── daemon/                 # L9: daemon sub-modules
+│       ├── pipeline.ts         # candle-close → trading pipeline orchestration
+│       ├── crash-recovery.ts   # startup position reconciliation + SL re-registration
+│       └── shutdown.ts         # graceful shutdown + execution mode management
 ├── tests/
 ├── scripts/
 │   └── kill-switch.ts          # emergency: flatten all positions + halt
@@ -142,7 +146,7 @@ L9  daemon                     — orchestrates all layers
 | `notifications` | L7 | Slack webhook alerts (fire-and-forget) | `sendSlackAlert()`, `formatMessage()`, `getWebhookUrl()` | core, db (CommonCode) |
 | `api` | L8 | REST routes | `createRouter(): Router` | core, positions, candles, signals, knn, limits, labeling, config |
 | `backtest` | L8 | Backtest runner, WFO | `BacktestRunner.run(): BacktestResult` | full pipeline (candles→labeling) |
-| `daemon` | L9 | Main entry, orchestration, shutdown | `startDaemon()`, `gracefulShutdown()` | all |
+| `daemon` | L9 | Main entry, pipeline, crash recovery, shutdown | `startDaemon()`, `handleCandleClose()`, `recoverFromCrash()`, `gracefulShutdown()`, `getExecutionMode()`, `killSwitch()` | all |
 
 ## Data ownership
 

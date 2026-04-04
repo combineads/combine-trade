@@ -133,9 +133,9 @@ L9  daemon                     — orchestrates all layers
 | `filters` | L4 | Direction filter, trade block | `DailyDirectionFilter`, `TradeBlockManager` | core, config, indicators |
 | `knn` | L4 | KNN engine, distance, time decay | `KnnEngine.query(vector): KnnResult` | core, db, vectors |
 | `signals` | L5 | WATCHING, Evidence Gate, Safety Gate | `WatchingDetector`, `EvidenceGate`, `SafetyGate` | core, indicators, filters |
-| `positions` | L5 | FSM, ticket manager, position sizer | `PositionFSM`, `TicketManager`, `PositionSizer` | core, db, config |
-| `limits` | L5 | Loss limit (daily/session/hourly) | `LossLimitManager.canTrade(): boolean`, `LossLimitManager.recordLoss()` | core, db, config, positions |
-| `orders` | L6 | Order executor, slippage check | `OrderExecutor.execute(signal): OrderResult` | core, positions, exchanges (via ports) |
+| `positions` | L5 | FSM, ticket manager, position sizer | `canTransition()`, `validateTransition()`, `createTicket()`, `closeTicket()`, `calculateSize()` | core, db |
+| `limits` | L5 | Loss limit (daily/session/hourly) | `checkLossLimit()`, `recordLoss()`, `resetAllExpired()` | core, db (schema direct — no positions import) |
+| `orders` | L6 | Order executor, slippage check | `executeEntry()`, `emergencyClose()`, `checkSlippage()` | core, db, orders/slippage (local) |
 | `exits` | L6 | 3-stage exit, trailing stop | `ExitManager.check(ticket, candle): ExitAction` | core, positions, indicators |
 | `labeling` | L6 | Trade result recording (into Ticket) | `LabelingEngine.finalize(ticket): void` | core, db, positions |
 | `reconciliation` | L7 | DB↔exchange sync, panic close | `ReconciliationWorker.run()` | core, db, positions, exchanges |
@@ -257,7 +257,7 @@ Runs on 60-second interval timer within the daemon process. While sharing a proc
 | BB20(20,2), BB4(4,4), MA(20/60/120) immutable | core/constants.ts | `as const`, no config override |
 | Max symbols: 2 (BTCUSDT, XAUTUSDT) | config | Schema validation |
 | Max exchanges: 4 | config | Schema validation |
-| Max leverage: 38× | positions | Hard cap in PositionSizer |
+| Max leverage: 38× | positions | Hard cap in `sizer.ts` (`HARD_CAP_LEVERAGE = 38`) |
 | 202-dim vectors | vectors | Constant, validated at insertion |
 | No lookahead in backtest | backtest | Mock adapter only serves data ≤ current timestamp |
 | Layer dependency direction | all | eslint-plugin-boundaries or custom CI script |

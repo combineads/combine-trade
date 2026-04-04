@@ -15,8 +15,11 @@
 - 데몬 파이프라인 오케스트레이션 (EP-09)
 
 ## Prerequisites
-- EP-01 M2 (db — Candle 테이블) 완료
-- EP-03 M2 (exchanges — WebSocket) 완료 — M1(히스토리 로더)는 Binance public data 직접 다운로드로 EP-03 불필요
+- EP-01 (foundation) 완료 ✅ — db/schema.ts에 Symbol/SymbolState/CommonCode 정의됨. 아카이빙: `docs/tasks/archive/ep-01-foundation/`
+- EP-02 (indicators) 완료 ✅ — 아카이빙: `docs/tasks/archive/ep-02-indicators/`
+- EP-03 M2 (exchanges — WebSocket) 완료 ✅ — ws-manager.ts 구현됨, 10/10 태스크 done
+- **참고:** Candle 테이블은 EP-01 기반 마이그레이션에 미포함 (Master/Reference만). T-04-001에서 생성
+- **참고:** M1(히스토리 로더)는 Binance public data 직접 다운로드로 EP-03 불필요
 
 ## Milestones
 
@@ -65,17 +68,18 @@
 - Validation:
   - `bun test -- --grep "gap-recovery"`
 
-## Task candidates
-- T-04-001: db/migrations/002 — Candle 테이블 마이그레이션
-- T-04-002: candles/history-loader.ts — Binance public data ZIP 다운로드 & CSV 파싱 (monthly + daily 2단계)
-- T-04-003: candles/history-loader.ts — 벌크 UPSERT (중복 처리, CCXT REST fallback)
+## Task candidates → Generated tasks mapping
+- T-04-000: docker-compose.yml + tests/helpers/test-db.ts — DB 테스트 인프라 (PostgreSQL 16 + pgvector)
+- T-04-001: db/schema.ts — Candle 테��블 Drizzle 스키마 & 마이그레이션
+- T-04-002: candles/history-loader.ts — Binance public data ZIP 다운로드 & CSV 파싱 + CCXT REST fallback
+- T-04-003: candles/repository.ts — 벌크 UPSERT, 조회 헬퍼
 - T-04-004: candles/sync.ts — 데몬 시작 시 전일까지 동기화 (덮어쓰기 포함)
 - T-04-005: candles/cleanup.ts — 1M 데이터 6개월 rolling 정리
-- T-04-006: candles/collector.ts — WebSocket 캔들 수집기 기본
-- T-04-007: candles/collector.ts — 캔들 마감 감지 & 이벤트 발행
-- T-04-008: candles/gap-recovery.ts — 갭 감지 로직
+- T-04-006: candles/collector.ts — WebSocket 실시간 캔들 수집기
+- T-04-007: candles/collector.ts + types.ts — 캔들 마감 감지 & 콜백 이벤트 발행
+- T-04-008: candles/gap-detection.ts — 갭 감지 로직
 - T-04-009: candles/gap-recovery.ts — REST 보완 로드 & 자동 복구
-- T-04-010: candles/index.ts — 통합 API (시작/중지/상태)
+- T-04-010: candles/index.ts — CandleManager 통합 API (시작/중지/상태)
 
 ## Risks
 - **WebSocket 안정성**: Bun WebSocket 클라이언트의 24/7 안정성 미검증. 대안: ws 패키지 사용.
@@ -90,10 +94,14 @@
 - 1M 데이터는 6개월 rolling — 초과분 주기적 삭제 (1D/1H/5M은 3년 보존)
 - 미마감 캔들도 DB에 저장 (대시보드 표시용) — is_closed=false
 - Candle 테이블은 이 에픽의 마이그레이션에서 생성 (EP-01에서 Master/Reference만 생성)
+- 거래소별 독립 수집이 Scope에 있으나 Phase 1은 Binance만 — OKX/Bitget/MEXC 수집은 해당 거래소 Phase에서 추가
 
 ## Consensus Log
 - Round 1-2: EP-01~EP-11 전체 컨센서스 — 상세 로그는 01-foundation.md 참조
 - Verdict: 2라운드 만에 컨센서스 달성
 
 ## Progress notes
-- (작업 전)
+- 2026-04-04: 에픽 분석 완료. 전제조건 EP-01/02/03 모두 충족. EP-01/02 아카이빙 확인.
+- 2026-04-04: 태스크 생성 완료 (10개). 의존성 체인: T-04-001(스키마) → T-04-002/003(로더/repo) → T-04-004(sync) / T-04-006→007(수집기) / T-04-008→009(갭) → T-04-010(통합).
+- 2026-04-04: 태스크 리뷰 완료. Critical 3건 수정: (1) fetchCandlesViaREST를 T-04-003→T-04-002로 이동 (one-deliverable 준수), (2) getCandleGaps 중복 제거 — T-04-008이 갭 감지 전���, (3) T-04-006에 reconnection 이벤트 추���. Important 4건 수정: exchange 파라미터/is_closed 감지/DELETE 패턴/심볼 소스 명확화.
+- 2026-04-04: DB 테스트 인프라 추가. T-04-000 신설 (docker-compose + test-db 헬퍼). EP-04부터 모든 DB 연동 태스크가 실제 PostgreSQL에서 통합 테스트 실행. mock DB 금지. 의존성 체인: T-04-000→T-04-001→나머지 (전이적 의존).

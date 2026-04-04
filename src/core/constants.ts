@@ -5,7 +5,7 @@
 
 // Bollinger Band anchors
 export const BB20_CONFIG = Object.freeze({ length: 20, stddev: 2, source: "close" } as const);
-export const BB4_CONFIG = Object.freeze({ length: 4, stddev: 4, source: "close" } as const);
+export const BB4_CONFIG = Object.freeze({ length: 4, stddev: 4, source: "open" } as const);
 
 // Moving Average periods
 export const MA_PERIODS = Object.freeze([20, 60, 120] as const);

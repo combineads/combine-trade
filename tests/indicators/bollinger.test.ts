@@ -2,20 +2,21 @@ import { describe, expect, it } from "bun:test";
 import Decimal from "decimal.js";
 import { d } from "../../src/core/decimal";
 import type { Candle } from "../../src/core/types";
-import { calcBB, calcBB20, calcBB4, candlesToCloses } from "../../src/indicators/bollinger";
+import { calcBB, calcBB20, calcBB4, candlesToCloses, candlesToOpens } from "../../src/indicators/bollinger";
 
 // ---------------------------------------------------------------------------
 // Test helper
 // ---------------------------------------------------------------------------
 
-function makeCandle(close: number): Candle {
+function makeCandle(close: number, open?: number): Candle {
+  const openPrice = open ?? close * 0.995; // open slightly below close by default
   return {
     id: crypto.randomUUID(),
     symbol: "BTCUSDT",
     exchange: "binance" as const,
     timeframe: "5M" as const,
     open_time: new Date(),
-    open: d(close.toString()),
+    open: d(openPrice.toString()),
     high: d((close * 1.01).toString()),
     low: d((close * 0.99).toString()),
     close: d(close.toString()),
@@ -30,9 +31,9 @@ function makeCandles(count: number, baseClose = 100): Candle[] {
   return Array.from({ length: count }, (_, i) => makeCandle(baseClose + i * 0.1));
 }
 
-/** Build an array of candles all with the same close price. */
+/** Build an array of candles all with the same close and open price. */
 function makeConstantCandles(count: number, close = 100): Candle[] {
-  return Array.from({ length: count }, () => makeCandle(close));
+  return Array.from({ length: count }, () => makeCandle(close, close));
 }
 
 // ---------------------------------------------------------------------------
@@ -54,6 +55,35 @@ describe("bollinger — candlesToCloses", () => {
     const candle = makeCandle(99.987);
     const [close] = candlesToCloses([candle]);
     expect(close).toBeCloseTo(99.987, 10);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// candlesToOpens
+// ---------------------------------------------------------------------------
+
+describe("bollinger — candlesToOpens", () => {
+  it("extracts open prices as numbers in order", () => {
+    const candles = [makeCandle(100, 98), makeCandle(101, 99), makeCandle(102, 100)];
+    const opens = candlesToOpens(candles);
+    expect(opens).toEqual([98, 99, 100]);
+  });
+
+  it("returns empty array for empty input", () => {
+    expect(candlesToOpens([])).toEqual([]);
+  });
+
+  it("preserves exact open values (no rounding)", () => {
+    const candle = makeCandle(100, 99.987);
+    const [open] = candlesToOpens([candle]);
+    expect(open).toBeCloseTo(99.987, 10);
+  });
+
+  it("open prices differ from close prices", () => {
+    const candles = [makeCandle(100, 95), makeCandle(101, 96)];
+    const opens = candlesToOpens(candles);
+    const closes = candlesToCloses(candles);
+    expect(opens).not.toEqual(closes);
   });
 });
 
@@ -176,15 +206,39 @@ describe("bollinger — calcBB4", () => {
     expect(result!.bandwidth.toFixed(10)).toBe(expected.toFixed(10));
   });
 
-  it("percentB = (close - lower) / (upper - lower)", () => {
+  it("percentB uses open price (not close) as current price", () => {
     const candles = makeCandles(10);
     const result = calcBB4(candles);
     expect(result).not.toBeNull();
-    const lastClose = d(candles[candles.length - 1]!.close.toString());
-    const expected = lastClose
+    // BB4 source is "open" — percentB must be computed from the last open price.
+    const lastOpen = d(candles[candles.length - 1]!.open.toString());
+    const expected = lastOpen
       .minus(result!.lower)
       .div(result!.upper.minus(result!.lower));
     expect(result!.percentB.toFixed(10)).toBe(expected.toFixed(10));
+  });
+
+  it("BB4 bands are computed from open prices, not close prices", () => {
+    // Build candles where open and close are clearly different sequences.
+    // opens: 200, 201, 202, 203  closes: 100, 101, 102, 103
+    const candles = Array.from({ length: 4 }, (_, i) =>
+      makeCandle(100 + i, 200 + i),
+    );
+    const opens = candlesToOpens(candles);
+    const closes = candlesToCloses(candles);
+
+    // BB4 result should match a calcBB built from opens, not closes.
+    const resultFromOpens = calcBB(opens, 4, 4, opens[opens.length - 1]!);
+    const resultFromCloses = calcBB(closes, 4, 4, closes[closes.length - 1]!);
+    const resultBB4 = calcBB4(candles);
+
+    if (resultFromOpens !== null && resultBB4 !== null) {
+      expect(resultBB4.middle.toFixed(6)).toBe(resultFromOpens.middle.toFixed(6));
+    }
+    // BB4 must NOT match a close-based calculation when opens ≠ closes.
+    if (resultFromCloses !== null && resultBB4 !== null && resultFromOpens !== null) {
+      expect(resultBB4.middle.toFixed(6)).not.toBe(resultFromCloses.middle.toFixed(6));
+    }
   });
 });
 

@@ -12,6 +12,7 @@ const BB20_LENGTH = BB20_CONFIG.length;
 const BB20_STDDEV = BB20_CONFIG.stddev;
 const BB4_LENGTH = BB4_CONFIG.length;
 const BB4_STDDEV = BB4_CONFIG.stddev;
+const BB4_SOURCE = BB4_CONFIG.source;
 
 /**
  * Extracts close prices from a Candle array as plain numbers.
@@ -21,6 +22,16 @@ const BB4_STDDEV = BB4_CONFIG.stddev;
  */
 export function candlesToCloses(candles: Candle[]): number[] {
   return candles.map((c) => c.close.toNumber());
+}
+
+/**
+ * Extracts open prices from a Candle array as plain numbers.
+ * Numbers are required here because @ixjb94/indicators accepts number[].
+ * WARNING: Only use for passing to external indicator libraries — never for
+ * monetary arithmetic.
+ */
+export function candlesToOpens(candles: Candle[]): number[] {
+  return candles.map((c) => c.open.toNumber());
 }
 
 /**
@@ -90,13 +101,14 @@ export function calcBB20(candles: Candle[]): BollingerResult | null {
 
 /**
  * Calculates BB4 (4-period, 4-stddev) for the given candle series.
- * Uses the last candle's close as currentClose for percentB.
+ * Uses open prices as the source (BB4_CONFIG.source = "open").
+ * Uses the last candle's open as the currentClose argument for percentB.
  * Returns null if the series is shorter than BB4_CONFIG.length.
  */
 export function calcBB4(candles: Candle[]): BollingerResult | null {
   if (candles.length < BB4_LENGTH) return null;
-  const closes = candlesToCloses(candles);
-  const currentClose = closes[closes.length - 1];
-  if (currentClose === undefined) return null;
-  return calcBB(closes, BB4_LENGTH, BB4_STDDEV, currentClose);
+  const prices = BB4_SOURCE === "open" ? candlesToOpens(candles) : candlesToCloses(candles);
+  const currentPrice = prices[prices.length - 1];
+  if (currentPrice === undefined) return null;
+  return calcBB(prices, BB4_LENGTH, BB4_STDDEV, currentPrice);
 }

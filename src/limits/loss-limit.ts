@@ -3,6 +3,9 @@
  *
  * checkLossLimit() is a pure function (no DB, no side effects).
  * recordLoss() and loadLossLimitConfig() handle DB interaction.
+ * shouldReset*() are pure time-boundary functions.
+ * reset*() functions handle DB writes for counter resets.
+ * resetAllExpired() orchestrates checking + resetting all counters.
  *
  * Layer: L5 (limits)
  * No imports from positions module (L5 -> L5 forbidden).
@@ -54,6 +57,26 @@ export interface SymbolLossState {
   lossesThisHour5m: number;
   /** Hourly 1M loss count. */
   lossesThisHour1m: number;
+}
+
+/** Timestamps of the last resets, used by resetAllExpired(). */
+export interface LastResets {
+  /** When the daily counter was last reset. */
+  lastDailyReset: Date;
+  /** When the hourly counters were last reset. */
+  lastHourlyReset: Date;
+  /** Session start time (market open). Omit if not applicable. */
+  sessionStartTime?: Date | undefined;
+}
+
+/** Result of resetAllExpired() indicating which resets were performed. */
+export interface ResetResult {
+  /** true if losses_today was reset. */
+  dailyReset: boolean;
+  /** true if losses_session was reset. */
+  sessionReset: boolean;
+  /** true if losses_this_1h_5m and losses_this_1h_1m were reset. */
+  hourlyReset: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -194,4 +217,159 @@ export async function loadLossLimitConfig(db: NodePgDatabase): Promise<LossLimit
   }
 
   return config;
+}
+
+// ---------------------------------------------------------------------------
+// Pure function: shouldResetDaily
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true when `now` is on a different UTC day than `lastResetTime`,
+ * indicating the daily loss counter should be reset (UTC 00:00 boundary).
+ *
+ * Pure function -- deterministic given the same inputs.
+ */
+export function shouldResetDaily(now: Date, lastResetTime: Date): boolean {
+  return utcDateKey(now) !== utcDateKey(lastResetTime);
+}
+
+// ---------------------------------------------------------------------------
+// Pure function: shouldResetSession
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true when `now` is at or after `sessionStartTime`, indicating the
+ * session (market open) loss counter should be reset.
+ *
+ * Pure function -- deterministic given the same inputs.
+ */
+export function shouldResetSession(now: Date, sessionStartTime: Date): boolean {
+  return now.getTime() >= sessionStartTime.getTime();
+}
+
+// ---------------------------------------------------------------------------
+// Pure function: shouldResetHourly
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true when `now` is in a different UTC hour than `lastResetTime`,
+ * indicating the hourly loss counters should be reset (HH:00 boundary).
+ *
+ * Pure function -- deterministic given the same inputs.
+ */
+export function shouldResetHourly(now: Date, lastResetTime: Date): boolean {
+  return utcHourKey(now) !== utcHourKey(lastResetTime);
+}
+
+// ---------------------------------------------------------------------------
+// DB function: resetDailyLosses
+// ---------------------------------------------------------------------------
+
+/**
+ * Resets the daily loss counter (losses_today) to '0' for the given symbol.
+ */
+export async function resetDailyLosses(
+  db: NodePgDatabase,
+  symbol: string,
+  exchange: string,
+): Promise<void> {
+  await db
+    .update(symbolStateTable)
+    .set({
+      losses_today: "0",
+      updated_at: new Date(),
+    })
+    .where(and(eq(symbolStateTable.symbol, symbol), eq(symbolStateTable.exchange, exchange)));
+}
+
+// ---------------------------------------------------------------------------
+// DB function: resetSessionLosses
+// ---------------------------------------------------------------------------
+
+/**
+ * Resets the session loss counter (losses_session) to 0 for the given symbol.
+ */
+export async function resetSessionLosses(
+  db: NodePgDatabase,
+  symbol: string,
+  exchange: string,
+): Promise<void> {
+  await db
+    .update(symbolStateTable)
+    .set({
+      losses_session: 0,
+      updated_at: new Date(),
+    })
+    .where(and(eq(symbolStateTable.symbol, symbol), eq(symbolStateTable.exchange, exchange)));
+}
+
+// ---------------------------------------------------------------------------
+// DB function: resetHourlyLosses
+// ---------------------------------------------------------------------------
+
+/**
+ * Resets the hourly loss counters (losses_this_1h_5m, losses_this_1h_1m)
+ * to 0 for the given symbol.
+ */
+export async function resetHourlyLosses(
+  db: NodePgDatabase,
+  symbol: string,
+  exchange: string,
+): Promise<void> {
+  await db
+    .update(symbolStateTable)
+    .set({
+      losses_this_1h_5m: 0,
+      losses_this_1h_1m: 0,
+      updated_at: new Date(),
+    })
+    .where(and(eq(symbolStateTable.symbol, symbol), eq(symbolStateTable.exchange, exchange)));
+}
+
+// ---------------------------------------------------------------------------
+// Orchestrator: resetAllExpired
+// ---------------------------------------------------------------------------
+
+/**
+ * Checks all time boundaries and resets the appropriate loss counters.
+ *
+ * Multiple resets can trigger simultaneously (e.g., midnight = daily + hourly).
+ * Session reset only fires when sessionStartTime is provided.
+ */
+export async function resetAllExpired(
+  db: NodePgDatabase,
+  symbol: string,
+  exchange: string,
+  now: Date,
+  lastResets: LastResets,
+): Promise<ResetResult> {
+  const dailyReset = shouldResetDaily(now, lastResets.lastDailyReset);
+  const sessionReset =
+    lastResets.sessionStartTime !== undefined &&
+    shouldResetSession(now, lastResets.sessionStartTime);
+  const hourlyReset = shouldResetHourly(now, lastResets.lastHourlyReset);
+
+  // Execute all applicable resets (they are independent -- no ordering needed)
+  const promises: Promise<void>[] = [];
+  if (dailyReset) promises.push(resetDailyLosses(db, symbol, exchange));
+  if (sessionReset) promises.push(resetSessionLosses(db, symbol, exchange));
+  if (hourlyReset) promises.push(resetHourlyLosses(db, symbol, exchange));
+
+  await Promise.all(promises);
+
+  return { dailyReset, sessionReset, hourlyReset };
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/** Returns a string key "YYYY-MM-DD" for the UTC date of the given timestamp. */
+function utcDateKey(date: Date): string {
+  return `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`;
+}
+
+/** Returns a string key "YYYY-MM-DD-HH" for the UTC date+hour of the given timestamp. */
+function utcHourKey(date: Date): string {
+  return `${utcDateKey(date)}-${date.getUTCHours()}`;
 }

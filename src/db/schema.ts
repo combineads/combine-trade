@@ -535,3 +535,41 @@ export const eventLogTable = pgTable(
 
 export type EventLogRow = InferSelectModel<typeof eventLogTable>;
 export type NewEventLogRow = InferInsertModel<typeof eventLogTable>;
+
+// ---------------------------------------------------------------------------
+// backtests table
+// ---------------------------------------------------------------------------
+
+export const backtestTable = pgTable(
+  "backtests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    run_type: text("run_type").notNull(),
+    symbol: text("symbol").notNull(),
+    exchange: text("exchange").notNull(),
+    start_date: timestamp("start_date", { withTimezone: true, mode: "date" }).notNull(),
+    end_date: timestamp("end_date", { withTimezone: true, mode: "date" }).notNull(),
+    config_snapshot: jsonb("config_snapshot").notNull(),
+    results: jsonb("results").notNull(),
+    parent_id: uuid("parent_id"),
+    window_index: integer("window_index"),
+    created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.symbol, t.exchange],
+      foreignColumns: [symbolTable.symbol, symbolTable.exchange],
+    }).onDelete("restrict"),
+    foreignKey({
+      columns: [t.parent_id],
+      foreignColumns: [t.id],
+      name: "backtests_parent_id_fk",
+    }).onDelete("cascade"),
+    check("backtests_run_type_check", sql`${t.run_type} IN ('BACKTEST', 'WFO')`),
+  ],
+);
+
+export type BacktestRow = InferSelectModel<typeof backtestTable>;
+export type NewBacktestRow = InferInsertModel<typeof backtestTable>;

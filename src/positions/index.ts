@@ -6,7 +6,17 @@ export {
   InvalidTransitionError,
   validateTransition,
 } from "./fsm.ts";
-
+export {
+  canPyramid,
+  type EntryResult,
+  type ExecuteEntryFn,
+  type ExecutePyramidParams,
+  executePyramid,
+  loadPyramidConfig,
+  type PyramidCheckResult,
+  type PyramidConfig,
+  type PyramidSlippageConfig,
+} from "./pyramid.ts";
 export {
   calculateSize,
   getRiskPct,
@@ -15,7 +25,6 @@ export {
   type SizeParams,
   type SizeResult,
 } from "./sizer.ts";
-
 export {
   type CloseTicketParams,
   type CreateTicketParams,

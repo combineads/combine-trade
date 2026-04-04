@@ -77,4 +77,4 @@ bun run lint
 ## Out of Scope
 - Investing.com 경제이벤트 API 연동 (별도 태스크 또는 EP 이후)
 - 방향 필터 (T-05-004)
-- 웹 UI에서 수동 차단 관리 (EP-10)
+- 웹 UI에서 수동 차단 관리 (EP-11)

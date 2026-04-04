@@ -6,7 +6,7 @@
  * conditions where another process modifies a SymbolState row between the
  * point of reading and the point of applying corrective action.
  *
- * Layer: L3 (db)
+ * Layer: L1 (db)
  */
 
 import { ne } from "drizzle-orm";

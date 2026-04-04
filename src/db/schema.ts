@@ -114,3 +114,44 @@ export const commonCodeTable = pgTable(
 
 export type CommonCodeRow = InferSelectModel<typeof commonCodeTable>;
 export type NewCommonCodeRow = InferInsertModel<typeof commonCodeTable>;
+
+// ---------------------------------------------------------------------------
+// candles table
+// ---------------------------------------------------------------------------
+
+export const candleTable = pgTable(
+  "candles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    symbol: text("symbol").notNull(),
+    exchange: text("exchange").notNull(),
+    timeframe: text("timeframe").notNull(),
+    open_time: timestamp("open_time", { withTimezone: true, mode: "date" }).notNull(),
+    open: numeric("open").notNull(),
+    high: numeric("high").notNull(),
+    low: numeric("low").notNull(),
+    close: numeric("close").notNull(),
+    volume: numeric("volume").notNull(),
+    is_closed: boolean("is_closed").default(false),
+    created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.symbol, t.exchange],
+      foreignColumns: [symbolTable.symbol, symbolTable.exchange],
+    }).onDelete("restrict"),
+    uniqueIndex("candles_symbol_exchange_tf_opentime_idx").on(
+      t.symbol,
+      t.exchange,
+      t.timeframe,
+      t.open_time,
+    ),
+    index("candles_recent_idx").on(t.symbol, t.exchange, t.timeframe, t.open_time),
+    check("candles_timeframe_check", sql`${t.timeframe} IN ('1D', '1H', '5M', '1M')`),
+  ],
+);
+
+export type CandleRow = InferSelectModel<typeof candleTable>;
+export type NewCandleRow = InferInsertModel<typeof candleTable>;

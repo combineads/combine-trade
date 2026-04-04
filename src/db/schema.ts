@@ -235,3 +235,75 @@ export const watchSessionTable = pgTable(
 
 export type WatchSessionRow = InferSelectModel<typeof watchSessionTable>;
 export type NewWatchSessionRow = InferInsertModel<typeof watchSessionTable>;
+
+// ---------------------------------------------------------------------------
+// signals table
+// ---------------------------------------------------------------------------
+
+export const signalTable = pgTable(
+  "signals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    symbol: text("symbol").notNull(),
+    exchange: text("exchange").notNull(),
+    watch_session_id: uuid("watch_session_id").notNull(),
+    timeframe: text("timeframe").notNull(),
+    signal_type: text("signal_type").notNull(),
+    direction: text("direction").notNull(),
+    entry_price: numeric("entry_price").notNull(),
+    sl_price: numeric("sl_price").notNull(),
+    safety_passed: boolean("safety_passed").notNull(),
+    knn_decision: text("knn_decision"),
+    a_grade: boolean("a_grade").notNull().default(false),
+    vector_id: uuid("vector_id"),
+    created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.symbol, t.exchange],
+      foreignColumns: [symbolTable.symbol, symbolTable.exchange],
+    }).onDelete("restrict"),
+    foreignKey({
+      columns: [t.watch_session_id],
+      foreignColumns: [watchSessionTable.id],
+    }).onDelete("restrict"),
+    check("signals_timeframe_check", sql`${t.timeframe} IN ('5M', '1M')`),
+    check("signals_signal_type_check", sql`${t.signal_type} IN ('DOUBLE_B', 'ONE_B')`),
+    check("signals_direction_check", sql`${t.direction} IN ('LONG', 'SHORT')`),
+    check(
+      "signals_knn_decision_check",
+      sql`${t.knn_decision} IS NULL OR ${t.knn_decision} IN ('PASS', 'FAIL', 'SKIP')`,
+    ),
+  ],
+);
+
+export type SignalRow = InferSelectModel<typeof signalTable>;
+export type NewSignalRow = InferInsertModel<typeof signalTable>;
+
+// ---------------------------------------------------------------------------
+// signal_details table
+// ---------------------------------------------------------------------------
+
+export const signalDetailTable = pgTable(
+  "signal_details",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    signal_id: uuid("signal_id").notNull(),
+    key: text("key").notNull(),
+    value: numeric("value"),
+    text_value: text("text_value"),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.signal_id],
+      foreignColumns: [signalTable.id],
+    }).onDelete("cascade"),
+    uniqueIndex("signal_details_signal_id_key_idx").on(t.signal_id, t.key),
+    index("signal_details_key_value_idx").on(t.key, t.value),
+  ],
+);
+
+export type SignalDetailRow = InferSelectModel<typeof signalDetailTable>;
+export type NewSignalDetailRow = InferInsertModel<typeof signalDetailTable>;

@@ -22,6 +22,10 @@ export const SlackEventType = {
   DAEMON_START: "DAEMON_START",
   DAEMON_STOP: "DAEMON_STOP",
   CRASH_RECOVERY: "CRASH_RECOVERY",
+  TRANSFER_SUCCESS: "TRANSFER_SUCCESS",
+  TRANSFER_FAILED: "TRANSFER_FAILED",
+  TRANSFER_SKIP: "TRANSFER_SKIP",
+  TRANSFER_SURPLUS_ALERT: "TRANSFER_SURPLUS_ALERT",
 } as const;
 
 export type SlackEventType = (typeof SlackEventType)[keyof typeof SlackEventType];
@@ -59,6 +63,10 @@ const EVENT_COLORS: Record<SlackEventType, string> = {
   [SlackEventType.DAEMON_START]: COLOR_GREEN,
   [SlackEventType.DAEMON_STOP]: COLOR_ORANGE,
   [SlackEventType.CRASH_RECOVERY]: COLOR_RED,
+  [SlackEventType.TRANSFER_SUCCESS]: COLOR_GREEN,
+  [SlackEventType.TRANSFER_FAILED]: COLOR_RED,
+  [SlackEventType.TRANSFER_SKIP]: COLOR_ORANGE,
+  [SlackEventType.TRANSFER_SURPLUS_ALERT]: COLOR_ORANGE,
 };
 
 // ---------------------------------------------------------------------------
@@ -74,6 +82,10 @@ const EVENT_EMOJIS: Record<SlackEventType, string> = {
   [SlackEventType.DAEMON_START]: ":rocket:",
   [SlackEventType.DAEMON_STOP]: ":octagonal_sign:",
   [SlackEventType.CRASH_RECOVERY]: ":adhesive_bandage:",
+  [SlackEventType.TRANSFER_SUCCESS]: ":money_with_wings:",
+  [SlackEventType.TRANSFER_FAILED]: ":rotating_light:",
+  [SlackEventType.TRANSFER_SKIP]: ":fast_forward:",
+  [SlackEventType.TRANSFER_SURPLUS_ALERT]: ":mega:",
 };
 
 // ---------------------------------------------------------------------------

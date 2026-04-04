@@ -4,7 +4,6 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["node", "bun-types"],
     "jsx": "react-jsx",
     "strict": true,
     "noImplicitAny": true,
@@ -23,9 +22,9 @@
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@web/*": ["src/*"]
     }
   },
-  "include": ["src/**/*", "scripts/**/*"],
-  "exclude": ["node_modules", "public", "dist", "src/web"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
 }

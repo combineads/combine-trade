@@ -15,7 +15,8 @@
     "migrate": "bun src/db/migrate.ts",
     "seed": "bun run scripts/seed.ts",
     "check-layers": "bun run scripts/check-layers.ts",
-    "daemon": "bun run src/daemon.ts"
+    "daemon": "bun run src/daemon.ts",
+    "build:web": "cd src/web && bunx vite build"
   },
   "dependencies": {
     "@ixjb94/indicators": "^1.2.4",
@@ -38,7 +39,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.10",
+    "@tailwindcss/vite": "^4.2.2",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "bun-types": "^1.3.11",
     "drizzle-kit": "^0.31.10",

@@ -20,6 +20,7 @@ import type { Candle, Exchange, Timeframe } from "@/core/types";
 import type { CrashRecoveryDeps, CrashRecoveryResult } from "@/daemon/crash-recovery";
 import type { ActiveSymbol, PipelineDeps } from "@/daemon/pipeline";
 import { handleCandleClose } from "@/daemon/pipeline";
+import { gracefulShutdown, type ShutdownDeps } from "@/daemon/shutdown";
 import type { ReconciliationDeps, ReconciliationHandle } from "@/reconciliation/worker";
 
 // ---------------------------------------------------------------------------
@@ -85,6 +86,13 @@ export type DaemonDeps = {
    * for symbols present in this list.
    */
   activeSymbols: ReadonlyArray<ActiveSymbol>;
+
+  /**
+   * Shutdown dependency bag — passed to gracefulShutdown() when stop() is called.
+   * If omitted, a minimal shutdown (candleManager.stop + reconciliation.stop only)
+   * is performed for backward compatibility.
+   */
+  shutdownDeps?: ShutdownDeps;
 };
 
 /**
@@ -181,11 +189,21 @@ export async function startDaemon(deps: DaemonDeps): Promise<DaemonHandle> {
 
     log.info("daemon_stopping");
 
-    await candleManager.stop();
-    log.info("candle_manager_stopped");
+    if (deps.shutdownDeps !== undefined) {
+      // Use enhanced graceful shutdown with order cancellation, DB pool close, Slack alert
+      await gracefulShutdown({
+        ...deps.shutdownDeps,
+        candleManager,
+        reconciliationHandle: reconciliation,
+      });
+    } else {
+      // Minimal fallback: stop candle manager + reconciliation only
+      await candleManager.stop();
+      log.info("candle_manager_stopped");
 
-    reconciliation.stop();
-    log.info("reconciliation_stopped");
+      reconciliation.stop();
+      log.info("reconciliation_stopped");
+    }
 
     log.info("daemon_shutdown_complete");
   }

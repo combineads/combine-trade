@@ -78,7 +78,11 @@ function makeIndicators(overrides: Partial<AllIndicators> = {}): AllIndicators {
 
 describe("watching — detectWatching — SQUEEZE_BREAKOUT", () => {
   it("detects SQUEEZE_BREAKOUT LONG when squeeze=expansion and close > BB20 upper with LONG_ONLY bias", () => {
-    const candle = makeCandle("52500"); // above BB20 upper of 52000
+    // high=53000, low=49000, close=52500 → upper wick = (53000-52500)/(53000-49000) = 500/4000 = 0.125 < 0.5 ✓
+    const candle = makeCandle("52500", {
+      high: new Decimal("53000"),
+      low: new Decimal("49000"),
+    });
     const indicators = makeIndicators({ squeeze: "expansion" });
     const bias: DailyBias = "LONG_ONLY";
 
@@ -92,7 +96,11 @@ describe("watching — detectWatching — SQUEEZE_BREAKOUT", () => {
   });
 
   it("returns null for SQUEEZE_BREAKOUT LONG when bias is SHORT_ONLY (direction mismatch)", () => {
-    const candle = makeCandle("52500"); // above BB20 upper
+    // high=53000, low=49000, close=52500 → realistic candle
+    const candle = makeCandle("52500", {
+      high: new Decimal("53000"),
+      low: new Decimal("49000"),
+    });
     const indicators = makeIndicators({ squeeze: "expansion" });
     const bias: DailyBias = "SHORT_ONLY";
 
@@ -104,7 +112,11 @@ describe("watching — detectWatching — SQUEEZE_BREAKOUT", () => {
   });
 
   it("detects SQUEEZE_BREAKOUT SHORT when squeeze=expansion and close < BB20 lower with SHORT_ONLY bias", () => {
-    const candle = makeCandle("47000"); // below BB20 lower of 48000
+    // high=49000, low=46000, close=47000 → lower wick = (47000-46000)/(49000-46000) = 1000/3000 = 0.33 < 0.5 ✓
+    const candle = makeCandle("47000", {
+      high: new Decimal("49000"),
+      low: new Decimal("46000"),
+    });
     const indicators = makeIndicators({ squeeze: "expansion" });
     const bias: DailyBias = "SHORT_ONLY";
 
@@ -118,7 +130,11 @@ describe("watching — detectWatching — SQUEEZE_BREAKOUT", () => {
   });
 
   it("detects SQUEEZE_BREAKOUT when bias is NEUTRAL and close > BB20 upper", () => {
-    const candle = makeCandle("52500");
+    // high=53000, low=49000, close=52500 → upper wick ratio = 0.125 < 0.5 ✓
+    const candle = makeCandle("52500", {
+      high: new Decimal("53000"),
+      low: new Decimal("49000"),
+    });
     const indicators = makeIndicators({ squeeze: "expansion" });
     const bias: DailyBias = "NEUTRAL";
 
@@ -130,7 +146,11 @@ describe("watching — detectWatching — SQUEEZE_BREAKOUT", () => {
   });
 
   it("returns null when squeeze is not expansion (normal)", () => {
-    const candle = makeCandle("52500");
+    // high=53000, low=49000, close=52500
+    const candle = makeCandle("52500", {
+      high: new Decimal("53000"),
+      low: new Decimal("49000"),
+    });
     const indicators = makeIndicators({ squeeze: "normal" });
     const bias: DailyBias = "LONG_ONLY";
 
@@ -143,7 +163,11 @@ describe("watching — detectWatching — SQUEEZE_BREAKOUT", () => {
   });
 
   it("returns null when squeeze is 'squeeze' (not expansion)", () => {
-    const candle = makeCandle("52500");
+    // high=53000, low=49000, close=52500
+    const candle = makeCandle("52500", {
+      high: new Decimal("53000"),
+      low: new Decimal("49000"),
+    });
     const indicators = makeIndicators({ squeeze: "squeeze" });
     const bias: DailyBias = "LONG_ONLY";
 
@@ -153,7 +177,11 @@ describe("watching — detectWatching — SQUEEZE_BREAKOUT", () => {
   });
 
   it("includes context_data with BB values and squeeze state", () => {
-    const candle = makeCandle("52500");
+    // high=53000, low=49000, close=52500 → upper wick ratio = 0.125 < 0.5 ✓
+    const candle = makeCandle("52500", {
+      high: new Decimal("53000"),
+      low: new Decimal("49000"),
+    });
     const indicators = makeIndicators({ squeeze: "expansion" });
     const bias: DailyBias = "LONG_ONLY";
 
@@ -165,6 +193,28 @@ describe("watching — detectWatching — SQUEEZE_BREAKOUT", () => {
     expect(ctx.bb20Upper).toBeDefined();
     expect(ctx.bb20Lower).toBeDefined();
     expect(ctx.close).toBe("52500");
+  });
+
+  it("returns null for SQUEEZE_BREAKOUT LONG when upper wick ratio >= 0.5 (wick dominated)", () => {
+    // high=56000, low=49000, close=52500 → upper wick = (56000-52500)/(56000-49000) = 3500/7000 = 0.5 → reject
+    const candleLong = makeCandle("52500", {
+      high: new Decimal("56000"),
+      low: new Decimal("49000"),
+    });
+    const indicators = makeIndicators({ squeeze: "expansion" });
+    const result = detectWatching(candleLong, indicators, "LONG_ONLY");
+    expect(result).toBeNull();
+  });
+
+  it("returns null for SQUEEZE_BREAKOUT SHORT when lower wick ratio >= 0.5 (wick dominated)", () => {
+    // high=49000, low=43000, close=47000 → lower wick=(47000-43000)/(49000-43000)=4000/6000=0.667 >= 0.5 → reject
+    const candleShort = makeCandle("47000", {
+      high: new Decimal("49000"),
+      low: new Decimal("43000"),
+    });
+    const indicators = makeIndicators({ squeeze: "expansion" });
+    const result = detectWatching(candleShort, indicators, "SHORT_ONLY");
+    expect(result).toBeNull();
   });
 });
 
@@ -249,10 +299,12 @@ describe("watching — detectWatching — BB4_TOUCH", () => {
 
 describe("watching — detectWatching — SR_CONFLUENCE", () => {
   it("detects SR_CONFLUENCE LONG when close is between BB20 lower and BB4 lower", () => {
-    // BB20 lower=48000, BB4 lower=49000 → close between 48000-49000 triggers LONG confluence
+    // BB20 lower=48000, BB4 lower=49000 → close=48500, distance from bb20Lower=500
+    // ATR14=2000 → threshold=600 > 500 ✓ (close is within ATR14×0.3 of support)
     const candle = makeCandle("48500");
     const indicators = makeIndicators({
       squeeze: "normal",
+      atr14: new Decimal("2000"),
       bb20: {
         upper: new Decimal("52000"),
         middle: new Decimal("50000"),
@@ -279,9 +331,10 @@ describe("watching — detectWatching — SR_CONFLUENCE", () => {
   });
 
   it("detects SR_CONFLUENCE SHORT when close is between BB4 upper and BB20 upper", () => {
-    // BB4 upper=51000, BB20 upper=52000 → close between 51000-52000 triggers SHORT confluence
+    // BB4 upper=51000, BB20 upper=52000 → close=51500, distance from bb20Upper=500
+    // ATR14=2000 → threshold=600 > 500 ✓ (close is within ATR14×0.3 of resistance)
     const candle = makeCandle("51500");
-    const indicators = makeIndicators({ squeeze: "normal" });
+    const indicators = makeIndicators({ squeeze: "normal", atr14: new Decimal("2000") });
     const bias: DailyBias = "SHORT_ONLY";
 
     const result = detectWatching(candle, indicators, bias);
@@ -300,6 +353,68 @@ describe("watching — detectWatching — SR_CONFLUENCE", () => {
     const result = detectWatching(candle, indicators, bias);
 
     expect(result).toBeNull();
+  });
+
+  it("returns null for SR_CONFLUENCE LONG when close is too far from bb20Lower (ATR filter)", () => {
+    // close=48500, bb20Lower=48000, distance=500
+    // ATR14=500 → threshold=150 < 500 → rejected by ATR filter
+    const candle = makeCandle("48500");
+    const indicators = makeIndicators({
+      squeeze: "normal",
+      atr14: new Decimal("500"),
+      bb20: {
+        upper: new Decimal("52000"),
+        middle: new Decimal("50000"),
+        lower: new Decimal("48000"),
+        bandwidth: new Decimal("0.08"),
+        percentB: new Decimal("0.125"),
+      },
+      bb4: {
+        upper: new Decimal("51000"),
+        middle: new Decimal("50000"),
+        lower: new Decimal("49000"),
+        bandwidth: new Decimal("0.04"),
+        percentB: new Decimal("0.25"),
+      },
+    });
+    const result = detectWatching(candle, indicators, "LONG_ONLY");
+    expect(result?.detectionType).not.toBe("SR_CONFLUENCE");
+  });
+
+  it("returns null for SR_CONFLUENCE SHORT when close is too far from bb20Upper (ATR filter)", () => {
+    // close=51500, bb20Upper=52000, distance=500
+    // ATR14=500 → threshold=150 < 500 → rejected by ATR filter
+    const candle = makeCandle("51500");
+    const indicators = makeIndicators({ squeeze: "normal", atr14: new Decimal("500") });
+    const result = detectWatching(candle, indicators, "SHORT_ONLY");
+    expect(result?.detectionType).not.toBe("SR_CONFLUENCE");
+  });
+
+  it("passes SR_CONFLUENCE when atr14 is null (ATR filter skipped)", () => {
+    // When atr14 is null the ATR filter is skipped and the position-based check is sufficient
+    // close=48500, between bb20Lower=48000 and bb4Lower=49000 ✓
+    const candle = makeCandle("48500");
+    const indicators = makeIndicators({
+      squeeze: "normal",
+      atr14: null,
+      bb20: {
+        upper: new Decimal("52000"),
+        middle: new Decimal("50000"),
+        lower: new Decimal("48000"),
+        bandwidth: new Decimal("0.08"),
+        percentB: new Decimal("0.125"),
+      },
+      bb4: {
+        upper: new Decimal("51000"),
+        middle: new Decimal("50000"),
+        lower: new Decimal("49000"),
+        bandwidth: new Decimal("0.04"),
+        percentB: new Decimal("0.25"),
+      },
+    });
+    const result = detectWatching(candle, indicators, "LONG_ONLY");
+    expect(result).not.toBeNull();
+    expect(result!.detectionType).toBe("SR_CONFLUENCE");
   });
 });
 
@@ -381,14 +496,24 @@ describe("watching — checkInvalidation", () => {
     expect(result).toBe("bias_changed");
   });
 
-  it("returns null when LONG session with NEUTRAL bias (allowed)", () => {
+  it("returns 'bias_changed_to_neutral' when LONG session and bias changes to NEUTRAL", () => {
     const candle = makeCandle("50000");
     const indicators = makeIndicators();
     const session = makeSession("LONG");
 
     const result = checkInvalidation(candle, indicators, session, "NEUTRAL");
 
-    expect(result).toBeNull();
+    expect(result).toBe("bias_changed_to_neutral");
+  });
+
+  it("returns 'bias_changed_to_neutral' when SHORT session and bias changes to NEUTRAL", () => {
+    const candle = makeCandle("50000");
+    const indicators = makeIndicators();
+    const session = makeSession("SHORT");
+
+    const result = checkInvalidation(candle, indicators, session, "NEUTRAL");
+
+    expect(result).toBe("bias_changed_to_neutral");
   });
 
   it("returns 'price_breakout' when LONG session and close < BB20 lower", () => {

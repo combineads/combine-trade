@@ -37,6 +37,11 @@ function isDirectionAllowed(direction: Direction, bias: DailyBias): boolean {
  * Squeeze Breakout: squeeze state is "expansion" (caller's indicators reflect
  * that the *current* state is expansion, implying it transitioned from squeeze)
  * AND the close has broken out of the BB20 band in the matching direction.
+ *
+ * Wick ratio filter: the opposite wick must be < 0.5 of the candle range,
+ * ensuring the candle body (not a wick) drove the breakout.
+ * - LONG: upper wick ratio = (high − close) / (high − low) must be < 0.5
+ * - SHORT: lower wick ratio = (close − low) / (high − low) must be < 0.5
  */
 function detectSqueezeBreakout(
   candle: Candle,
@@ -47,11 +52,20 @@ function detectSqueezeBreakout(
   if (!indicators.bb20 || !indicators.sma20) return null;
 
   const close = candle.close;
+  const high = candle.high;
+  const low = candle.low;
   const { upper: bb20Upper, lower: bb20Lower, middle: bb20Middle } = indicators.bb20;
   const sma20 = indicators.sma20;
 
-  // LONG: close breaks above BB20 upper
+  const range = high.minus(low);
+
+  // LONG: close breaks above BB20 upper with upper wick ratio < 0.5
   if (close.greaterThan(bb20Upper) && isDirectionAllowed("LONG", bias)) {
+    // If range is zero, skip the wick filter (degenerate candle)
+    if (!range.isZero()) {
+      const upperWickRatio = high.minus(close).dividedBy(range);
+      if (upperWickRatio.greaterThanOrEqualTo("0.5")) return null;
+    }
     return {
       detectionType: "SQUEEZE_BREAKOUT",
       direction: "LONG",
@@ -68,8 +82,13 @@ function detectSqueezeBreakout(
     };
   }
 
-  // SHORT: close breaks below BB20 lower
+  // SHORT: close breaks below BB20 lower with lower wick ratio < 0.5
   if (close.lessThan(bb20Lower) && isDirectionAllowed("SHORT", bias)) {
+    // If range is zero, skip the wick filter (degenerate candle)
+    if (!range.isZero()) {
+      const lowerWickRatio = close.minus(low).dividedBy(range);
+      if (lowerWickRatio.greaterThanOrEqualTo("0.5")) return null;
+    }
     return {
       detectionType: "SQUEEZE_BREAKOUT",
       direction: "SHORT",
@@ -95,6 +114,10 @@ function detectSqueezeBreakout(
  *
  * LONG: close is between BB20 lower and BB4 lower (near support).
  * SHORT: close is between BB4 upper and BB20 upper (near resistance).
+ *
+ * ATR proximity filter: the close must be within ATR14 × 0.3 of the S/R level
+ * (BB20 lower for LONG, BB20 upper for SHORT) to confirm price is close enough
+ * to the level to constitute confluence.
  */
 function detectSRConfluence(
   candle: Candle,
@@ -108,6 +131,9 @@ function detectSRConfluence(
   const { upper: bb4Upper, lower: bb4Lower } = indicators.bb4;
   const sma20 = indicators.sma20;
 
+  // ATR proximity threshold (optional — only applied when atr14 is available)
+  const atrThreshold = indicators.atr14 != null ? indicators.atr14.times("0.3") : null;
+
   // LONG confluence: close is between BB20 lower and BB4 lower
   // (BB4 lower is inside BB20 lower on the upside, so BB4 lower > BB20 lower)
   if (
@@ -116,6 +142,11 @@ function detectSRConfluence(
     lte(close, bb4Lower) &&
     isDirectionAllowed("LONG", bias)
   ) {
+    // ATR filter: close must be within ATR14 × 0.3 of bb20Lower (support level)
+    if (atrThreshold != null) {
+      const distanceFromLevel = close.minus(bb20Lower).abs();
+      if (distanceFromLevel.greaterThan(atrThreshold)) return null;
+    }
     return {
       detectionType: "SR_CONFLUENCE",
       direction: "LONG",
@@ -140,6 +171,11 @@ function detectSRConfluence(
     lte(close, bb20Upper) &&
     isDirectionAllowed("SHORT", bias)
   ) {
+    // ATR filter: close must be within ATR14 × 0.3 of bb20Upper (resistance level)
+    if (atrThreshold != null) {
+      const distanceFromLevel = bb20Upper.minus(close).abs();
+      if (distanceFromLevel.greaterThan(atrThreshold)) return null;
+    }
     return {
       detectionType: "SR_CONFLUENCE",
       direction: "SHORT",
@@ -250,6 +286,7 @@ export function detectWatching(
  *
  * Reasons:
  * - 'bias_changed': current bias no longer permits the session direction
+ * - 'bias_changed_to_neutral': current bias is NEUTRAL (no directional conviction)
  * - 'price_breakout': price has moved beyond the opposite BB20 band
  */
 export function checkInvalidation(
@@ -258,6 +295,11 @@ export function checkInvalidation(
   session: WatchSession,
   currentBias?: DailyBias,
 ): string | null {
+  // NEUTRAL bias — invalidate any active WATCHING session (no directional conviction)
+  if (currentBias === "NEUTRAL") {
+    return "bias_changed_to_neutral";
+  }
+
   // Bias changed — direction no longer permitted
   if (currentBias !== undefined && !isDirectionAllowed(session.direction, currentBias)) {
     return "bias_changed";

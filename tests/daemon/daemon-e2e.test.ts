@@ -202,6 +202,7 @@ function createMockAdapter(overrides?: Partial<ExchangeAdapter>): ExchangeAdapte
       contractSize: new Decimal("1"),
     })),
     setLeverage: mock(async () => {}),
+    transfer: mock(() => Promise.resolve({ id: "mock-transfer-id", status: "ok" })),
     ...overrides,
   };
 }

@@ -241,6 +241,7 @@ function buildDeps(overrides?: Partial<PipelineDeps>): PipelineDeps {
       contractSize: new Decimal("1"),
     })),
     setLeverage: mock(async () => {}),
+    transfer: mock(async () => ({ id: "mock-transfer-id", status: "ok" })),
     fetchOHLCV: mock(async () => []),
   };
 

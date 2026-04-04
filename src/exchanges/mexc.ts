@@ -96,4 +96,13 @@ export class MexcAdapter extends BaseExchangeAdapter {
   setLeverage(_leverage: number, _symbol: string): Promise<void> {
     throw new ExchangeNotImplementedError(this.exchangeName, "setLeverage");
   }
+
+  transfer(
+    _currency: string,
+    _amount: Decimal,
+    _fromAccount: string,
+    _toAccount: string,
+  ): Promise<{ id: string; status: string }> {
+    throw new ExchangeNotImplementedError(this.exchangeName, "transfer");
+  }
 }

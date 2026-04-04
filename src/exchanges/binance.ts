@@ -469,6 +469,37 @@ export class BinanceAdapter extends BaseExchangeAdapter {
   }
 
   // ---------------------------------------------------------------------------
+  // WRITE — transfer
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Transfers funds between Binance accounts (e.g. future → spot) via CCXT.
+   *
+   * CCXT signature: exchange.transfer(currency, amount, fromAccount, toAccount)
+   * Returns { id, status } from the exchange response.
+   */
+  async transfer(
+    currency: string,
+    amount: Decimal,
+    fromAccount: string,
+    toAccount: string,
+  ): Promise<{ id: string; status: string }> {
+    return this.withRetry(async () => {
+      const result = await this.ccxt.transfer(
+        currency,
+        amount.toNumber(),
+        fromAccount,
+        toAccount,
+      );
+
+      return {
+        id: String((result as Record<string, unknown>).id ?? ""),
+        status: String((result as Record<string, unknown>).status ?? "ok"),
+      };
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
 

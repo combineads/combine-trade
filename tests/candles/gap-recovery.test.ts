@@ -101,6 +101,7 @@ function createMockAdapter(
       contractSize: new Decimal("1"),
     }),
     setLeverage: async () => {},
+    transfer: async () => ({ id: "mock-transfer-id", status: "ok" }),
   };
 }
 

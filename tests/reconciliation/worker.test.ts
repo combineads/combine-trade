@@ -60,6 +60,7 @@ function createMockAdapter(overrides?: Partial<ExchangeAdapter>): ExchangeAdapte
       }),
     ),
     setLeverage: mock(() => Promise.resolve()),
+    transfer: mock(() => Promise.resolve({ id: "mock-transfer-id", status: "ok" })),
     ...overrides,
   };
 }

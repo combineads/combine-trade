@@ -86,6 +86,7 @@ function createMockAdapter(
       }),
     ),
     setLeverage: mock(() => Promise.resolve()),
+    transfer: mock(() => Promise.resolve({ id: "mock-transfer-id", status: "ok" })),
     ...overrides,
   };
 }

@@ -80,6 +80,9 @@ class TestAdapter extends BaseExchangeAdapter {
   setLeverage(): Promise<void> {
     return Promise.resolve();
   }
+  transfer(): Promise<{ id: string; status: string }> {
+    return Promise.resolve({ id: "mock-transfer-id", status: "ok" });
+  }
 }
 
 // ---------------------------------------------------------------------------

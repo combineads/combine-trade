@@ -33,6 +33,7 @@ function createMockAdapter(): ExchangeAdapter {
     watchOHLCV: mock(async () => () => {}),
     getExchangeInfo: mock(async () => ({ symbol: "", tickSize: {} as never, minOrderSize: {} as never, maxLeverage: 125, contractSize: {} as never })),
     setLeverage: mock(async () => {}),
+    transfer: mock(async () => ({ id: "mock-transfer-id", status: "ok" })),
   };
 }
 

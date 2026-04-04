@@ -267,6 +267,13 @@ export abstract class BaseExchangeAdapter implements ExchangeAdapter {
   abstract getExchangeInfo(symbol: string): Promise<ExchangeSymbolInfo>;
 
   abstract setLeverage(leverage: number, symbol: string): Promise<void>;
+
+  abstract transfer(
+    currency: string,
+    amount: Decimal,
+    fromAccount: string,
+    toAccount: string,
+  ): Promise<{ id: string; status: string }>;
 }
 
 // Re-export errors for convenience

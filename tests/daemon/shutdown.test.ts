@@ -80,6 +80,7 @@ function createMockAdapter(overrides: Partial<ExchangeAdapter> = {}): ExchangeAd
       contractSize: {} as never,
     })),
     setLeverage: mock(async () => {}),
+    transfer: mock(async () => ({ id: "mock-transfer-id", status: "ok" })),
     ...overrides,
   };
 }

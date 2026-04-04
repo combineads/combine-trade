@@ -57,6 +57,7 @@ function makeAdapter(overrides: Partial<ExchangeAdapter> = {}): ExchangeAdapter 
     watchOHLCV: mock(() => Promise.reject(new Error("not implemented"))),
     getExchangeInfo: mock(() => Promise.reject(new Error("not implemented"))),
     setLeverage: mock(() => Promise.reject(new Error("not implemented"))),
+    transfer: mock(() => Promise.resolve({ id: "mock-transfer-id", status: "ok" })),
     ...overrides,
   };
 }

@@ -55,6 +55,14 @@ const mockAdapter: ExchangeAdapter = {
   setLeverage(_leverage: number, _symbol: string): Promise<void> {
     throw new Error("not implemented");
   },
+  transfer(
+    _currency: string,
+    _amount: Decimal,
+    _fromAccount: string,
+    _toAccount: string,
+  ): Promise<{ id: string; status: string }> {
+    throw new Error("not implemented");
+  },
 };
 
 // ---------------------------------------------------------------------------

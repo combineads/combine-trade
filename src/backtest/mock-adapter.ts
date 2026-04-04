@@ -497,4 +497,13 @@ export class MockExchangeAdapter implements ExchangeAdapter {
   async setLeverage(_leverage: number, _symbol: string): Promise<void> {
     // No-op: leverage is not simulated in this adapter
   }
+
+  async transfer(
+    _currency: string,
+    _amount: Decimal,
+    _fromAccount: string,
+    _toAccount: string,
+  ): Promise<{ id: string; status: string }> {
+    return { id: "mock-transfer-id", status: "ok" };
+  }
 }

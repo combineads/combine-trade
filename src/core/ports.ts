@@ -80,6 +80,12 @@ export type ExchangeAdapter = {
   watchOHLCV(symbol: string, timeframe: string, callback: OHLCVCallback): Promise<Unsubscribe>;
   getExchangeInfo(symbol: string): Promise<ExchangeSymbolInfo>;
   setLeverage(leverage: number, symbol: string): Promise<void>;
+  transfer(
+    currency: string,
+    amount: Decimal,
+    fromAccount: string,
+    toAccount: string,
+  ): Promise<{ id: string; status: string }>;
 };
 
 // ---------------------------------------------------------------------------

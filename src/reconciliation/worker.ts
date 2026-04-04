@@ -63,9 +63,18 @@ export type ReconciliationHandle = {
 /**
  * Dependency injection interface for the reconciliation worker.
  * Keeps the worker testable by abstracting DB and order operations.
+ *
+ * IMPORTANT — getActiveTickets implementation contract:
+ *   The implementation MUST use SELECT ... FOR UPDATE to lock the rows for
+ *   the duration of the reconciliation transaction. This prevents race
+ *   conditions where another process modifies a SymbolState row between the
+ *   point of reading and the point of applying corrective action.
+ *   Example (postgres.js):
+ *     sql`SELECT ... FROM tickets WHERE state != 'CLOSED' FOR UPDATE`
  */
 export type ReconciliationDeps = {
-  /** Fetch active tickets (state != 'CLOSED') from DB */
+  /** Fetch active tickets (state != 'CLOSED') from DB.
+   *  Implementation MUST use SELECT ... FOR UPDATE to lock rows. */
   getActiveTickets: () => Promise<TicketSnapshot[]>;
 
   /** Fetch set of "symbol:exchange" keys with pending orders */
@@ -87,6 +96,17 @@ export type ReconciliationDeps = {
     eventType: string,
     data: Record<string, unknown>,
     meta?: { symbol?: string; exchange?: string },
+  ) => Promise<void>;
+
+  /**
+   * Send a Slack alert (optional).
+   * Called fire-and-forget after each successful panic close.
+   * Errors are swallowed — reconciliation continues regardless.
+   * Implement using sendSlackAlert(SlackEventType.RECONCILIATION_MISMATCH, details).
+   */
+  sendSlackAlert?: (
+    eventType: string,
+    details: Record<string, string | number | boolean | undefined>,
   ) => Promise<void>;
 };
 
@@ -184,6 +204,24 @@ export async function runOnce(
         },
         { symbol: position.symbol, exchange: position.exchange },
       );
+
+      // Fire-and-forget Slack alert — never blocks reconciliation
+      if (deps.sendSlackAlert !== undefined) {
+        deps
+          .sendSlackAlert("RECONCILIATION_MISMATCH", {
+            symbol: position.symbol,
+            exchange: position.exchange,
+            size: position.size.toString(),
+            side: position.side,
+          })
+          .catch((alertErr: unknown) => {
+            log.warn("sendSlackAlert failed after panic close", {
+              symbol: position.symbol,
+              exchange: position.exchange,
+              error: alertErr instanceof Error ? alertErr.message : String(alertErr),
+            });
+          });
+      }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       log.error("action failed for unmatched position", {

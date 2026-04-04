@@ -11,6 +11,7 @@ import {
   recordOrder,
   ExecutionModeError,
   type ExecuteEntryParams,
+  type SpreadCheckConfig,
 } from "../../src/orders/executor";
 
 // ---------------------------------------------------------------------------
@@ -641,6 +642,84 @@ describe("executor", () => {
 
       expect(result.entryOrder).not.toBeNull();
       expect(result.entryOrder!.exchange).toBe("okx");
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Pre-order spread check
+  // ---------------------------------------------------------------------------
+
+  describe("spread check (pre-order)", () => {
+    it("no spreadCheck provided -> proceeds normally (spread check skipped)", async () => {
+      const params = makeEntryParams(); // spreadCheck not set
+      const result = await executeEntry(params);
+
+      expect(result.success).toBe(true);
+      expect(result.aborted).toBe(false);
+    });
+
+    it("spreadCheck within threshold -> proceeds to place order", async () => {
+      const adapter = createMockAdapter();
+      const spreadCheck: SpreadCheckConfig = {
+        bid: d("49990"),
+        ask: d("50010"),
+        // spreadPct = 20/50000 = 0.0004 < 0.001
+        maxSpreadPct: d("0.001"),
+      };
+      const params = makeEntryParams({ adapter, spreadCheck });
+      const result = await executeEntry(params);
+
+      expect(result.success).toBe(true);
+      expect(result.aborted).toBe(false);
+      // setLeverage must have been called (order was placed)
+      expect(adapter.setLeverage).toHaveBeenCalledTimes(1);
+    });
+
+    it("spreadCheck above threshold -> aborts BEFORE placing any order", async () => {
+      const adapter = createMockAdapter();
+      const spreadCheck: SpreadCheckConfig = {
+        bid: d("49000"),
+        ask: d("51000"),
+        // spreadPct = 2000/50000 = 0.04 (4%) > 0.001
+        maxSpreadPct: d("0.001"),
+      };
+      const params = makeEntryParams({ adapter, spreadCheck });
+      const result = await executeEntry(params);
+
+      expect(result.success).toBe(false);
+      expect(result.aborted).toBe(true);
+      expect(result.abortReason).toContain("spread too wide");
+      expect(result.entryOrder).toBeNull();
+      expect(result.slOrder).toBeNull();
+      // No exchange calls should have been made
+      expect(adapter.setLeverage).not.toHaveBeenCalled();
+      expect(adapter.createOrder).not.toHaveBeenCalled();
+    });
+
+    it("spreadCheck abort reason includes computed spreadPct and maxSpreadPct", async () => {
+      const spreadCheck: SpreadCheckConfig = {
+        bid: d("49000"),
+        ask: d("51000"),
+        maxSpreadPct: d("0.001"),
+      };
+      const params = makeEntryParams({ spreadCheck });
+      const result = await executeEntry(params);
+
+      expect(result.abortReason).toContain("0.001");
+    });
+
+    it("spreadCheck at exact threshold (boundary) proceeds normally", async () => {
+      // bid=99.95, ask=100.05 => spreadPct=0.001 == maxSpreadPct (should pass)
+      const spreadCheck: SpreadCheckConfig = {
+        bid: d("99.95"),
+        ask: d("100.05"),
+        maxSpreadPct: d("0.001"),
+      };
+      const params = makeEntryParams({ spreadCheck });
+      const result = await executeEntry(params);
+
+      expect(result.success).toBe(true);
+      expect(result.aborted).toBe(false);
     });
   });
 

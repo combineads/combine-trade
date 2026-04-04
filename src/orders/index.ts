@@ -4,7 +4,8 @@ export type {
   ExecuteEntryResult,
   OrderRecord,
   RecordOrderParams,
+  SpreadCheckConfig,
 } from "./executor";
 export { ExecutionModeError, emergencyClose, executeEntry, recordOrder } from "./executor";
-export type { SlippageConfig, SlippageResult } from "./slippage";
-export { checkSlippage, loadSlippageConfig } from "./slippage";
+export type { SlippageConfig, SlippageResult, SpreadCheckResult } from "./slippage";
+export { checkSlippage, checkSpread, loadSlippageConfig } from "./slippage";

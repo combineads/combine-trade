@@ -29,7 +29,7 @@ import {
   type OrderType,
 } from "@/core/types";
 import type { NewOrderRow } from "@/db/schema";
-import { checkSlippage, type SlippageConfig } from "./slippage";
+import { checkSlippage, checkSpread, type SlippageConfig } from "./slippage";
 
 // ---------------------------------------------------------------------------
 // Logger
@@ -62,6 +62,15 @@ const SL_TIMEOUT_MS = 3_000;
 // Types
 // ---------------------------------------------------------------------------
 
+export type SpreadCheckConfig = {
+  /** Current best bid price (fetched by caller before invoking executeEntry). */
+  bid: Decimal;
+  /** Current best ask price (fetched by caller before invoking executeEntry). */
+  ask: Decimal;
+  /** Maximum allowed bid/ask spread ratio (e.g. 0.001 for 0.1%). */
+  maxSpreadPct: Decimal;
+};
+
 export type ExecuteEntryParams = {
   adapter: ExchangeAdapter;
   symbol: string;
@@ -73,6 +82,13 @@ export type ExecuteEntryParams = {
   size: Decimal;
   leverage: number;
   slippageConfig: SlippageConfig;
+  /**
+   * Optional pre-order spread check. When provided, executeEntry will call
+   * checkSpread(bid, ask, maxSpreadPct) before placing any order. If the spread
+   * exceeds the threshold the entry is aborted (no exchange calls made).
+   * The caller is responsible for fetching current bid/ask from the adapter.
+   */
+  spreadCheck?: SpreadCheckConfig;
 };
 
 /** Lightweight order row (pre-DB insert shape) returned from the executor */
@@ -348,6 +364,7 @@ export async function executeEntry(params: ExecuteEntryParams): Promise<ExecuteE
     size,
     leverage,
     slippageConfig,
+    spreadCheck,
   } = params;
 
   // 1. Mode guard
@@ -367,7 +384,29 @@ export async function executeEntry(params: ExecuteEntryParams): Promise<ExecuteE
     leverage: leverage.toString(),
   });
 
-  // 2. Set leverage
+  // 2. Pre-order spread check (optional — caller provides current bid/ask)
+  if (spreadCheck !== undefined) {
+    const spreadResult = checkSpread(spreadCheck.bid, spreadCheck.ask, spreadCheck.maxSpreadPct);
+
+    if (!spreadResult.passed) {
+      log.warn("spread too wide — aborting entry", {
+        symbol,
+        exchange,
+        spreadPct: spreadResult.spreadPct.toString(),
+        maxSpreadPct: spreadCheck.maxSpreadPct.toString(),
+      });
+
+      return {
+        success: false,
+        entryOrder: null,
+        slOrder: null,
+        aborted: true,
+        abortReason: `spread too wide: ${spreadResult.spreadPct.toString()} > ${spreadCheck.maxSpreadPct.toString()}`,
+      };
+    }
+  }
+
+  // 3. Set leverage
   await adapter.setLeverage(leverage, symbol);
 
   // 3. Attempt bracket order

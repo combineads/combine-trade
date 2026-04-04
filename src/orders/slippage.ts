@@ -1,11 +1,19 @@
 import type Decimal from "decimal.js";
 import { and, eq } from "drizzle-orm";
 
-import { abs, d, div, lte, sub } from "@/core/decimal";
+import { abs, add, d, div, lte, sub } from "@/core/decimal";
 import type { DbInstance } from "@/db/pool";
 import { commonCodeTable } from "@/db/schema";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+/** Result of a pre-order spread check (bid/ask spread vs. threshold). */
+export type SpreadCheckResult = {
+  /** true when spreadPct <= maxSpreadPct (safe to place order). */
+  passed: boolean;
+  /** (ask - bid) / ((ask + bid) / 2) — mid-price relative spread. */
+  spreadPct: Decimal;
+};
 
 /** Result of a slippage check against the max-spread threshold. */
 export type SlippageResult = {
@@ -63,6 +71,37 @@ export function checkSlippage(
     slippagePct,
     expectedPrice,
     filledPrice,
+  };
+}
+
+// ─── checkSpread (pre-order bid/ask spread guard) ─────────────────────────────
+
+/**
+ * Checks whether the current bid/ask spread is within the allowed threshold
+ * before placing an order.
+ *
+ * Formula:
+ * - `spread = ask - bid`
+ * - `spreadPct = spread / ((ask + bid) / 2)` (mid-price relative spread)
+ * - `passed = spreadPct <= maxSpreadPct`
+ *
+ * This is a PRE-ORDER check (unlike checkSlippage which is post-fill).
+ *
+ * @param bid          - Current best bid price.
+ * @param ask          - Current best ask price.
+ * @param maxSpreadPct - Maximum allowed spread ratio (e.g. 0.001 for 0.1%).
+ * @returns SpreadCheckResult with pass/fail verdict and computed spreadPct.
+ * @throws When bid + ask is zero (degenerate market data).
+ */
+export function checkSpread(bid: Decimal, ask: Decimal, maxSpreadPct: Decimal): SpreadCheckResult {
+  const spread = sub(ask, bid);
+  const mid = div(add(ask, bid), d("2"));
+  const spreadPct = div(spread, mid);
+  const passed = lte(spreadPct, maxSpreadPct);
+
+  return {
+    passed,
+    spreadPct,
   };
 }
 

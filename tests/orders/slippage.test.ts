@@ -2,8 +2,8 @@ import { describe, expect, it } from "bun:test";
 import Decimal from "decimal.js";
 
 import { d } from "../../src/core/decimal";
-import { checkSlippage } from "../../src/orders/slippage";
-import type { SlippageResult } from "../../src/orders/slippage";
+import { checkSlippage, checkSpread } from "../../src/orders/slippage";
+import type { SlippageResult, SpreadCheckResult } from "../../src/orders/slippage";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -125,5 +125,80 @@ describe("checkSlippage", () => {
 
     const tiny = checkSlippage(d("100"), d("100.001"), d("0"));
     expect(tiny.passed).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// checkSpread — pre-order bid/ask spread guard
+// ---------------------------------------------------------------------------
+
+describe("checkSpread", () => {
+  it("zero spread (bid === ask) returns passed=true, spreadPct=0", () => {
+    // Degenerate but valid: bid == ask
+    const result = checkSpread(d("100"), d("100"), d("0.001"));
+
+    expect(result.passed).toBe(true);
+    expect(result.spreadPct.isZero()).toBe(true);
+  });
+
+  it("spread below threshold returns passed=true", () => {
+    // bid=99.95, ask=100.05 => spread=0.10, mid=100, spreadPct=0.001 (0.1%)
+    const result = checkSpread(d("99.95"), d("100.05"), d("0.002"));
+
+    expect(result.passed).toBe(true);
+    expect(result.spreadPct.equals(d("0.001"))).toBe(true);
+  });
+
+  it("spread at exact threshold returns passed=true (boundary)", () => {
+    // bid=99.95, ask=100.05 => spreadPct=0.001
+    const result = checkSpread(d("99.95"), d("100.05"), d("0.001"));
+
+    expect(result.passed).toBe(true);
+    expect(result.spreadPct.equals(d("0.001"))).toBe(true);
+  });
+
+  it("spread above threshold returns passed=false", () => {
+    // bid=99, ask=101 => spread=2, mid=100, spreadPct=0.02 (2%) > 0.1%
+    const result = checkSpread(d("99"), d("101"), d("0.001"));
+
+    expect(result.passed).toBe(false);
+    expect(result.spreadPct.equals(d("0.02"))).toBe(true);
+  });
+
+  it("wide spread on cheap token returns passed=false", () => {
+    // bid=0.099, ask=0.101 => spread=0.002, mid=0.1, spreadPct=0.02 (2%)
+    const result = checkSpread(d("0.099"), d("0.101"), d("0.001"));
+
+    expect(result.passed).toBe(false);
+    expect(result.spreadPct.equals(d("0.02"))).toBe(true);
+  });
+
+  it("uses mid-price formula: (ask - bid) / ((ask + bid) / 2)", () => {
+    // bid=49900, ask=50100 => spread=200, mid=50000, spreadPct=200/50000=0.004
+    const result = checkSpread(d("49900"), d("50100"), d("0.01"));
+
+    expect(result.passed).toBe(true);
+    expect(result.spreadPct.equals(d("0.004"))).toBe(true);
+  });
+
+  it("spreadPct return value is a Decimal instance", () => {
+    const result = checkSpread(d("99.95"), d("100.05"), d("0.001"));
+
+    expect(result.spreadPct).toBeInstanceOf(Decimal);
+  });
+
+  it("tight threshold (0.0001) rejects typical crypto spread", () => {
+    // bid=49990, ask=50010 => spread=20, mid=50000, spreadPct=0.0004 > 0.0001
+    const result = checkSpread(d("49990"), d("50010"), d("0.0001"));
+
+    expect(result.passed).toBe(false);
+  });
+
+  it("very small prices do not cause precision issues", () => {
+    // bid=0.000099, ask=0.000101 => spread=0.000002, mid=0.0001, pct=0.02
+    const result = checkSpread(d("0.000099"), d("0.000101"), d("0.03"));
+
+    expect(result.passed).toBe(true);
+    expect(result.spreadPct.equals(d("0.02"))).toBe(true);
   });
 });

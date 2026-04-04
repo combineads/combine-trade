@@ -1,4 +1,10 @@
 export { type CleanupResult, cleanupOldCandles } from "./cleanup.ts";
+export { CandleCollector, type CollectorStatus } from "./collector.ts";
+export {
+  type CandleGap,
+  detectGaps,
+  getTimeframeDurationMs,
+} from "./gap-detection.ts";
 export {
   buildDailyUrl,
   buildMonthlyUrl,

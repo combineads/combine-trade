@@ -1,6 +1,9 @@
 import { PositionsTable } from "../components/dashboard/PositionsTable.tsx";
+import { RecentSignals } from "../components/dashboard/RecentSignals.tsx";
+import { RecentTrades } from "../components/dashboard/RecentTrades.tsx";
 import { SymbolCard, SymbolCardSkeleton } from "../components/dashboard/SymbolCard.tsx";
 import { SystemStatusRow } from "../components/dashboard/SystemStatusRow.tsx";
+import { TodayPerformance } from "../components/dashboard/TodayPerformance.tsx";
 import { useSymbolStates } from "../hooks/useApi.ts";
 
 export function DashboardPage() {
@@ -49,89 +52,13 @@ export function DashboardPage() {
           </section>
         </div>
 
-        {/* Right column (2/5 = 40%) — placeholder for Wave 7 */}
+        {/* Right column (2/5 = 40%) */}
         <div className="flex flex-col gap-6 lg:col-span-2">
-          <RightColumnPlaceholder />
+          <TodayPerformance />
+          <RecentTrades />
+          <RecentSignals />
         </div>
       </div>
     </main>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Placeholder for right column (T-11-011)                            */
-/* ------------------------------------------------------------------ */
-
-function RightColumnPlaceholder() {
-  return (
-    <>
-      {/* Today's performance placeholder */}
-      <div
-        className="rounded-lg border p-4"
-        style={{
-          backgroundColor: "#1e293b",
-          borderColor: "#334155",
-        }}
-      >
-        <h2 className="mb-3 text-sm font-medium" style={{ color: "#94a3b8" }}>
-          오늘의 성과
-        </h2>
-        <div className="h-10 w-40 animate-pulse rounded" style={{ backgroundColor: "#334155" }} />
-        <div
-          className="mt-2 h-4 w-28 animate-pulse rounded"
-          style={{ backgroundColor: "#334155" }}
-        />
-      </div>
-
-      {/* Recent trades placeholder */}
-      <div
-        className="rounded-lg border p-4"
-        style={{
-          backgroundColor: "#1e293b",
-          borderColor: "#334155",
-        }}
-      >
-        <h2 className="mb-3 text-sm font-medium" style={{ color: "#94a3b8" }}>
-          최근 거래
-        </h2>
-        <div
-          className="mb-2 h-4 animate-pulse rounded"
-          style={{ backgroundColor: "#334155", width: "85%" }}
-        />
-        <div
-          className="mb-2 h-4 animate-pulse rounded"
-          style={{ backgroundColor: "#334155", width: "75%" }}
-        />
-        <div
-          className="mb-2 h-4 animate-pulse rounded"
-          style={{ backgroundColor: "#334155", width: "65%" }}
-        />
-      </div>
-
-      {/* Recent signals placeholder */}
-      <div
-        className="rounded-lg border p-4"
-        style={{
-          backgroundColor: "#1e293b",
-          borderColor: "#334155",
-        }}
-      >
-        <h2 className="mb-3 text-sm font-medium" style={{ color: "#94a3b8" }}>
-          최근 시그널
-        </h2>
-        <div
-          className="mb-2 h-4 animate-pulse rounded"
-          style={{ backgroundColor: "#334155", width: "80%" }}
-        />
-        <div
-          className="mb-2 h-4 animate-pulse rounded"
-          style={{ backgroundColor: "#334155", width: "70%" }}
-        />
-        <div
-          className="mb-2 h-4 animate-pulse rounded"
-          style={{ backgroundColor: "#334155", width: "60%" }}
-        />
-      </div>
-    </>
   );
 }

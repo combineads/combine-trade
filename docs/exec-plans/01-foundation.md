@@ -124,7 +124,7 @@
 - **pgvector 확장 설치 실패**: Bun에서 pg 드라이버와 pgvector 호환성 확인 필요. 대안: postgres.js + pgvector 직접 쿼리. **M0 spike에서 검증.**
 - **Drizzle ORM + Bun 호환성**: Drizzle의 Bun 지원이 불안정할 수 있음. 대안: Kysely 또는 직접 SQL. **M0 spike에서 검증.**
 - **CCXT + Bun 호환성**: CCXT는 Node.js 전용 의존성(node:crypto, node:http) 사용 가능. 대안: Bun Node.js 호환 레이어, 또는 직접 REST 클라이언트. **M0 spike에서 검증.**
-- **eslint-plugin-boundaries Bun 지원**: ESLint flat config와의 호환성 확인 필요. 대안: 커스텀 import 검증 스크립트.
+- **레이어 의존성 검증**: Biome에 boundaries 플러그인이 없으므로 커스텀 import 검증 스크립트(`scripts/check-layers.ts`)로 대체.
 
 ## Decision log
 - 모든 금액 컬럼에 `numeric` 타입 사용 (float 금지) — DATA_MODEL.md 준수
@@ -135,7 +135,7 @@
 - CommonCode 시드에 NOTIFICATION 그룹 추가 (Slack 웹훅 URL 등)
 - ORM 선택은 M0 spike 결과에 따라 결정 (Drizzle 우선, 대안 Kysely)
 - M0 spike deferred — TECH_STACK.md에서 Drizzle + postgres.js + pgvector 조합 확정, 호환성은 M2 구현 중 자연스럽게 검증
-- ESLint 대신 Biome 사용 (TECH_STACK.md 기준) — eslint-plugin-boundaries 대안으로 커스텀 레이어 검증 스크립트 채택
+- Biome을 린터/포맷터로 사용 (TECH_STACK.md 기준) — 레이어 의존성 검증은 커스텀 스크립트(`scripts/check-layers.ts`)로 처리
 - db/queries.ts → db/schema.ts 명칭 변경 — Drizzle ORM에서 스키마 정의가 곧 타입 안전 쿼리 빌더 역할
 
 ## Consensus Log

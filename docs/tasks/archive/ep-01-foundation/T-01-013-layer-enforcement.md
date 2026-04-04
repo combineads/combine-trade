@@ -1,7 +1,7 @@
 # T-01-013 Layer dependency enforcement script
 
 ## Goal
-Create a custom import validation script at `scripts/check-layers.ts` that enforces the architectural layer rules defined in ARCHITECTURE.md. Since Biome (the project's linter) does not have an `eslint-plugin-boundaries` equivalent, this script provides the same guarantee via static import analysis.
+Create a custom import validation script at `scripts/check-layers.ts` that enforces the architectural layer rules defined in ARCHITECTURE.md. Biome에 boundaries 플러그인이 없으므로 정적 import 분석으로 동일한 보장을 제공한다.
 
 ## Why
 The pipeline module monolith architecture depends on strict layer ordering (L0→L9). Without enforcement, developers (and agents) can inadvertently introduce upward dependencies that create circular imports and violate module boundaries. An automated check in CI prevents architectural decay.

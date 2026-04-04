@@ -114,7 +114,7 @@
     "pattern": "Pipeline Module Monolith",
     "layers": 10,
     "layer_rule": "Module at layer N may only import from layers 0..N-1",
-    "enforcement": "eslint-plugin-boundaries or custom CI script",
+    "enforcement": "scripts/check-layers.ts (custom CI script)",
     "modules": [
       "core (L0)", "db (L1)", "config (L1)", "indicators (L2)", "exchanges (L2)",
       "candles (L3)", "vectors (L3)", "filters (L4)", "knn (L4)",

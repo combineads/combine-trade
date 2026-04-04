@@ -35,6 +35,16 @@ export interface LossLimitResult {
   violations: LossViolation[];
 }
 
+/** Result of the account-level daily loss limit check. */
+export interface AccountDailyLimitResult {
+  /** true when the account-level daily loss is below the threshold. */
+  allowed: boolean;
+  /** Sum of losses_today across all symbol_state rows. */
+  totalLossesToday: Decimal;
+  /** Threshold: balance × maxDailyLossPct. */
+  threshold: Decimal;
+}
+
 /** Configuration for loss limits (loaded from CommonCode). */
 export interface LossLimitConfig {
   /** Max daily loss as a ratio of balance (default 0.10 = 10%). */
@@ -217,6 +227,45 @@ export async function loadLossLimitConfig(db: DbInstance): Promise<LossLimitConf
   }
 
   return config;
+}
+
+// ---------------------------------------------------------------------------
+// DB function: checkAccountDailyLimit
+// ---------------------------------------------------------------------------
+
+/**
+ * Checks whether the account-level daily loss limit has been reached.
+ *
+ * Queries SUM(losses_today) across all rows in symbol_state (all symbols and
+ * exchanges). If the total is >= balance × maxDailyLossPct the account is
+ * blocked from new entries.
+ *
+ * Fail-closed: on empty table (SUM = 0) returns allowed = true.
+ *
+ * @param db     - Active DB instance.
+ * @param balance - Current account balance provided by the caller (from
+ *                  exchange adapter or cache). Not fetched from DB.
+ * @param config  - Loss limit configuration (re-uses LossLimitConfig.maxDailyLossPct).
+ */
+export async function checkAccountDailyLimit(
+  db: DbInstance,
+  balance: Decimal | string,
+  config: LossLimitConfig,
+): Promise<AccountDailyLimitResult> {
+  const rows = await db
+    .select({
+      total: sql<string>`COALESCE(SUM(${symbolStateTable.losses_today}::numeric), 0)`,
+    })
+    .from(symbolStateTable);
+
+  const totalLossesToday = d(rows[0]?.total ?? "0");
+  const threshold = mul(balance, config.maxDailyLossPct);
+
+  return {
+    allowed: !gte(totalLossesToday, threshold),
+    totalLossesToday,
+    threshold,
+  };
 }
 
 // ---------------------------------------------------------------------------

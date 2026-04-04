@@ -5,13 +5,14 @@
  * real DB / WebSocket connections are made.
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import type { DaemonDeps, DaemonHandle } from "../../src/daemon";
 import { startDaemon } from "../../src/daemon";
 import type { CandleCloseCallback } from "../../src/candles/types";
-import type { ReconciliationDeps, ReconciliationHandle } from "../../src/reconciliation/worker";
+import type { CrashRecoveryDeps, CrashRecoveryResult } from "../../src/daemon/crash-recovery";
 import type { ExchangeAdapter } from "../../src/core/ports";
 import type { Exchange } from "../../src/core/types";
+import type { ReconciliationDeps, ReconciliationHandle } from "../../src/reconciliation/worker";
 
 // ---------------------------------------------------------------------------
 // Call-order tracking helper
@@ -68,6 +69,38 @@ function createMockReconciliationDeps(): ReconciliationDeps {
 }
 
 // ---------------------------------------------------------------------------
+// Mock crash recovery deps factory
+// ---------------------------------------------------------------------------
+
+function createMockCrashRecoveryDeps(): CrashRecoveryDeps {
+  return {
+    adapters: new Map<Exchange, ExchangeAdapter>(),
+    getActiveTickets: mock(async () => []),
+    getPendingSymbols: mock(async () => new Set<string>()),
+    comparePositions: mock(() => ({ matched: [], unmatched: [], orphaned: [], excluded: [] })),
+    emergencyClose: mock(async () => {}),
+    setSymbolStateIdle: mock(async () => {}),
+    checkSlOnExchange: mock(async () => true),
+    reRegisterSl: mock(async () => {}),
+    restoreLossCounters: mock(async () => {}),
+    insertEvent: mock(async () => {}),
+    sendSlackAlert: mock(async () => {}),
+  };
+}
+
+function createMockRecoverFromCrash() {
+  const result: CrashRecoveryResult = {
+    matched: 0,
+    unmatched: 0,
+    orphaned: 0,
+    slReRegistered: 0,
+    errors: [],
+    durationMs: 0,
+  };
+  return mock(async () => result);
+}
+
+// ---------------------------------------------------------------------------
 // Mock CandleManager factory
 // ---------------------------------------------------------------------------
 
@@ -106,10 +139,12 @@ function buildDeps(overrides?: Partial<DaemonDeps>): {
 } {
   const candleManager = createMockCandleManager();
   const reconciliationDeps = createMockReconciliationDeps();
+  const crashRecoveryDeps = createMockCrashRecoveryDeps();
   const reconciliationHandle: ReconciliationHandle = { stop: mock(() => {}) };
   const startReconciliationFn = mock(() => reconciliationHandle);
   const initDb = mock(async () => {});
   const loadAllConfig = mock(async () => {});
+  const recoverFromCrash = createMockRecoverFromCrash();
 
   const adapters = new Map<Exchange, ExchangeAdapter>([
     ["binance", createMockAdapter()],
@@ -125,7 +160,11 @@ function buildDeps(overrides?: Partial<DaemonDeps>): {
     },
     initDb,
     loadAllConfig,
+    recoverFromCrash,
+    crashRecoveryDeps,
     startReconciliation: startReconciliationFn,
+    pipelineDeps: {} as never,
+    activeSymbols: [],
     ...overrides,
   };
 

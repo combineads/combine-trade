@@ -1,13 +1,14 @@
 /**
- * Daemon entry-point skeleton.
+ * Daemon entry-point.
  *
  * Orchestrates the startup sequence:
  *   1. initDb()           — establish DB connection
  *   2. loadAllConfig()    — load CommonCode config into memory cache
- *   3. CandleManager.start() — history sync + WebSocket collection
- *   4. onCandleClose()    — register candle-close callback (currently just logs)
- *   5. startReconciliation() — 60 s reconciliation worker
- *   6. SIGTERM / SIGINT   — graceful shutdown
+ *   3. recoverFromCrash() — reconcile positions/tickets after unclean shutdown
+ *   4. CandleManager.start() — history sync + WebSocket collection
+ *   5. onCandleClose()    — register candle-close callback (routes to pipeline)
+ *   6. startReconciliation() — 60 s reconciliation worker
+ *   7. SIGTERM / SIGINT   — graceful shutdown
  *
  * Layer: L9 — may import any lower layer.
  */
@@ -16,6 +17,9 @@ import type { CandleManager, CandleManagerConfig } from "@/candles/index";
 import { createLogger } from "@/core/logger";
 import type { ExchangeAdapter } from "@/core/ports";
 import type { Candle, Exchange, Timeframe } from "@/core/types";
+import type { CrashRecoveryDeps, CrashRecoveryResult } from "@/daemon/crash-recovery";
+import type { ActiveSymbol, PipelineDeps } from "@/daemon/pipeline";
+import { handleCandleClose } from "@/daemon/pipeline";
 import type { ReconciliationDeps, ReconciliationHandle } from "@/reconciliation/worker";
 
 // ---------------------------------------------------------------------------
@@ -52,6 +56,15 @@ export type DaemonDeps = {
   loadAllConfig: () => Promise<void>;
 
   /**
+   * Crash recovery function called once at startup after loadAllConfig.
+   * Signature matches recoverFromCrash from @/daemon/crash-recovery.
+   */
+  recoverFromCrash: (deps: CrashRecoveryDeps) => Promise<CrashRecoveryResult>;
+
+  /** Crash recovery dependency bag (injectable for tests) */
+  crashRecoveryDeps: CrashRecoveryDeps;
+
+  /**
    * Factory that starts the reconciliation worker (injectable for tests).
    * Signature matches startReconciliation from @/reconciliation/worker.
    */
@@ -60,6 +73,18 @@ export type DaemonDeps = {
     deps: ReconciliationDeps,
     config?: { intervalMs?: number },
   ) => ReconciliationHandle;
+
+  /**
+   * Pipeline dependency bag injected into handleCandleClose on every
+   * candle-close event. Enables full DI for the trading pipeline.
+   */
+  pipelineDeps: PipelineDeps;
+
+  /**
+   * List of active trading symbols. Candle-close events are only processed
+   * for symbols present in this list.
+   */
+  activeSymbols: ReadonlyArray<ActiveSymbol>;
 };
 
 /**
@@ -85,7 +110,11 @@ export async function startDaemon(deps: DaemonDeps): Promise<DaemonHandle> {
     candleManagerConfig,
     initDb,
     loadAllConfig,
+    recoverFromCrash,
+    crashRecoveryDeps,
     startReconciliation,
+    pipelineDeps,
+    activeSymbols,
   } = deps;
 
   // Duplicate-shutdown guard
@@ -100,20 +129,43 @@ export async function startDaemon(deps: DaemonDeps): Promise<DaemonHandle> {
   await loadAllConfig();
   log.info("config_loaded");
 
-  // ---- Step 3: Start CandleManager (history sync + WebSocket) ----
+  // ---- Step 3: Crash recovery — reconcile positions/tickets after unclean shutdown ----
+  const recoveryResult = await recoverFromCrash(crashRecoveryDeps);
+  log.info("crash_recovery_done", {
+    details: {
+      matched: recoveryResult.matched,
+      unmatched: recoveryResult.unmatched,
+      orphaned: recoveryResult.orphaned,
+      slReRegistered: recoveryResult.slReRegistered,
+      errors: recoveryResult.errors.length,
+    },
+  });
+
+  // ---- Step 4: Start CandleManager (history sync + WebSocket) ----
   await candleManager.start(candleManagerConfig);
   log.info("candle_manager_started");
 
-  // ---- Step 4: Register candle-close callback ----
+  // ---- Step 5: Register candle-close callback (routes to trading pipeline) ----
   candleManager.onCandleClose((candle: Candle, timeframe: Timeframe) => {
     log.info("candle_close", {
       symbol: candle.symbol,
       exchange: candle.exchange,
       details: { timeframe },
     });
+
+    // Delegate to the pipeline orchestrator. Fire-and-forget — errors are
+    // caught and logged inside handleCandleClose; they must never propagate
+    // up to the CandleManager subscription loop.
+    handleCandleClose(candle, timeframe, activeSymbols, pipelineDeps).catch((err: unknown) => {
+      log.error("pipeline_unhandled_error", {
+        symbol: candle.symbol,
+        exchange: candle.exchange,
+        details: { timeframe, error: String(err) },
+      });
+    });
   });
 
-  // ---- Step 5: Start reconciliation worker (60 s interval) ----
+  // ---- Step 6: Start reconciliation worker (60 s interval) ----
   const reconciliation: ReconciliationHandle = startReconciliation(adapters, reconciliationDeps, {
     intervalMs: 60_000,
   });
@@ -138,7 +190,7 @@ export async function startDaemon(deps: DaemonDeps): Promise<DaemonHandle> {
     log.info("daemon_shutdown_complete");
   }
 
-  // ---- Step 6: Signal handlers ----
+  // ---- Step 7: Signal handlers ----
   const onSignal = () => {
     stop().catch((err: unknown) => {
       log.error("stop_failed", { details: { error: String(err) } });

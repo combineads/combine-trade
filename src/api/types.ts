@@ -13,6 +13,7 @@ import type { SignalsDeps } from "@/api/routes/signals";
 import type { StatsDeps } from "@/api/routes/stats";
 import type { SymbolStatesDeps } from "@/api/routes/symbol-states";
 import type { TicketsDeps } from "@/api/routes/tickets";
+import type { TransfersDeps } from "@/api/routes/transfers";
 import type { Logger } from "@/core/logger";
 
 // ---------------------------------------------------------------------------
@@ -31,7 +32,8 @@ export type RouteDeps = HealthDeps &
   SignalsDeps &
   EventsDeps &
   ConfigDeps &
-  ControlDeps;
+  ControlDeps &
+  TransfersDeps;
 
 // ---------------------------------------------------------------------------
 // ApiServerDeps — everything the API server needs, injected from outside

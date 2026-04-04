@@ -26,6 +26,7 @@ import { createSignalsRoutes } from "../../src/api/routes/signals";
 import { createStatsRoutes } from "../../src/api/routes/stats";
 import { createSymbolStatesRoutes } from "../../src/api/routes/symbol-states";
 import { createTicketRoutes } from "../../src/api/routes/tickets";
+import { createTransferRoutes } from "../../src/api/routes/transfers";
 import type { RouteDeps } from "../../src/api/types";
 
 // ---------------------------------------------------------------------------
@@ -115,6 +116,20 @@ function createMockRouteDeps(): RouteDeps {
     createTradeBlock: mock(async () => ({ id: "tb-1", created: true })),
     deleteTradeBlock: mock(async () => true),
     recordEvent: mock(async () => {}),
+
+    // TransfersDeps
+    getTransferHistory: mock(async () => []),
+    triggerTransfer: mock(async () => ({
+      success: true,
+      transferable: {
+        walletBalance: { toString: () => "1000" } as unknown as import("../../src/core/decimal").Decimal,
+        openMargin: { toString: () => "0" } as unknown as import("../../src/core/decimal").Decimal,
+        reserve: { toString: () => "50" } as unknown as import("../../src/core/decimal").Decimal,
+        available: { toString: () => "950" } as unknown as import("../../src/core/decimal").Decimal,
+        transferAmount: { toString: () => "100" } as unknown as import("../../src/core/decimal").Decimal,
+        skip: false,
+      },
+    })),
   };
 }
 
@@ -158,6 +173,7 @@ function buildFullApp(routeDeps: RouteDeps, authDeps: AuthDeps, staticDir: strin
   api.route("/", createEventsRoutes(routeDeps));
   api.route("/", createConfigRoutes(routeDeps));
   api.route("/", createControlRoutes(routeDeps));
+  api.route("/", createTransferRoutes(routeDeps));
   api.all("/*", (c) => c.json({ error: "Not Found" }, 404));
   app.route("/api", api);
 

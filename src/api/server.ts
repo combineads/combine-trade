@@ -22,6 +22,7 @@ import { createSignalsRoutes } from "@/api/routes/signals";
 import { createStatsRoutes } from "@/api/routes/stats";
 import { createSymbolStatesRoutes } from "@/api/routes/symbol-states";
 import { createTicketRoutes } from "@/api/routes/tickets";
+import { createTransferRoutes } from "@/api/routes/transfers";
 import type { ApiServerDeps, ApiServerHandle, RouteDeps } from "@/api/types";
 
 // ---------------------------------------------------------------------------
@@ -53,6 +54,7 @@ function createApiRouter(routeDeps?: RouteDeps): Hono {
     api.route("/", createEventsRoutes(routeDeps));
     api.route("/", createConfigRoutes(routeDeps));
     api.route("/", createControlRoutes(routeDeps));
+    api.route("/", createTransferRoutes(routeDeps));
   }
 
   // Catch-all: any /api/* path that doesn't match a registered route → 404 JSON

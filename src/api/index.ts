@@ -14,5 +14,7 @@ export type { SymbolStateRow, SymbolStatesDeps } from "@/api/routes/symbol-state
 export { createSymbolStatesRoutes } from "@/api/routes/symbol-states";
 export type { TicketFilters, TicketRow, TicketsDeps } from "@/api/routes/tickets";
 export { createTicketRoutes } from "@/api/routes/tickets";
+export type { TransferEventRow, TransfersDeps } from "@/api/routes/transfers";
+export { createTransferRoutes } from "@/api/routes/transfers";
 export { createApiServer } from "@/api/server";
 export type { ApiServerDeps, ApiServerHandle, RouteDeps } from "@/api/types";

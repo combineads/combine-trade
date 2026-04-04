@@ -8,7 +8,7 @@
  * NO database imports, NO side effects.
  */
 
-import type { TicketState } from "@/core/types";
+import type { FsmState, TicketState } from "@/core/types";
 
 // ---------------------------------------------------------------------------
 // FSM events
@@ -115,4 +115,67 @@ function eventToTarget(event: FsmEvent): TicketState {
     case "CLOSE_EVENT":
       return "CLOSED";
   }
+}
+
+// ---------------------------------------------------------------------------
+// SymbolState FSM — pure-function state machine for SymbolState lifecycle.
+//
+// States:  IDLE -> WATCHING -> HAS_POSITION -> IDLE
+//          WATCHING -> IDLE (cancel watching)
+//
+// Forbidden: IDLE -> HAS_POSITION (must go through WATCHING)
+//            HAS_POSITION -> WATCHING (must close position first)
+//            self-loops (IDLE -> IDLE, WATCHING -> WATCHING, HAS_POSITION -> HAS_POSITION)
+//
+// NO database imports, NO side effects.
+// ---------------------------------------------------------------------------
+
+/** Allowed SymbolState transitions keyed by source state. */
+export const SYMBOL_STATE_TRANSITION_MAP: Readonly<Record<FsmState, readonly FsmState[]>> = {
+  IDLE: ["WATCHING"],
+  WATCHING: ["HAS_POSITION", "IDLE"],
+  HAS_POSITION: ["IDLE"],
+} as const;
+
+// ---------------------------------------------------------------------------
+// SymbolState error class
+// ---------------------------------------------------------------------------
+
+export class InvalidSymbolStateTransitionError extends Error {
+  readonly from: FsmState;
+  readonly to: FsmState;
+
+  constructor(from: FsmState, to: FsmState) {
+    super(`Invalid symbol state transition: ${from} -> ${to}`);
+    this.name = "InvalidSymbolStateTransitionError";
+    this.from = from;
+    this.to = to;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SymbolState pure functions
+// ---------------------------------------------------------------------------
+
+/**
+ * Check whether a SymbolState transition from `from` to `to` is allowed.
+ */
+export function canSymbolStateTransition(from: FsmState, to: FsmState): boolean {
+  return SYMBOL_STATE_TRANSITION_MAP[from].includes(to);
+}
+
+/**
+ * Validate a SymbolState transition. Throws {@link InvalidSymbolStateTransitionError} if not allowed.
+ */
+export function validateSymbolStateTransition(from: FsmState, to: FsmState): void {
+  if (!canSymbolStateTransition(from, to)) {
+    throw new InvalidSymbolStateTransitionError(from, to);
+  }
+}
+
+/**
+ * Return the list of SymbolState states reachable from the given state.
+ */
+export function getAllowedSymbolStateTransitions(current: FsmState): readonly FsmState[] {
+  return SYMBOL_STATE_TRANSITION_MAP[current];
 }

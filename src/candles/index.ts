@@ -17,4 +17,5 @@ export {
 } from "./history-loader.ts";
 
 export { bulkUpsertCandles, getCandles, getLatestCandleTime } from "./repository.ts";
+export { type SyncOptions, type SyncResult, syncCandles } from "./sync.ts";
 export type { CandleCloseCallback } from "./types.ts";

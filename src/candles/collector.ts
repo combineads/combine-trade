@@ -4,6 +4,7 @@ import type { Candle, Timeframe } from "@/core/types";
 import { getDb } from "@/db/pool";
 import type { NewCandle } from "./history-loader";
 import { bulkUpsertCandles } from "./repository";
+import type { CandleCloseCallback } from "./types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -26,6 +27,8 @@ const TIMEFRAME_DURATION_MS: Record<Timeframe, number> = {
 };
 
 const RECONNECT_MULTIPLIER = 3;
+
+const MAX_RECENT_CLOSES = 1000;
 
 // ---------------------------------------------------------------------------
 // Logger
@@ -52,6 +55,8 @@ export class CandleCollector {
   private lastReceivedAt: Date | null = null;
   private lastReceivedPerSub = new Map<string, Date>();
   private reconnectCallbacks = new Set<() => void>();
+  private closeCallbacks = new Set<CandleCloseCallback>();
+  private recentCloses = new Set<string>();
 
   // -----------------------------------------------------------------------
   // start
@@ -135,6 +140,17 @@ export class CandleCollector {
   }
 
   // -----------------------------------------------------------------------
+  // onCandleClose
+  // -----------------------------------------------------------------------
+
+  onCandleClose(callback: CandleCloseCallback): Unsubscribe {
+    this.closeCallbacks.add(callback);
+    return () => {
+      this.closeCallbacks.delete(callback);
+    };
+  }
+
+  // -----------------------------------------------------------------------
   // Internal: handle incoming candle
   // -----------------------------------------------------------------------
 
@@ -174,7 +190,19 @@ export class CandleCollector {
     };
 
     // Persist to DB — never let a failure stop collection
-    bulkUpsertCandles(getDb(), [newCandle]).catch((err) => {
+    try {
+      bulkUpsertCandles(getDb(), [newCandle]).catch((err) => {
+        log.error("upsert_failed", {
+          symbol: candle.symbol,
+          details: {
+            timeframe: candle.timeframe,
+            open_time: candle.open_time.toISOString(),
+            is_closed: candle.is_closed,
+            error: err instanceof Error ? err.message : String(err),
+          },
+        });
+      });
+    } catch (err) {
       log.error("upsert_failed", {
         symbol: candle.symbol,
         details: {
@@ -184,7 +212,7 @@ export class CandleCollector {
           error: err instanceof Error ? err.message : String(err),
         },
       });
-    });
+    }
 
     log.debug("candle_received", {
       symbol: candle.symbol,
@@ -194,6 +222,22 @@ export class CandleCollector {
         is_closed: candle.is_closed,
       },
     });
+
+    // Fire close callbacks for closed candles (with dedup)
+    if (candle.is_closed) {
+      const dedupKey = `${candle.symbol}:${candle.exchange}:${candle.timeframe}:${candle.open_time.getTime()}`;
+      if (!this.recentCloses.has(dedupKey)) {
+        this.recentCloses.add(dedupKey);
+
+        // Evict oldest entries when cache exceeds max size
+        if (this.recentCloses.size > MAX_RECENT_CLOSES) {
+          const it = this.recentCloses.values();
+          this.recentCloses.delete(it.next().value as string);
+        }
+
+        this.fireCloseCallbacks(candle, timeframe);
+      }
+    }
   }
 
   // -----------------------------------------------------------------------
@@ -207,6 +251,27 @@ export class CandleCollector {
       } catch (err) {
         log.error("reconnect_callback_error", {
           details: {
+            error: err instanceof Error ? err.message : String(err),
+          },
+        });
+      }
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Internal: fire candle close callbacks
+  // -----------------------------------------------------------------------
+
+  private fireCloseCallbacks(candle: Candle, timeframe: Timeframe): void {
+    for (const cb of this.closeCallbacks) {
+      try {
+        cb(candle, timeframe);
+      } catch (err) {
+        log.error("close_callback_error", {
+          symbol: candle.symbol,
+          details: {
+            timeframe,
+            open_time: candle.open_time.toISOString(),
             error: err instanceof Error ? err.message : String(err),
           },
         });

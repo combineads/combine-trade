@@ -5,6 +5,7 @@ export {
   detectGaps,
   getTimeframeDurationMs,
 } from "./gap-detection.ts";
+export { GapRecovery, type RecoveryResult } from "./gap-recovery.ts";
 export {
   buildDailyUrl,
   buildMonthlyUrl,
@@ -16,3 +17,4 @@ export {
 } from "./history-loader.ts";
 
 export { bulkUpsertCandles, getCandles, getLatestCandleTime } from "./repository.ts";
+export type { CandleCloseCallback } from "./types.ts";

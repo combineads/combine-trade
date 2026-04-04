@@ -362,3 +362,144 @@ export const vectorTable = pgTable(
 
 export type VectorRow = InferSelectModel<typeof vectorTable>;
 export type NewVectorRow = InferInsertModel<typeof vectorTable>;
+
+// ---------------------------------------------------------------------------
+// tickets table
+// ---------------------------------------------------------------------------
+
+export const ticketTable = pgTable(
+  "tickets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    symbol: text("symbol").notNull(),
+    exchange: text("exchange").notNull(),
+    signal_id: uuid("signal_id").notNull().unique(),
+    parent_ticket_id: uuid("parent_ticket_id"),
+    timeframe: text("timeframe").notNull(),
+    direction: text("direction").notNull(),
+    state: text("state").notNull().default("INITIAL"),
+    entry_price: numeric("entry_price").notNull(),
+    sl_price: numeric("sl_price").notNull(),
+    current_sl_price: numeric("current_sl_price").notNull(),
+    size: numeric("size").notNull(),
+    remaining_size: numeric("remaining_size").notNull(),
+    leverage: integer("leverage").notNull(),
+    tp1_price: numeric("tp1_price"),
+    tp2_price: numeric("tp2_price"),
+    trailing_active: boolean("trailing_active").default(false),
+    trailing_price: numeric("trailing_price"),
+    max_profit: numeric("max_profit").default("0"),
+    pyramid_count: integer("pyramid_count").default(0),
+    opened_at: timestamp("opened_at", { withTimezone: true, mode: "date" }).notNull(),
+    closed_at: timestamp("closed_at", { withTimezone: true, mode: "date" }),
+    close_reason: text("close_reason"),
+    result: text("result"),
+    pnl: numeric("pnl"),
+    pnl_pct: numeric("pnl_pct"),
+    max_favorable: numeric("max_favorable"),
+    max_adverse: numeric("max_adverse"),
+    hold_duration_sec: integer("hold_duration_sec"),
+    created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updated_at: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // FK: (symbol, exchange) → Symbol RESTRICT
+    foreignKey({
+      columns: [t.symbol, t.exchange],
+      foreignColumns: [symbolTable.symbol, symbolTable.exchange],
+    }).onDelete("restrict"),
+    // FK: signal_id → Signal RESTRICT
+    foreignKey({
+      columns: [t.signal_id],
+      foreignColumns: [signalTable.id],
+    }).onDelete("restrict"),
+    // FK: self-ref parent_ticket_id → Ticket SET NULL
+    foreignKey({
+      columns: [t.parent_ticket_id],
+      foreignColumns: [t.id],
+      name: "tickets_parent_ticket_id_fk",
+    }).onDelete("set null"),
+    // CHECK constraints
+    check("tickets_state_check", sql`${t.state} IN ('INITIAL', 'TP1_HIT', 'TP2_HIT', 'CLOSED')`),
+    check("tickets_direction_check", sql`${t.direction} IN ('LONG', 'SHORT')`),
+    check("tickets_timeframe_check", sql`${t.timeframe} IN ('5M', '1M')`),
+    check(
+      "tickets_close_reason_check",
+      sql`${t.close_reason} IS NULL OR ${t.close_reason} IN ('SL', 'TP1', 'TP2', 'TRAILING', 'TIME_EXIT', 'PANIC_CLOSE', 'MANUAL')`,
+    ),
+    check(
+      "tickets_result_check",
+      sql`${t.result} IS NULL OR ${t.result} IN ('WIN', 'LOSS', 'TIME_EXIT')`,
+    ),
+    check("tickets_exchange_check", sql`${t.exchange} IN ('binance', 'okx', 'bitget', 'mexc')`),
+    // Partial index: active tickets (state != 'CLOSED')
+    index("tickets_active_idx")
+      .on(t.symbol, t.exchange, t.state)
+      .where(sql`${t.state} != 'CLOSED'`),
+  ],
+);
+
+export type TicketRow = InferSelectModel<typeof ticketTable>;
+export type NewTicketRow = InferInsertModel<typeof ticketTable>;
+
+// ---------------------------------------------------------------------------
+// orders table
+// ---------------------------------------------------------------------------
+
+export const orderTable = pgTable(
+  "orders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ticket_id: uuid("ticket_id"),
+    exchange: text("exchange").notNull(),
+    order_type: text("order_type").notNull(),
+    status: text("status").notNull(),
+    side: text("side").notNull(),
+    price: numeric("price"),
+    expected_price: numeric("expected_price"),
+    size: numeric("size").notNull(),
+    filled_price: numeric("filled_price"),
+    filled_size: numeric("filled_size"),
+    exchange_order_id: text("exchange_order_id"),
+    intent_id: text("intent_id").notNull(),
+    idempotency_key: text("idempotency_key").notNull(),
+    slippage: numeric("slippage"),
+    error_message: text("error_message"),
+    created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updated_at: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // FK: ticket_id → Ticket SET NULL
+    foreignKey({
+      columns: [t.ticket_id],
+      foreignColumns: [ticketTable.id],
+    }).onDelete("set null"),
+    // UNIQUE(exchange, idempotency_key)
+    uniqueIndex("orders_exchange_idempotency_key_idx").on(t.exchange, t.idempotency_key),
+    // CHECK constraints
+    check("orders_exchange_check", sql`${t.exchange} IN ('binance', 'okx', 'bitget', 'mexc')`),
+    check(
+      "orders_order_type_check",
+      sql`${t.order_type} IN ('ENTRY', 'SL', 'TP1', 'TP2', 'TRAILING', 'PYRAMID', 'PANIC_CLOSE', 'TIME_EXIT')`,
+    ),
+    check(
+      "orders_status_check",
+      sql`${t.status} IN ('PENDING', 'FILLED', 'PARTIALLY_FILLED', 'CANCELLED', 'FAILED')`,
+    ),
+    check("orders_side_check", sql`${t.side} IN ('BUY', 'SELL')`),
+    // Indices
+    index("orders_ticket_id_created_at_idx").on(t.ticket_id, t.created_at),
+    index("orders_intent_id_idx").on(t.intent_id),
+  ],
+);
+
+export type OrderRow = InferSelectModel<typeof orderTable>;
+export type NewOrderRow = InferInsertModel<typeof orderTable>;

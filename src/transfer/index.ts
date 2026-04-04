@@ -9,3 +9,8 @@ export {
   type TransferExecutorDeps,
   type TransferResult,
 } from "./executor.ts";
+
+export {
+  TransferScheduler,
+  type TransferSchedulerDeps,
+} from "./scheduler.ts";

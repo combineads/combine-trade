@@ -36,7 +36,6 @@ describe("schema-vector — vectorTable structural", () => {
     expect(cols).toContain("label");
     expect(cols).toContain("grade");
     expect(cols).toContain("labeled_at");
-    expect(cols).toContain("signal_id");
     expect(cols).toContain("created_at");
   });
 
@@ -46,10 +45,6 @@ describe("schema-vector — vectorTable structural", () => {
 
   it("candle_id column is PgUUID type", () => {
     expect(vectorTable.candle_id.columnType).toBe("PgUUID");
-  });
-
-  it("signal_id column is PgUUID type", () => {
-    expect(vectorTable.signal_id.columnType).toBe("PgUUID");
   });
 
   it("candle_id column is notNull", () => {
@@ -68,15 +63,11 @@ describe("schema-vector — vectorTable structural", () => {
     expect(vectorTable.labeled_at.notNull).toBe(false);
   });
 
-  it("signal_id column is nullable", () => {
-    expect(vectorTable.signal_id.notNull).toBe(false);
-  });
-
   it("embedding column is not null", () => {
     expect(vectorTable.embedding.notNull).toBe(true);
   });
 
-  it("$inferSelect type contains all 11 expected keys", () => {
+  it("$inferSelect type contains all 10 expected keys", () => {
     type Row = typeof vectorTable.$inferSelect;
     const keys: (keyof Row)[] = [
       "id",
@@ -88,10 +79,9 @@ describe("schema-vector — vectorTable structural", () => {
       "label",
       "grade",
       "labeled_at",
-      "signal_id",
       "created_at",
     ];
-    expect(keys).toHaveLength(11);
+    expect(keys).toHaveLength(10);
   });
 });
 
@@ -221,7 +211,7 @@ describe.skipIf(!dbAvailable)("schema-vector — integration", () => {
     const vectorId = insertResult[0]!.id as string;
 
     const selectResult = await pool`
-      SELECT id, candle_id, symbol, exchange, timeframe, label, grade, labeled_at, signal_id
+      SELECT id, candle_id, symbol, exchange, timeframe, label, grade, labeled_at
       FROM vectors WHERE id = ${vectorId}
     `;
     expect(selectResult).toHaveLength(1);
@@ -232,7 +222,6 @@ describe.skipIf(!dbAvailable)("schema-vector — integration", () => {
     expect(selectResult[0]!.label).toBeNull();
     expect(selectResult[0]!.grade).toBeNull();
     expect(selectResult[0]!.labeled_at).toBeNull();
-    expect(selectResult[0]!.signal_id).toBeNull();
   });
 
   // ── Wrong dimension ───────────────────────────────────────────────────────
@@ -291,26 +280,6 @@ describe.skipIf(!dbAvailable)("schema-vector — integration", () => {
       await pool`
         INSERT INTO vectors (candle_id, symbol, exchange, timeframe, embedding)
         VALUES (${"00000000-0000-0000-0000-000000000000"}, ${"BTC/USDT"}, ${"binance"}, ${"5M"}, ${embedding}::vector)
-      `;
-      expect.unreachable("should have thrown");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      expect(msg).toMatch(/foreign key|violates/i);
-    }
-  });
-
-  // ── FK constraint: signal_id → signals ───────────────────────────────────
-
-  it("INSERT with non-existent signal_id fails with FK violation", async () => {
-    await insertParentSymbol();
-    const candleId = await insertCandle();
-    const pool = getPool();
-    const embedding = make202dim();
-
-    try {
-      await pool`
-        INSERT INTO vectors (candle_id, symbol, exchange, timeframe, embedding, signal_id)
-        VALUES (${candleId}, ${"BTC/USDT"}, ${"binance"}, ${"5M"}, ${embedding}::vector, ${"00000000-0000-0000-0000-000000000000"})
       `;
       expect.unreachable("should have thrown");
     } catch (err: unknown) {

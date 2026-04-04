@@ -56,7 +56,6 @@ export interface InsertVectorParams {
   exchange: string;
   timeframe: string;
   embedding: Float32Array;
-  signalId?: string;
 }
 
 /**
@@ -76,7 +75,6 @@ export async function insertVector(db: DbInstance, params: InsertVectorParams): 
       exchange: params.exchange,
       timeframe: params.timeframe,
       embedding: embeddingStr,
-      signal_id: params.signalId ?? null,
     })
     .returning();
 

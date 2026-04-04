@@ -110,7 +110,6 @@ describe.skipIf(!dbAvailable)("vector-repository integration", () => {
       expect(row.label).toBeNull();
       expect(row.grade).toBeNull();
       expect(row.labeled_at).toBeNull();
-      expect(row.signal_id).toBeNull();
       expect(row.created_at).toBeInstanceOf(Date);
     });
 
@@ -138,41 +137,6 @@ describe.skipIf(!dbAvailable)("vector-repository integration", () => {
       // pgvector stores as "[v1,v2,...]"
       expect(rawRow[0]!.emb_str).toMatch(/^\[/);
       expect(rawRow[0]!.emb_str).toMatch(/\]$/);
-    });
-
-    it("accepts optional signalId and stores it", async () => {
-      await insertParentSymbol();
-      const candleId = await insertCandle();
-      const pool = getPool();
-
-      // Insert a watch_session + signal to get a valid signal_id
-      const wsResult = await pool`
-        INSERT INTO watch_session (symbol, exchange, detection_type, direction, detected_at)
-        VALUES (${"BTC/USDT"}, ${"binance"}, ${"BB4_TOUCH"}, ${"LONG"}, now())
-        RETURNING id
-      `;
-      const watchSessionId = wsResult[0]!.id as string;
-
-      const sigResult = await pool`
-        INSERT INTO signals
-          (symbol, exchange, watch_session_id, timeframe, signal_type, direction, entry_price, sl_price, safety_passed)
-        VALUES
-          (${"BTC/USDT"}, ${"binance"}, ${watchSessionId}, ${"5M"}, ${"DOUBLE_B"}, ${"LONG"}, ${"50000.00"}, ${"49000.00"}, ${true})
-        RETURNING id
-      `;
-      const signalId = sigResult[0]!.id as string;
-
-      const db = getDb();
-      const row = await insertVector(db, {
-        candleId,
-        symbol: "BTC/USDT",
-        exchange: "binance",
-        timeframe: "5M",
-        embedding: makeEmbedding(0.3),
-        signalId,
-      });
-
-      expect(row.signal_id).toBe(signalId);
     });
 
     it("inserts into the vectors table (verifiable via raw SQL)", async () => {

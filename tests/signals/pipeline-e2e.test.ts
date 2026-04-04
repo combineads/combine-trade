@@ -353,7 +353,6 @@ describe.skipIf(!dbAvailable)("[E2E] LONG 전체 흐름: bias=LONG_ONLY → WATC
       exchange: EXCHANGE,
       timeframe: "5M",
       embedding,
-      signalId: signal.id,
     });
     expect(vectorRow.id).toBeDefined();
 
@@ -477,7 +476,6 @@ describe.skipIf(!dbAvailable)("[E2E] SHORT A-grade 흐름: bias=SHORT_ONLY → W
       exchange: EXCHANGE,
       timeframe: "5M",
       embedding,
-      signalId: signal.id,
     });
 
     // 10. KNN search
@@ -715,7 +713,6 @@ describe.skipIf(!dbAvailable)("[E2E] KNN SKIP: labeled 벡터 부족 → knn_dec
       exchange: EXCHANGE,
       timeframe: "5M",
       embedding,
-      signalId: signal.id,
     });
 
     // 9. KNN search — returns only 10 labeled rows (< 30 threshold)

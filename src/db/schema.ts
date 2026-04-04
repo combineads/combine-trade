@@ -341,7 +341,6 @@ export const vectorTable = pgTable(
     label: text("label"),
     grade: text("grade"),
     labeled_at: timestamp("labeled_at", { withTimezone: true, mode: "date" }),
-    signal_id: uuid("signal_id"),
     created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -351,10 +350,6 @@ export const vectorTable = pgTable(
       columns: [t.candle_id],
       foreignColumns: [candleTable.id],
     }).onDelete("cascade"),
-    foreignKey({
-      columns: [t.signal_id],
-      foreignColumns: [signalTable.id],
-    }).onDelete("set null"),
     index("vectors_symbol_exchange_timeframe_idx").on(t.symbol, t.exchange, t.timeframe),
     check("vectors_timeframe_check", sql`${t.timeframe} IN ('5M', '1M')`),
     check(

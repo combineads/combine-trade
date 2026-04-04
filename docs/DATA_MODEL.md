@@ -249,11 +249,10 @@ function isTradeBlocked(now: Date): boolean {
 - `label` (text) — CHECK (WIN / LOSS / TIME_EXIT), nullable (미확정)
 - `grade` (text) — CHECK (A / B / C), nullable (미확정)
 - `labeled_at` (timestamptz) — label 확정 시각
-- `signal_id` (FK → Signal, nullable) — 라벨링 근거가 된 시그널
 - `created_at` (timestamptz, not null)
 - CRUD: 캔들 마감 시 생성 (label=null), Ticket 종료 시 label/grade 확정
 
-> **TrainingExample 제거 → Vector 흡수 근거:** 이전에 "동일 벡터를 여러 Signal이 참조하면 label 충돌" 우려로 분리했으나, 실제로는 캔들 1개당 벡터 1개이고 진입은 1개 시그널에서만 발생. label 충돌이 현실적으로 발생하지 않으므로 Vector에 직접 label/grade를 기록하고 signal_id로 출처를 추적.
+> **TrainingExample 제거 → Vector 흡수 근거:** 이전에 "동일 벡터를 여러 Signal이 참조하면 label 충돌" 우려로 분리했으나, 실제로는 캔들 1개당 벡터 1개이고 진입은 1개 시그널에서만 발생. label 충돌이 현실적으로 발생하지 않으므로 Vector에 직접 label/grade를 기록. 라벨링 출처는 Signal.vector_id 역방향 조회(`SELECT s.id FROM signal s WHERE s.vector_id = ?`)로 추적.
 
 > **Vector.symbol/exchange — FK 없음:** 비정규화 컬럼이므로 Symbol FK를 걸지 않음. Candle → Vector CASCADE가 참조 무결성을 보장하고, symbol/exchange 값은 코드에서 Candle 값을 복사. 3.8M행 append-only 테이블에 추가 FK 체크는 불필요.
 
@@ -399,10 +398,11 @@ function isTradeBlocked(now: Date): boolean {
 | 7 | WatchSession → Signal | 1:N | Signal.watch_session_id | RESTRICT | NOT NULL |
 | 8 | Signal → SignalDetail | 1:N | SignalDetail.signal_id | CASCADE | NOT NULL |
 | 9 | Signal → Ticket | 1:0..1 | Ticket.signal_id | RESTRICT | UNIQUE |
-| 10 | Ticket → Order | 1:N | Order.ticket_id | SET NULL | nullable |
-| 11 | Ticket → Ticket (피라미딩) | N:1 | Ticket.parent_ticket_id | SET NULL | nullable |
-| 12 | Symbol → Backtest | 1:N | Backtest.(symbol, exchange) | RESTRICT | NOT NULL |
-| 13 | Backtest → Backtest (WFO) | N:1 | Backtest.parent_id | CASCADE | nullable |
+| 10 | Signal → Vector (KNN) | N:0..1 | Signal.vector_id | SET NULL | nullable |
+| 11 | Ticket → Order | 1:N | Order.ticket_id | SET NULL | nullable |
+| 12 | Ticket → Ticket (피라미딩) | N:1 | Ticket.parent_ticket_id | SET NULL | nullable |
+| 13 | Symbol → Backtest | 1:N | Backtest.(symbol, exchange) | RESTRICT | NOT NULL |
+| 14 | Backtest → Backtest (WFO) | N:1 | Backtest.parent_id | CASCADE | nullable |
 
 **CASCADE 정책:**
 - **RESTRICT**: 거래 기록 삭제 불가 (감사 추적)

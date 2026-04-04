@@ -362,7 +362,6 @@ describe('core/types — entity construction', () => {
       label: null,
       grade: null,
       labeled_at: null,
-      signal_id: null,
       created_at: new Date(),
     };
     expect(vec.embedding).toBeInstanceOf(Float32Array);

@@ -229,7 +229,6 @@ export type Vector = {
   /** null until labeled */
   grade: VectorGrade | null;
   labeled_at: Date | null;
-  signal_id: string | null;
   created_at: Date;
 };
 

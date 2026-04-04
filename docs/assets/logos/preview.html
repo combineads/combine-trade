@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Combine Trade — Logo Preview</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
+
+    header {
+      background: #303942;
+      color: #fff;
+      padding: 48px 32px;
+      text-align: center;
+    }
+    header h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+    header p { font-size: 14px; color: #8B9DAF; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+    section {
+      margin-bottom: 48px;
+    }
+    section h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #303942;
+    }
+    section .desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+    }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .card.dark {
+      background: #303942;
+      border-color: #303942;
+    }
+    .card img, .card object {
+      max-width: 100%;
+      height: auto;
+    }
+    .card .label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card.dark .label { color: #8B9DAF; }
+    .card .filename {
+      font-size: 11px;
+      font-family: 'SF Mono', Monaco, monospace;
+      color: #aaa;
+      background: #f5f5f5;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .card.dark .filename {
+      background: #252b33;
+      color: #8B9DAF;
+    }
+
+    .icon-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .size-badge {
+      font-size: 10px;
+      color: #999;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .checkerboard {
+      background-image:
+        linear-gradient(45deg, #e0e0e0 25%, transparent 25%),
+        linear-gradient(-45deg, #e0e0e0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e0e0e0 75%),
+        linear-gradient(-45deg, transparent 75%, #e0e0e0 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      padding: 32px;
+      border-radius: 8px;
+    }
+
+    .usage-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .usage-table th, .usage-table td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee;
+    }
+    .usage-table th {
+      font-weight: 600;
+      color: #303942;
+      background: #f9f9f9;
+    }
+    .usage-table code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="icon-white.svg" width="48" height="48" alt="Combine icon" style="margin-bottom: 16px;">
+  <h1>Combine Trade — Logo Assets</h1>
+  <p>웹사이트 및 앱에서 사용할 수 있는 로고 에셋 모음</p>
+</header>
+
+<div class="container">
+
+  <!-- Horizontal Logos -->
+  <section>
+    <h2>가로형 로고 (Horizontal)</h2>
+    <p class="desc">주로 네비게이션 바, 헤더, 이메일 등에 사용</p>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="label">Light Background</div>
+        <img src="logo-horizontal-light.svg" alt="Logo light" style="max-height: 80px;">
+        <span class="filename">logo-horizontal-light.svg</span>
+      </div>
+      <div class="card dark">
+        <div class="label">Dark Background</div>
+        <img src="logo-dark.svg" alt="Logo dark" style="max-height: 80px;">
+        <span class="filename">logo-dark.svg</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Square Logo -->
+  <section>
+    <h2>정사각형 로고 (Square)</h2>
+    <p class="desc">프로필 이미지, 소셜 미디어 아바타 등에 사용</p>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="label">Light Background</div>
+        <img src="logo-light.svg" alt="Logo square light" style="max-height: 160px;">
+        <span class="filename">logo-light.svg</span>
+      </div>
+      <div class="card dark">
+        <div class="label">Dark Background</div>
+        <img src="logo-dark-square.svg" alt="Logo square dark" style="max-height: 160px;">
+        <span class="filename">logo-dark-square.svg</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Icon Only -->
+  <section>
+    <h2>아이콘 (Icon Only)</h2>
+    <p class="desc">파비콘, 앱 아이콘, 워터마크 등 텍스트 없이 심볼만 필요할 때</p>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="label">Default</div>
+        <div class="checkerboard" style="display: flex; justify-content: center;">
+          <img src="icon.svg" alt="Icon" width="80" height="80">
+        </div>
+        <span class="filename">icon.svg</span>
+      </div>
+      <div class="card dark">
+        <div class="label">White (Dark BG)</div>
+        <img src="icon-white.svg" alt="Icon white" width="80" height="80">
+        <span class="filename">icon-white.svg</span>
+      </div>
+      <div class="card">
+        <div class="label">Favicon</div>
+        <div class="icon-row">
+          <div style="text-align:center">
+            <img src="favicon.svg" width="16" height="16" alt="16px">
+            <div class="size-badge">16px</div>
+          </div>
+          <div style="text-align:center">
+            <img src="favicon.svg" width="32" height="32" alt="32px">
+            <div class="size-badge">32px</div>
+          </div>
+          <div style="text-align:center">
+            <img src="favicon.svg" width="48" height="48" alt="48px">
+            <div class="size-badge">48px</div>
+          </div>
+          <div style="text-align:center">
+            <img src="favicon.svg" width="64" height="64" alt="64px">
+            <div class="size-badge">64px</div>
+          </div>
+        </div>
+        <span class="filename">favicon.svg</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- OG Image -->
+  <section>
+    <h2>소셜 공유 이미지 (OG Image)</h2>
+    <p class="desc">링크 공유 시 미리보기 카드에 표시되는 1200x630 이미지</p>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <img src="og-image.svg" alt="OG Image" style="width: 100%; display: block;">
+    </div>
+    <div style="text-align: center; margin-top: 8px;">
+      <span class="filename" style="display: inline-block;">og-image.svg</span>
+    </div>
+  </section>
+
+  <!-- Usage Guide -->
+  <section>
+    <h2>사용 가이드</h2>
+    <table class="usage-table">
+      <thead>
+        <tr>
+          <th>용도</th>
+          <th>파일</th>
+          <th>HTML 예시</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>파비콘</td>
+          <td><code>favicon.svg</code></td>
+          <td><code>&lt;link rel="icon" type="image/svg+xml" href="/favicon.svg"&gt;</code></td>
+        </tr>
+        <tr>
+          <td>Apple Touch Icon</td>
+          <td><code>icon.svg</code></td>
+          <td><code>&lt;link rel="apple-touch-icon" href="/icon.svg"&gt;</code></td>
+        </tr>
+        <tr>
+          <td>OG Image</td>
+          <td><code>og-image.svg</code></td>
+          <td><code>&lt;meta property="og:image" content="/og-image.svg"&gt;</code></td>
+        </tr>
+        <tr>
+          <td>네비게이션 (밝은 배경)</td>
+          <td><code>logo-horizontal-light.svg</code></td>
+          <td><code>&lt;img src="/logo-horizontal-light.svg" height="40"&gt;</code></td>
+        </tr>
+        <tr>
+          <td>네비게이션 (어두운 배경)</td>
+          <td><code>logo-dark.svg</code></td>
+          <td><code>&lt;img src="/logo-dark.svg" height="40"&gt;</code></td>
+        </tr>
+        <tr>
+          <td>PWA manifest</td>
+          <td><code>icon.svg</code></td>
+          <td><code>"icons": [{ "src": "/icon.svg", "type": "image/svg+xml", "sizes": "any" }]</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- File List -->
+  <section>
+    <h2>전체 파일 목록</h2>
+    <table class="usage-table">
+      <thead>
+        <tr>
+          <th>파일</th>
+          <th>설명</th>
+          <th>포맷</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>logo-dark.svg</code></td><td>가로형 로고 — 어두운 배경용 (흰색 텍스트)</td><td>SVG</td></tr>
+        <tr><td><code>logo-light.svg</code></td><td>정사각형 로고 — 밝은 배경용</td><td>SVG</td></tr>
+        <tr><td><code>logo-dark-square.svg</code></td><td>정사각형 로고 — 어두운 배경용</td><td>SVG</td></tr>
+        <tr><td><code>logo-horizontal-light.svg</code></td><td>가로형 로고 — 밝은 배경용 (투명 배경)</td><td>SVG</td></tr>
+        <tr><td><code>icon.svg</code></td><td>아이콘 전용 — 기본 색상</td><td>SVG</td></tr>
+        <tr><td><code>icon-white.svg</code></td><td>아이콘 전용 — 흰색 (어두운 배경용)</td><td>SVG</td></tr>
+        <tr><td><code>favicon.svg</code></td><td>파비콘 — 브라우저 탭 아이콘</td><td>SVG</td></tr>
+        <tr><td><code>og-image.svg</code></td><td>소셜 공유 미리보기 (1200x630)</td><td>SVG</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+</div>
+
+</body>
+</html>

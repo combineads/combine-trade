@@ -10,7 +10,7 @@
  *   volatility:      30
  *   trend:           40
  *   time_series:     50
- *   time_session:    12
+ *   strategy:        12
  *   TOTAL:          202
  */
 
@@ -280,21 +280,22 @@ const TIME_SERIES_CROSS = [
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Category: time_session (12)
+// Category: strategy (12)
+// Double-BB strategy-specific derived features capturing entry signal context.
 // ---------------------------------------------------------------------------
-const TIME_SESSION = [
-  "hour_sin", // sin(2π * utc_hour / 24)  cyclical encoding
-  "hour_cos", // cos(2π * utc_hour / 24)  cyclical encoding
-  "dow_sin", // sin(2π * day_of_week / 7)  cyclical encoding
-  "dow_cos", // cos(2π * day_of_week / 7)  cyclical encoding
-  "is_asia_session", // 1 if 00:00–08:00 UTC, else 0
-  "is_europe_session", // 1 if 08:00–16:00 UTC, else 0
-  "is_us_session", // 1 if 13:30–22:00 UTC, else 0
-  "is_funding_window", // 1 if within 15min of 00:00/08:00/16:00 UTC, else 0
-  "is_market_open_window", // 1 if within 2h of any session open, else 0
-  "minutes_since_hour_sin", // sin(2π * minute / 60)
-  "minutes_since_hour_cos", // cos(2π * minute / 60)
-  "is_top_of_hour", // 1 if minute < 5 or minute >= 55, else 0
+const STRATEGY = [
+  "bb20_position", // bb20_pct_b_5m mapped to [-1,1]: (bb20_pct_b_5m * 2) - 1
+  "bb4_position", // bb4_pct_b_5m mapped to [-1,1]: (bb4_pct_b_5m * 2) - 1  [weight 2.0]
+  "ma_ordering", // ordinal MA stack: sma20 vs sma60 vs sma120 encoded [-1,0,1]
+  "ma20_slope", // (sma20[0] - sma20[3]) / sma20[3]  (3-bar slope of sma20) [5M]
+  "atr_separation", // (bb4_upper - bb4_lower) / atr14  (band width in ATR units) [5M]
+  "pivot_distance", // (close - nearest_pivot) / atr14  (distance to nearest support/resistance pivot) [weight 1.5]
+  "rsi_normalized", // (rsi14_5m - 50) / 50  centered and scaled to [-1,1]
+  "rsi_extreme_count", // count of bars in last 5 where rsi14 > 70 or < 30  (0–5)
+  "breakout_intensity", // (close - bb20_upper) / atr14 if above upper, (bb20_lower - close) / atr14 if below lower, else 0
+  "disparity_divergence", // bb4_pct_b_5m - bb20_pct_b_5m  (inner vs outer band divergence)
+  "daily_open_distance", // (close - daily_open) / atr14  (distance from daily open) [weight 1.5]
+  "session_box_position", // (close - session_low) / (session_high - session_low)  mapped to [-1,1] [weight 1.5]
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -307,7 +308,7 @@ export const FEATURE_CATEGORIES: Record<string, readonly string[]> = {
   volatility: [...VOLATILITY_5M, ...VOLATILITY_1M, ...VOLATILITY_CROSS] as const,
   trend: [...TREND_5M, ...TREND_1M, ...TREND_CROSS] as const,
   time_series: [...TIME_SERIES_5M, ...TIME_SERIES_1M, ...TIME_SERIES_CROSS] as const,
-  time_session: [...TIME_SESSION] as const,
+  strategy: [...STRATEGY] as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -330,10 +331,22 @@ export const FEATURE_NAMES: string[] = [
   ...TIME_SERIES_5M,
   ...TIME_SERIES_1M,
   ...TIME_SERIES_CROSS,
-  ...TIME_SESSION,
+  ...STRATEGY,
 ];
 
 // ---------------------------------------------------------------------------
 // VECTOR_DIM: canonical dimension constant. Must equal FEATURE_NAMES.length.
 // ---------------------------------------------------------------------------
 export const VECTOR_DIM = 202 as const;
+
+// ---------------------------------------------------------------------------
+// FEATURE_WEIGHTS: per-feature importance multiplier for weighted KNN distance.
+// Default weight is 1.0; elevated weights increase sensitivity for that feature.
+// Keys are feature names; missing keys → weight 1.0.
+// ---------------------------------------------------------------------------
+export const FEATURE_WEIGHTS: Record<string, number> = {
+  bb4_position: 2.0,
+  pivot_distance: 1.5,
+  daily_open_distance: 1.5,
+  session_box_position: 1.5,
+};

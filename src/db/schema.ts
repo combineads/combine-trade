@@ -503,3 +503,35 @@ export const orderTable = pgTable(
 
 export type OrderRow = InferSelectModel<typeof orderTable>;
 export type NewOrderRow = InferInsertModel<typeof orderTable>;
+
+// ---------------------------------------------------------------------------
+// event_log table
+// ---------------------------------------------------------------------------
+
+export const eventLogTable = pgTable(
+  "event_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    event_type: text("event_type").notNull(),
+    symbol: text("symbol"),
+    exchange: text("exchange"),
+    ref_id: uuid("ref_id"),
+    ref_type: text("ref_type"),
+    data: jsonb("data"),
+    created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("event_log_event_type_created_at_idx").on(t.event_type, sql`${t.created_at} DESC`),
+    index("event_log_symbol_exchange_created_at_idx").on(
+      t.symbol,
+      t.exchange,
+      sql`${t.created_at} DESC`,
+    ),
+    index("event_log_ref_type_ref_id_idx").on(t.ref_type, t.ref_id),
+  ],
+);
+
+export type EventLogRow = InferSelectModel<typeof eventLogTable>;
+export type NewEventLogRow = InferInsertModel<typeof eventLogTable>;

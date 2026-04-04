@@ -85,3 +85,28 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/*
+ * WATCHING badge pulse animation
+ * Uses compositor-friendly opacity only.
+ * Disabled under prefers-reduced-motion.
+ */
+@keyframes watching-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.symbol-card-pulse {
+  animation: watching-pulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .symbol-card-pulse {
+    animation: none;
+  }
+}

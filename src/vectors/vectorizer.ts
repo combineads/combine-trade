@@ -540,18 +540,18 @@ function extractVolatility(ctx: VectorizerCtx): number[] {
   f.push(safe(close !== 0 ? atr14 / close : 0));
   // 71: atr14_norm_5m = atr14 / (bb20_upper - bb20_lower)
   f.push(safe(bb20BandWidth !== 0 ? atr14 / bb20BandWidth : 0));
-  // 72: body_size_5m = |close - open| / close
-  f.push(safe(close !== 0 ? bodyAbs / close : 0));
+  // 72: body_size_5m = |close - open| / open
+  f.push(safe(openPrice !== 0 ? bodyAbs / openPrice : 0));
   // 73: body_ratio_5m = |close - open| / (high - low)
   f.push(safe(range !== 0 ? bodyAbs / range : 0));
-  // 74: upper_wick_5m = (high - max(open, close)) / atr14
-  f.push(safe(atr14 !== 0 ? upperWickAbs / atr14 : 0));
-  // 75: lower_wick_5m = (min(open, close) - low) / atr14
-  f.push(safe(atr14 !== 0 ? lowerWickAbs / atr14 : 0));
+  // 74: upper_wick_5m = (high - max(open, close)) / high * 1.5
+  f.push(safe(high !== 0 ? (upperWickAbs / high) * 1.5 : 0));
+  // 75: lower_wick_5m = (min(open, close) - low) / high * 1.5
+  f.push(safe(high !== 0 ? (lowerWickAbs / high) * 1.5 : 0));
   // 76: wick_total_5m = (upperWick + lowerWick) / (high - low)
   f.push(safe(range !== 0 ? (upperWickAbs + lowerWickAbs) / range : 0));
-  // 77: high_low_range_5m = (high - low) / close
-  f.push(safe(close !== 0 ? range / close : 0));
+  // 77: high_low_range_5m = (high - low) / low
+  f.push(safe(low !== 0 ? range / low : 0));
   // 78: candle_range_vs_bb20bw_5m = (high - low) / (bb20_upper - bb20_lower)
   f.push(safe(bb20BandWidth !== 0 ? range / bb20BandWidth : 0));
   // 79: squeeze_intensity_5m = bw[0] / mean(bw[0..19])
@@ -566,12 +566,12 @@ function extractVolatility(ctx: VectorizerCtx): number[] {
   // ---- 1M volatility (indices 83–95): same values ----
   f.push(safe(close !== 0 ? atr14 / close : 0)); // 83
   f.push(safe(bb20BandWidth !== 0 ? atr14 / bb20BandWidth : 0)); // 84
-  f.push(safe(close !== 0 ? bodyAbs / close : 0)); // 85
+  f.push(safe(openPrice !== 0 ? bodyAbs / openPrice : 0)); // 85: body_size_1m = |close - open| / open
   f.push(safe(range !== 0 ? bodyAbs / range : 0)); // 86
-  f.push(safe(atr14 !== 0 ? upperWickAbs / atr14 : 0)); // 87
-  f.push(safe(atr14 !== 0 ? lowerWickAbs / atr14 : 0)); // 88
+  f.push(safe(high !== 0 ? (upperWickAbs / high) * 1.5 : 0)); // 87: upper_wick_1m = (high - max(open,close)) / high * 1.5
+  f.push(safe(high !== 0 ? (lowerWickAbs / high) * 1.5 : 0)); // 88: lower_wick_1m = (min(open,close) - low) / high * 1.5
   f.push(safe(range !== 0 ? (upperWickAbs + lowerWickAbs) / range : 0)); // 89
-  f.push(safe(close !== 0 ? range / close : 0)); // 90
+  f.push(safe(low !== 0 ? range / low : 0)); // 90: high_low_range_1m = (high - low) / low
   f.push(safe(bb20BandWidth !== 0 ? range / bb20BandWidth : 0)); // 91
   f.push(safe(bwMean20 !== 0 ? bwCurr / bwMean20 : 0)); // 92
   f.push(safe(atrMean20 !== 0 ? atrCurr / atrMean20 : 0)); // 93

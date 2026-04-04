@@ -9,7 +9,7 @@
 - 리스크 관리 사각지대 (수수료, 계좌 합산, spread 사전 체크)
 
 ## Non-goals
-- 백테스트/WFO 실행 코드 (EP-12)
+- 백테스트/WFO 실행 코드 (EP-13)
 - ANCHOR 수정 금지 API (EP-11)
 - 웹 UI / API 엔드포인트 (EP-11)
 
@@ -139,14 +139,14 @@
 
 ## Risks
 - **벡터 하위 호환성**: 피처 공식 변경 시 기존 벡터 DB와 호환 불가. **완화**: 운영 전이므로 기존 벡터 TRUNCATE (빈 DB). 프로덕션 전환 후에는 벡터 버전 관리 또는 label=null 리셋.
-- **KNN 성능 변화**: Time Decay와 임계값 변경으로 기존 대비 진입 빈도 변화. **완화**: 변경 전후 백테스트 비교 (EP-12 완료 후).
+- **KNN 성능 변화**: Time Decay와 임계값 변경으로 기존 대비 진입 빈도 변화. **완화**: 변경 전후 백테스트 비교 (EP-13 완료 후).
 - **Safety Gate 임계값 변경 영향**: 필터가 더 엄격/느슨해져 진입 패턴 변화. **완화**: analysis 모드에서 충분히 관찰 후 live 전환.
 - **BB4 source=open 영향**: 기존 close 기반 BB4와 다른 밴드 산출. **완화**: 변경 후 1H/5M/1M 각 TF 비교 확인.
 
 ## Decision log
 - 이 에픽은 새 기능 추가가 아닌 **PRD 정합성 교정** — 기존 코드를 PRD 명세에 맞춤
 - EP-05 VECTOR_SPEC.md가 부실했던 것이 근본 원인 — M2에서 문서부터 확정 후 코드 교정
-- 벡터 피처 변경은 기존 DB 데이터 무효화를 수반하므로, EP-12(백테스트) 이전에 완료 필수. 현재 운영 전이므로 TRUNCATE로 충분
+- 벡터 피처 변경은 기존 DB 데이터 무효화를 수반하므로, EP-13(백테스트) 이전에 완료 필수. 현재 운영 전이므로 TRUNCATE로 충분
 - SymbolState FSM은 Ticket FSM과 동일한 패턴(TRANSITION_MAP + 순수 함수)으로 구현
 - 계좌 수준 일일 한도는 단일 SUM 쿼리로 구현 (복잡한 집계 불필요)
 - daily_bias 교차 검증은 knn/decision.ts(L4)가 아닌 daemon/pipeline.ts(L9)에서 수행 — L4→L5 레이어 위반 방지

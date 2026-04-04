@@ -1,4 +1,4 @@
-# 11-backtest-wfo
+# 13-backtest-wfo
 
 ## Objective
 라이브 파이프라인과 동일한 코드 경로를 사용하는 백테스트 러너와 Walk-Forward Optimization(WFO)을 구현한다.
@@ -13,8 +13,8 @@
 - 시각화 (초기 — 웹 UI에서 별도)
 
 ## Prerequisites
-- EP-01~EP-06, EP-07 (전체 파이프라인 모듈) 완료
-- 특히 EP-05 (벡터라이저, KNN 엔진) 필수
+- EP-01~EP-12 전체 완료
+- 특히 EP-05 (벡터라이저, KNN 엔진), EP-12 (전략 검증 수정) 필수
 - 충분한 히스토리 캔들 데이터 (EP-04)
 
 ## Milestones
@@ -112,20 +112,20 @@
   - `bun run backtest --help`
 
 ## Task candidates
-- T-11-001: db/migrations/006 — Backtest 테이블 마이그레이션
-- T-11-002: backtest/mock-adapter.ts — MockExchangeAdapter
-- T-11-003: backtest/mock-adapter.ts — 슬리피지 시뮬레이션 & lookahead 방지
-- T-11-004: backtest/engine.ts — BacktestRunner 기본 루프
-- T-11-005: backtest/engine.ts — 파이프라인 코드 재사용 연결
-- T-11-006: backtest/metrics.ts — 기본 메트릭 (승률, 기대값, MDD)
-- T-11-007: backtest/metrics.ts — 고급 메트릭 (샤프, 프로핏 팩터)
-- T-11-008: backtest/reporter.ts — CLI 출력 & DB 저장
-- T-11-009: backtest/wfo.ts — WFO 구간 관리 (IS/OOS/롤)
-- T-11-010: backtest/wfo.ts — 파라미터 탐색 루프 (Grid + Random 2단계)
-- T-11-011: backtest/wfo.ts — WFO 효율성 검증 & 보고
-- T-11-012: backtest/wfo.ts — Worker thread 병렬화
-- T-11-013: CLI 인터페이스 (argparse, 진행률, --threads)
-- T-11-014: 백테스트 정확성 검증 (수동 계산 대비)
+- T-13-001: db/migrations/006 — Backtest 테이블 마이그레이션
+- T-13-002: backtest/mock-adapter.ts — MockExchangeAdapter
+- T-13-003: backtest/mock-adapter.ts — 슬리피지 시뮬레이션 & lookahead 방지
+- T-13-004: backtest/engine.ts — BacktestRunner 기본 루프
+- T-13-005: backtest/engine.ts — 파이프라인 코드 재사용 연결
+- T-13-006: backtest/metrics.ts — 기본 메트릭 (승률, 기대값, MDD)
+- T-13-007: backtest/metrics.ts — 고급 메트릭 (샤프, 프로핏 팩터)
+- T-13-008: backtest/reporter.ts — CLI 출력 & DB 저장
+- T-13-009: backtest/wfo.ts — WFO 구간 관리 (IS/OOS/롤)
+- T-13-010: backtest/wfo.ts — 파라미터 탐색 루프 (Grid + Random 2단계)
+- T-13-011: backtest/wfo.ts — WFO 효율성 검증 & 보고
+- T-13-012: backtest/wfo.ts — Worker thread 병렬화
+- T-13-013: CLI 인터페이스 (argparse, 진행률, --threads)
+- T-13-014: 백테스트 정확성 검증 (수동 계산 대비)
 
 ## Risks
 - **코드 경로 동일성**: 라이브와 백테스트가 분기하면 신뢰도 하락. MockAdapter 인터페이스 준수가 핵심.
@@ -143,7 +143,7 @@
 - Backtest 테이블은 이 에픽 마이그레이션에서 생성
 
 ## Consensus Log
-- Round 1-2: EP-01~EP-11 전체 컨센서스 — 상세 로그는 01-foundation.md 참조
+- Round 1-2: EP-01~EP-13 전체 컨센서스 — 상세 로그는 01-foundation.md 참조
 - Verdict: 2라운드 만에 컨센서스 달성
 
 ## Progress notes

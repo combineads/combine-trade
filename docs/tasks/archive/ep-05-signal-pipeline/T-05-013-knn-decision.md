@@ -84,4 +84,4 @@ bun run lint
 
 ## Out of Scope
 - 포지션 사이징에서의 A-grade 부스트 적용 (EP-06)
-- KNN 파라미터 자동 튜닝 (EP-11 WFO)
+- KNN 파라미터 자동 튜닝 (EP-13 WFO)

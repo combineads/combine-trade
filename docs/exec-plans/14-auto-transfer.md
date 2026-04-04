@@ -1,4 +1,4 @@
-# 12-auto-transfer
+# 14-auto-transfer
 
 ## Objective
 봇이 쌓은 수익을 선물 계좌에서 현물 지갑으로 자동 이체하여 실질적인 수익을 확정한다. "출금하지 않으면 절대 내 돈이 아니다" — 수익을 선물 계좌에 방치하면 복리 효과보다 파산 확률이 높아진다.
@@ -88,8 +88,8 @@
 - Deliverables:
   - `GET /api/transfers` — 이체 이력 조회 (EventLog에서 `TRANSFER_%` 필터, cursor 페이지네이션)
   - `POST /api/transfers/trigger` — 수동 즉시 이체 트리거 (웹 UI 버튼)
-  - `PUT /api/config` 에 TRANSFER 그룹 편집 포함 (EP-10 설정 관리 확장)
-  - 웹 대시보드 이체 이력 섹션 추가 (EP-10 M5 확장)
+  - `PUT /api/config` 에 TRANSFER 그룹 편집 포함 (EP-11 설정 관리 확장)
+  - 웹 대시보드 이체 이력 섹션 추가 (EP-11 확장)
 - Acceptance criteria:
   - 이체 이력 테이블 표시 (금액, 시각, 상태)
   - 수동 즉시 이체 버튼 (확인 대화상자 포함)
@@ -99,15 +99,15 @@
   - 브라우저 수동 확인
 
 ## Task candidates
-- T-12-001: config/seed.ts — TRANSFER CommonCode 그룹 시드 추가 (reserve_multiplier 포함)
-- T-12-002: transfer/balance.ts — 이체 가능 잔고 계산 (동적 reserve, risk_pct 연동, 증거금 제외)
-- T-12-003: transfer/executor.ts — CCXT transfer() 호출 & EventLog 기록
-- T-12-004: transfer/scheduler.ts — 스케줄러 (daily/weekly, setTimeout 체인)
-- T-12-005: scripts/transfer-now.ts — 수동 즉시 이체 CLI (--dry-run 포함)
-- T-12-006: notifications/slack.ts — 이체 성공/실패 알림 + 미지원 거래소 잉여 잔고 알림 템플릿
-- T-12-007: api/routes/ — 이체 이력 조회 (EventLog 필터) & 수동 트리거 엔드포인트
-- T-12-008: web/ — 이체 이력 섹션 & 수동 이체 버튼
-- T-12-009: 이체 E2E 통합 테스트 (dry-run + Binance 테스트넷)
+- T-14-001: config/seed.ts — TRANSFER CommonCode 그룹 시드 추가 (reserve_multiplier 포함)
+- T-14-002: transfer/balance.ts — 이체 가능 잔고 계산 (동적 reserve, risk_pct 연동, 증거금 제외)
+- T-14-003: transfer/executor.ts — CCXT transfer() 호출 & EventLog 기록
+- T-14-004: transfer/scheduler.ts — 스케줄러 (daily/weekly, setTimeout 체인)
+- T-14-005: scripts/transfer-now.ts — 수동 즉시 이체 CLI (--dry-run 포함)
+- T-14-006: notifications/slack.ts — 이체 성공/실패 알림 + 미지원 거래소 잉여 잔고 알림 템플릿
+- T-14-007: api/routes/ — 이체 이력 조회 (EventLog 필터) & 수동 트리거 엔드포인트
+- T-14-008: web/ — 이체 이력 섹션 & 수동 이체 버튼
+- T-14-009: 이체 E2E 통합 테스트 (dry-run + Binance 테스트넷)
 
 ## Risks
 - **이체 중 마진콜**: 이체 직후 급격한 가격 변동으로 유지 증거금 부족. **완화**: reserve = balance × risk_pct × reserve_multiplier로 동적 버퍼 확보, 이체 전 미실현 손익 확인.

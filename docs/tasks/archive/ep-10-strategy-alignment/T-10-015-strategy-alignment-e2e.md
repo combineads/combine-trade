@@ -82,7 +82,7 @@ bun run lint
 
 ## Out of Scope
 - 실제 DB 또는 거래소 API 연동 테스트
-- 백테스트 실행 (EP-12 범위)
+- 백테스트 실행 (EP-13 범위)
 - 성능/부하 테스트
 - pipeline.ts의 full E2E (handleCandleClose 전체 흐름) — 이 테스트는 개별 모듈 간 연결 검증에 집중
 - 기존 단위 테스트 수정

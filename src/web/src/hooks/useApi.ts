@@ -132,3 +132,70 @@ export function useConfig() {
     refetchInterval: 10_000,
   });
 }
+
+/* ------------------------------------------------------------------ */
+/*  Trade History types & hooks                                        */
+/* ------------------------------------------------------------------ */
+
+export interface Ticket {
+  id: string;
+  time: string;
+  symbol: string;
+  exchange: string;
+  side: "LONG" | "SHORT";
+  entryPrice: string;
+  exitPrice: string;
+  size: string;
+  realizedPnl: string;
+  result: "WIN" | "LOSS" | "TIMEOUT";
+}
+
+export interface TicketsResponse {
+  items: Ticket[];
+  total: number;
+  cursor: string | null;
+}
+
+export interface TicketsParams {
+  period?: string;
+  symbol?: string;
+  exchange?: string;
+  result?: string;
+  cursor?: string;
+  limit?: number;
+}
+
+export interface TradeStatsResponse {
+  totalPnl: string;
+  totalTrades: number;
+  winRate: number;
+  avgRiskReward: string;
+  maxDrawdown: string;
+}
+
+function buildTicketsPath(params: TicketsParams): string {
+  const searchParams = new URLSearchParams();
+  if (params.period) searchParams.set("period", params.period);
+  if (params.symbol) searchParams.set("symbol", params.symbol);
+  if (params.exchange) searchParams.set("exchange", params.exchange);
+  if (params.result) searchParams.set("result", params.result);
+  if (params.cursor) searchParams.set("cursor", params.cursor);
+  if (params.limit !== undefined) searchParams.set("limit", String(params.limit));
+  const qs = searchParams.toString();
+  return qs ? `/tickets?${qs}` : "/tickets";
+}
+
+export function useTickets(params: TicketsParams) {
+  return useQuery<TicketsResponse>({
+    queryKey: ["tickets", params],
+    queryFn: () => apiGet<TicketsResponse>(buildTicketsPath(params)),
+  });
+}
+
+export function useTradeStats(period?: string) {
+  const path = period ? `/stats/trades?period=${period}` : "/stats/trades";
+  return useQuery<TradeStatsResponse>({
+    queryKey: ["trade-stats", period],
+    queryFn: () => apiGet<TradeStatsResponse>(path),
+  });
+}

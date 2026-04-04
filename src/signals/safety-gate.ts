@@ -10,9 +10,16 @@ import type { AllIndicators } from "@/indicators/types";
 // Constants — safety filter thresholds
 // ---------------------------------------------------------------------------
 
-const WICK_RATIO_THRESHOLD = d("0.6");
-const BOX_MARGIN_RATIO = d("0.3");
-const ABNORMAL_CANDLE_MULTIPLE = d("3.0");
+/** Wick ratio thresholds per timeframe. 5M is tight (0.1); 1M is permissive (1.0). */
+const WICK_RATIO_THRESHOLD: Record<VectorTimeframe, Decimal> = {
+  "5M": d("0.1"),
+  "1M": d("1.0"),
+};
+
+/** Box range margin factor applied to BB20 range around SMA20 midpoint. */
+const BOX_MA20_MARGIN_RATIO = d("0.15");
+
+const ABNORMAL_CANDLE_MULTIPLE = d("2.0");
 
 // ---------------------------------------------------------------------------
 // SafetyResult
@@ -48,9 +55,14 @@ type SymbolStateInput = {
  * LONG:  lower wick = (min(open, close) - low) / (high - low)
  * SHORT: upper wick = (high - max(open, close)) / (high - low)
  *
+ * Threshold is timeframe-specific: 5M = 0.1, 1M = 1.0.
  * Doji (range == 0) always passes.
  */
-function checkWickRatio(candle: Candle, direction: Direction): string | null {
+function checkWickRatio(
+  candle: Candle,
+  direction: Direction,
+  timeframe: VectorTimeframe,
+): string | null {
   const range = candle.high.minus(candle.low);
 
   if (range.isZero()) {
@@ -67,7 +79,8 @@ function checkWickRatio(candle: Candle, direction: Direction): string | null {
     wick = candle.high.minus(bodyTop).dividedBy(range);
   }
 
-  if (gt(wick, WICK_RATIO_THRESHOLD)) {
+  const threshold = WICK_RATIO_THRESHOLD[timeframe];
+  if (gt(wick, threshold)) {
     return "wick_ratio_exceeded";
   }
 
@@ -77,23 +90,24 @@ function checkWickRatio(candle: Candle, direction: Direction): string | null {
 /**
  * Box range center filter.
  *
- * Entry price (candle.close) must fall within the extended session box:
- *   [box_low - margin, box_high + margin]
- *   where margin = (box_high - box_low) * BOX_MARGIN_RATIO
+ * Entry price (candle.close) must fall within the MA20-anchored boundary:
+ *   [sma20 - range_20 * 0.15, sma20 + range_20 * 0.15]
+ *   where range_20 = bb20.upper - bb20.lower
  *
- * Passes when session_box_high or session_box_low is null (no box data yet).
+ * Passes when sma20 or bb20 is null (no indicator data yet).
+ * Session box fields are ignored in favor of the indicator-based boundary.
  */
-function checkBoxRange(candle: Candle, symbolState: SymbolStateInput): string | null {
-  const { session_box_high, session_box_low } = symbolState;
+function checkBoxRange(candle: Candle, indicators: AllIndicators): string | null {
+  const { sma20, bb20 } = indicators;
 
-  if (session_box_high === null || session_box_low === null) {
+  if (sma20 === null || bb20 === null) {
     return null;
   }
 
-  const boxRange = session_box_high.minus(session_box_low);
-  const margin = boxRange.times(BOX_MARGIN_RATIO);
-  const lowerBound = session_box_low.minus(margin);
-  const upperBound = session_box_high.plus(margin);
+  const range20 = bb20.upper.minus(bb20.lower);
+  const margin = range20.times(BOX_MA20_MARGIN_RATIO);
+  const lowerBound = sma20.minus(margin);
+  const upperBound = sma20.plus(margin);
 
   const entryPrice = candle.close;
 
@@ -193,10 +207,10 @@ export function checkSafety(
 ): SafetyResult {
   const reasons: string[] = [];
 
-  const wickFailure = checkWickRatio(candle, signal.direction);
+  const wickFailure = checkWickRatio(candle, signal.direction, signal.timeframe);
   if (wickFailure) reasons.push(wickFailure);
 
-  const boxFailure = checkBoxRange(candle, symbolState);
+  const boxFailure = checkBoxRange(candle, indicators);
   if (boxFailure) reasons.push(boxFailure);
 
   const abnormalFailure = checkAbnormalCandle(candle, indicators);

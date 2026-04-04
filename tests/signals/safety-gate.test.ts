@@ -88,94 +88,132 @@ function makeSymbolState(
 }
 
 // ---------------------------------------------------------------------------
-// safety-gate — checkSafety — wick ratio filter
+// safety-gate — checkSafety — wick ratio filter (5M threshold = 0.1)
 // ---------------------------------------------------------------------------
 
-describe("safety-gate — wick ratio filter — LONG", () => {
-  it("passes when lower wick ratio is 0.3 (below threshold 0.6)", () => {
+describe("safety-gate — wick ratio filter — 5M — LONG", () => {
+  it("passes when lower wick ratio is 0.05 (below threshold 0.1)", () => {
     // range = 1000 (49000 to 50000)
-    // body bottom = min(open=49700, close=49800) = 49700
-    // lower wick = (49700 - 49000) / 1000 = 0.7 … let's make it 0.3
-    // lower wick = 0.3 → body bottom = low + 0.3*range = 49000 + 300 = 49300
-    // open=49300, close=49500, low=49000, high=50000
+    // lower wick = 0.05 → body bottom = 49000 + 0.05*1000 = 49050
+    // open=49050, close=49200, low=49000, high=50000
     const candle = makeCandle({
-      open: new Decimal("49300"),
-      close: new Decimal("49500"),
+      open: new Decimal("49050"),
+      close: new Decimal("49200"),
       low: new Decimal("49000"),
       high: new Decimal("50000"),
     });
-    const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
+    const result = checkSafety(candle, makeIndicators(), makeSignal({ timeframe: "5M" }), makeSymbolState());
     expect(result.reasons).not.toContain("wick_ratio_exceeded");
   });
 
-  it("fails when lower wick ratio is 0.7 (above threshold 0.6)", () => {
+  it("fails when lower wick ratio is 0.15 (above threshold 0.1)", () => {
+    // range = 1000, lower wick = 0.15 → body bottom = 49000 + 150 = 49150
+    // open=49150, close=49300, low=49000, high=50000
+    const candle = makeCandle({
+      open: new Decimal("49150"),
+      close: new Decimal("49300"),
+      low: new Decimal("49000"),
+      high: new Decimal("50000"),
+    });
+    const result = checkSafety(candle, makeIndicators(), makeSignal({ timeframe: "5M" }), makeSymbolState());
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("wick_ratio_exceeded");
+  });
+
+  it("passes when lower wick ratio equals threshold exactly (0.1)", () => {
+    // range = 1000, body bottom = 49000 + 100 = 49100
+    // lower wick = 100/1000 = 0.1 → exactly at threshold → should pass (≤ 0.1)
+    const candle = makeCandle({
+      open: new Decimal("49100"),
+      close: new Decimal("49200"),
+      low: new Decimal("49000"),
+      high: new Decimal("50000"),
+    });
+    const result = checkSafety(candle, makeIndicators(), makeSignal({ timeframe: "5M" }), makeSymbolState());
+    expect(result.reasons).not.toContain("wick_ratio_exceeded");
+  });
+});
+
+describe("safety-gate — wick ratio filter — 5M — SHORT", () => {
+  it("fails when upper wick ratio is 0.15 (above threshold 0.1)", () => {
+    // range = 1000 (49000 to 50000)
+    // upper wick = 0.15 → body top = 50000 - 150 = 49850
+    // open=49700, close=49850, low=49000, high=50000
+    const candle = makeCandle({
+      open: new Decimal("49700"),
+      close: new Decimal("49850"),
+      low: new Decimal("49000"),
+      high: new Decimal("50000"),
+    });
+    const result = checkSafety(
+      candle,
+      makeIndicators(),
+      makeSignal({ direction: "SHORT", timeframe: "5M" }),
+      makeSymbolState(),
+    );
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("wick_ratio_exceeded");
+  });
+
+  it("passes when upper wick ratio is 0.05 (below threshold 0.1)", () => {
+    // upper wick = 0.05 → body top = 50000 - 50 = 49950
+    // open=49800, close=49950, low=49000, high=50000
+    const candle = makeCandle({
+      open: new Decimal("49800"),
+      close: new Decimal("49950"),
+      low: new Decimal("49000"),
+      high: new Decimal("50000"),
+    });
+    const result = checkSafety(
+      candle,
+      makeIndicators(),
+      makeSignal({ direction: "SHORT", timeframe: "5M" }),
+      makeSymbolState(),
+    );
+    expect(result.reasons).not.toContain("wick_ratio_exceeded");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// safety-gate — checkSafety — wick ratio filter (1M threshold = 1.0)
+// ---------------------------------------------------------------------------
+
+describe("safety-gate — wick ratio filter — 1M — always passes", () => {
+  it("passes when lower wick ratio is 0.7 on 1M (threshold is 1.0)", () => {
     // range = 1000, lower wick = 0.7 → body bottom = 49000 + 700 = 49700
-    // open=49700, close=49800, low=49000, high=50000
+    // old 5M threshold of 0.6 would fail this — but 1M threshold is 1.0, so passes
     const candle = makeCandle({
       open: new Decimal("49700"),
       close: new Decimal("49800"),
       low: new Decimal("49000"),
       high: new Decimal("50000"),
     });
-    const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
-    expect(result.passed).toBe(false);
-    expect(result.reasons).toContain("wick_ratio_exceeded");
-  });
-
-  it("passes when lower wick ratio equals threshold exactly (0.6)", () => {
-    // range = 1000, body bottom = 49000 + 600 = 49600
-    // lower wick = 600/1000 = 0.6 → exactly at threshold → should pass (≤ 0.6)
-    const candle = makeCandle({
-      open: new Decimal("49600"),
-      close: new Decimal("49700"),
-      low: new Decimal("49000"),
-      high: new Decimal("50000"),
-    });
-    const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
+    const result = checkSafety(candle, makeIndicators(), makeSignal({ timeframe: "1M" }), makeSymbolState());
     expect(result.reasons).not.toContain("wick_ratio_exceeded");
   });
-});
 
-describe("safety-gate — wick ratio filter — SHORT", () => {
-  it("fails when upper wick ratio is 0.7 (above threshold 0.6)", () => {
-    // range = 1000 (49000 to 50000)
-    // body top = max(open, close)
-    // upper wick = (high - body top) / range = 0.7 → body top = 50000 - 700 = 49300
-    // open=49200, close=49300, low=49000, high=50000
+  it("passes when upper wick ratio is 0.9 on 1M SHORT (threshold is 1.0)", () => {
+    // range = 1000, upper wick = 0.9 → body top = 50000 - 900 = 49100
+    // open=49000, close=49100, low=49000, high=50000
     const candle = makeCandle({
-      open: new Decimal("49200"),
-      close: new Decimal("49300"),
+      open: new Decimal("49000"),
+      close: new Decimal("49100"),
       low: new Decimal("49000"),
       high: new Decimal("50000"),
     });
     const result = checkSafety(
       candle,
       makeIndicators(),
-      makeSignal({ direction: "SHORT" }),
-      makeSymbolState(),
-    );
-    expect(result.passed).toBe(false);
-    expect(result.reasons).toContain("wick_ratio_exceeded");
-  });
-
-  it("passes when upper wick ratio is 0.3", () => {
-    // upper wick = 0.3 → body top = 50000 - 300 = 49700
-    // open=49500, close=49700, low=49000, high=50000
-    const candle = makeCandle({
-      open: new Decimal("49500"),
-      close: new Decimal("49700"),
-      low: new Decimal("49000"),
-      high: new Decimal("50000"),
-    });
-    const result = checkSafety(
-      candle,
-      makeIndicators(),
-      makeSignal({ direction: "SHORT" }),
+      makeSignal({ direction: "SHORT", timeframe: "1M" }),
       makeSymbolState(),
     );
     expect(result.reasons).not.toContain("wick_ratio_exceeded");
   });
 });
+
+// ---------------------------------------------------------------------------
+// safety-gate — checkSafety — wick ratio filter — doji
+// ---------------------------------------------------------------------------
 
 describe("safety-gate — wick ratio filter — doji", () => {
   it("passes when candle range is zero (doji)", () => {
@@ -191,89 +229,118 @@ describe("safety-gate — wick ratio filter — doji", () => {
 });
 
 // ---------------------------------------------------------------------------
-// safety-gate — checkSafety — box range filter
+// safety-gate — checkSafety — box range filter (MA20-based)
+//
+// Default makeIndicators():
+//   sma20 = 50000, bb20.upper = 52000, bb20.lower = 48000
+//   range_20 = 4000, margin = 4000 * 0.15 = 600
+//   lowerBound = 50000 - 600 = 49400
+//   upperBound = 50000 + 600 = 50600
 // ---------------------------------------------------------------------------
 
 describe("safety-gate — box range filter", () => {
-  it("passes when session_box_high/low are null (no box data)", () => {
+  it("passes when sma20 is null (no indicator data)", () => {
     const candle = makeCandle({ close: new Decimal("60000") });
     const result = checkSafety(
       candle,
-      makeIndicators(),
+      makeIndicators({ sma20: null }),
       makeSignal(),
-      makeSymbolState({ session_box_high: null, session_box_low: null }),
+      makeSymbolState(),
     );
     expect(result.reasons).not.toContain("outside_box_range");
   });
 
-  it("passes when entry price is inside the session box", () => {
-    // box: 49000 to 51000, margin = 2000*0.3 = 600
-    // extended: [48400, 51600]
-    // close = 50200 → inside
-    const candle = makeCandle({ close: new Decimal("50200") });
+  it("passes when bb20 is null (no indicator data)", () => {
+    const candle = makeCandle({ close: new Decimal("60000") });
+    const result = checkSafety(
+      candle,
+      makeIndicators({ bb20: null }),
+      makeSignal(),
+      makeSymbolState(),
+    );
+    expect(result.reasons).not.toContain("outside_box_range");
+  });
+
+  it("passes when entry price is at MA20 midpoint (center of range)", () => {
+    // close = sma20 = 50000 → inside [49400, 50600]
+    const candle = makeCandle({ close: new Decimal("50000") });
+    const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
+    expect(result.reasons).not.toContain("outside_box_range");
+  });
+
+  it("passes when entry price is at the exact lower boundary", () => {
+    // lowerBound = 50000 - 600 = 49400 → exactly on boundary → should pass
+    const candle = makeCandle({ close: new Decimal("49400") });
+    const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
+    expect(result.reasons).not.toContain("outside_box_range");
+  });
+
+  it("passes when entry price is at the exact upper boundary", () => {
+    // upperBound = 50000 + 600 = 50600 → exactly on boundary → should pass
+    const candle = makeCandle({ close: new Decimal("50600") });
+    const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
+    expect(result.reasons).not.toContain("outside_box_range");
+  });
+
+  it("fails when entry price is below lower boundary", () => {
+    // lowerBound = 49400, close = 49399 → outside
+    const candle = makeCandle({ close: new Decimal("49399") });
+    const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("outside_box_range");
+  });
+
+  it("fails when entry price is above upper boundary", () => {
+    // upperBound = 50600, close = 50601 → outside
+    const candle = makeCandle({ close: new Decimal("50601") });
+    const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("outside_box_range");
+  });
+
+  it("uses MA20 midpoint, not session_box — session_box fields are irrelevant", () => {
+    // close=49399 is outside MA20 boundary [49400, 50600]
+    // session_box_high/low set to values that would extend far — should still fail
+    const candle = makeCandle({ close: new Decimal("49399") });
     const result = checkSafety(
       candle,
       makeIndicators(),
       makeSignal(),
       makeSymbolState({
-        session_box_high: new Decimal("51000"),
-        session_box_low: new Decimal("49000"),
-      }),
-    );
-    expect(result.reasons).not.toContain("outside_box_range");
-  });
-
-  it("passes when entry price is at the extended lower boundary", () => {
-    // box: 49000 to 51000, margin = 600
-    // extended lower = 49000 - 600 = 48400
-    const candle = makeCandle({ close: new Decimal("48400") });
-    const result = checkSafety(
-      candle,
-      makeIndicators(),
-      makeSignal(),
-      makeSymbolState({
-        session_box_high: new Decimal("51000"),
-        session_box_low: new Decimal("49000"),
-      }),
-    );
-    expect(result.reasons).not.toContain("outside_box_range");
-  });
-
-  it("fails when entry price is below extended lower boundary", () => {
-    // extended lower = 48400, close = 48399 → outside
-    const candle = makeCandle({ close: new Decimal("48399") });
-    const result = checkSafety(
-      candle,
-      makeIndicators(),
-      makeSignal(),
-      makeSymbolState({
-        session_box_high: new Decimal("51000"),
-        session_box_low: new Decimal("49000"),
+        session_box_high: new Decimal("55000"),
+        session_box_low: new Decimal("45000"),
       }),
     );
     expect(result.passed).toBe(false);
     expect(result.reasons).toContain("outside_box_range");
   });
 
-  it("fails when entry price is above extended upper boundary", () => {
-    // extended upper = 51600, close = 51601 → outside
-    const candle = makeCandle({ close: new Decimal("51601") });
+  it("uses different sma20 and bb20 values correctly", () => {
+    // sma20=51000, bb20.upper=53000, bb20.lower=49000 → range_20=4000, margin=600
+    // bounds: [50400, 51600]
+    // close=50400 → exactly on lower boundary → pass
+    const candle = makeCandle({ close: new Decimal("50400") });
     const result = checkSafety(
       candle,
-      makeIndicators(),
-      makeSignal(),
-      makeSymbolState({
-        session_box_high: new Decimal("51000"),
-        session_box_low: new Decimal("49000"),
+      makeIndicators({
+        sma20: new Decimal("51000"),
+        bb20: {
+          upper: new Decimal("53000"),
+          middle: new Decimal("51000"),
+          lower: new Decimal("49000"),
+          bandwidth: new Decimal("0.078"),
+          percentB: new Decimal("0.35"),
+        },
       }),
+      makeSignal(),
+      makeSymbolState(),
     );
-    expect(result.passed).toBe(false);
-    expect(result.reasons).toContain("outside_box_range");
+    expect(result.reasons).not.toContain("outside_box_range");
   });
 });
 
 // ---------------------------------------------------------------------------
-// safety-gate — checkSafety — abnormal candle filter
+// safety-gate — checkSafety — abnormal candle filter (threshold = 2x ATR)
 // ---------------------------------------------------------------------------
 
 describe("safety-gate — abnormal candle filter", () => {
@@ -291,8 +358,39 @@ describe("safety-gate — abnormal candle filter", () => {
     expect(result.reasons).not.toContain("abnormal_candle");
   });
 
-  it("passes when candle range is 2x ATR (below threshold 3x)", () => {
-    // atr=400, range=800 (2x), threshold=1200 → passes
+  it("passes when candle range is 1.5x ATR (below threshold 2x)", () => {
+    // atr=400, range=600 (1.5x), threshold=800 → passes
+    const candle = makeCandle({
+      high: new Decimal("50600"),
+      low: new Decimal("50000"),
+    });
+    const result = checkSafety(
+      candle,
+      makeIndicators({ atr14: new Decimal("400") }),
+      makeSignal(),
+      makeSymbolState(),
+    );
+    expect(result.reasons).not.toContain("abnormal_candle");
+  });
+
+  it("fails when candle range is 3x ATR (above threshold 2x)", () => {
+    // atr=400, range=1200 (3x), threshold=800 → fails
+    const candle = makeCandle({
+      high: new Decimal("51200"),
+      low: new Decimal("50000"),
+    });
+    const result = checkSafety(
+      candle,
+      makeIndicators({ atr14: new Decimal("400") }),
+      makeSignal(),
+      makeSymbolState(),
+    );
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("abnormal_candle");
+  });
+
+  it("passes when candle range equals exactly 2x ATR (at threshold)", () => {
+    // atr=400, range=800 (2x), threshold=800 → passes (must be GREATER than threshold)
     const candle = makeCandle({
       high: new Decimal("50800"),
       low: new Decimal("50000"),
@@ -306,10 +404,10 @@ describe("safety-gate — abnormal candle filter", () => {
     expect(result.reasons).not.toContain("abnormal_candle");
   });
 
-  it("fails when candle range is 4x ATR (above threshold 3x)", () => {
-    // atr=400, range=1600 (4x), threshold=1200 → fails
+  it("fails when candle range is just above 2x ATR", () => {
+    // atr=400, range=801 (just over 2x threshold of 800) → fails
     const candle = makeCandle({
-      high: new Decimal("51600"),
+      high: new Decimal("50801"),
       low: new Decimal("50000"),
     });
     const result = checkSafety(
@@ -320,21 +418,6 @@ describe("safety-gate — abnormal candle filter", () => {
     );
     expect(result.passed).toBe(false);
     expect(result.reasons).toContain("abnormal_candle");
-  });
-
-  it("passes when candle range equals exactly 3x ATR (at threshold)", () => {
-    // atr=400, range=1200 (3x), threshold=1200 → passes (must be GREATER than threshold)
-    const candle = makeCandle({
-      high: new Decimal("51200"),
-      low: new Decimal("50000"),
-    });
-    const result = checkSafety(
-      candle,
-      makeIndicators({ atr14: new Decimal("400") }),
-      makeSignal(),
-      makeSymbolState(),
-    );
-    expect(result.reasons).not.toContain("abnormal_candle");
   });
 });
 
@@ -444,62 +527,65 @@ describe("safety-gate — 1M noise filter", () => {
 // ---------------------------------------------------------------------------
 
 describe("safety-gate — combined scenarios", () => {
-  it("returns passed=true and empty reasons when all conditions pass", () => {
-    // Good candle: moderate wick, inside box, normal size, aligned bias
-    // range = 1000 (49000 to 50000)
-    // body bottom = 49500 → lower wick = 500/1000 = 0.5 → ok
-    // close = 49700 → inside box (49000 to 51000, extended to [48400, 51600])
-    // range = 1000, atr = 400 → 1000/400 = 2.5 < 3 → ok
-    // timeframe = 5M → skip noise filter
+  it("returns passed=true and empty reasons when all conditions pass (5M)", () => {
+    // Candle setup for 5M with tight wick threshold (0.1):
+    //   range = 200 (49900 to 50100)
+    //   lower wick: body bottom = min(open=49990, close=50000) = 49990
+    //   wick = (49990 - 49900) / 200 = 90/200 = 0.45 → FAILS 0.1 threshold
+    //   Use zero wick: open=close=high=50000, low=50000 (doji) → passes wick
+    //   Actually use: open=50050, close=50080, low=50040, high=50100
+    //   lower wick = (50050 - 50040) / 60 = 10/60 ≈ 0.167 → still > 0.1
+    //
+    // Simplest: use close exactly at sma20 center, with no lower wick.
+    //   open=50000, close=50050, low=50000, high=50100 (range=100)
+    //   lower wick = (50000 - 50000)/100 = 0 → passes
+    //   Box (MA20-based): sma20=50000, range_20=4000, margin=600
+    //     bounds=[49400, 50600] → close=50050 → inside → passes
+    //   Abnormal: range=100, atr=400, threshold=800 → 100 < 800 → passes
+    //   Timeframe = 5M → skip noise filter
     const candle = makeCandle({
-      open: new Decimal("49500"),
-      close: new Decimal("49700"),
-      low: new Decimal("49000"),
-      high: new Decimal("50000"),
+      open: new Decimal("50000"),
+      close: new Decimal("50050"),
+      low: new Decimal("50000"),
+      high: new Decimal("50100"),
     });
     const result = checkSafety(
       candle,
       makeIndicators({ atr14: new Decimal("400") }),
       makeSignal({ direction: "LONG", timeframe: "5M" }),
-      makeSymbolState({
-        session_box_high: new Decimal("51000"),
-        session_box_low: new Decimal("49000"),
-      }),
+      makeSymbolState(),
     );
     expect(result.passed).toBe(true);
     expect(result.reasons).toHaveLength(0);
   });
 
   it("accumulates multiple failure reasons when multiple conditions fail", () => {
-    // Bad candle: high wick ratio + outside box + abnormal size
-    // range = 10000 (40000 to 50000)
-    // lower wick: body bottom = min(40700, 40800) = 40700; wick = (40700-40000)/10000 = 0.07 → ok
-    // Let's make it fail wick: lower wick = 0.8 → body bottom = 40000 + 8000 = 48000
-    // AND abnormal: range=10000, atr=400 → 10000/400 = 25x → fail
-    // AND outside box: close=48500, box=[49000, 51000], extended=[48400, 51600] → 48500 > 48400 ok
-    // Actually let's set close to be outside box
-    // close = 47000 < extended lower 48400 → outside box
+    // Candle: large range → abnormal candle
+    //   range = 2000 (48000 to 50000), atr=400, threshold = 2*400=800 → 2000 > 800 → abnormal
+    // Wick (5M LONG): lower wick = (body_bottom - 48000) / 2000
+    //   open=49800, close=49900 → body_bottom=49800
+    //   wick = (49800-48000)/2000 = 1800/2000 = 0.9 → > 0.1 → fail
+    // Box (MA20): sma20=50000, range_20=4000, margin=600, bounds=[49400, 50600]
+    //   close=49900 → inside → passes
+    // Set close outside box: close=49000 < 49400 → fails
     const candle = makeCandle({
-      open: new Decimal("48000"),
-      close: new Decimal("47000"),
-      low: new Decimal("40000"),
+      open: new Decimal("49800"),
+      close: new Decimal("49000"),
+      low: new Decimal("48000"),
       high: new Decimal("50000"),
     });
     const result = checkSafety(
       candle,
       makeIndicators({ atr14: new Decimal("400") }),
       makeSignal({ direction: "LONG", timeframe: "5M" }),
-      makeSymbolState({
-        session_box_high: new Decimal("51000"),
-        session_box_low: new Decimal("49000"),
-      }),
+      makeSymbolState(),
     );
     expect(result.passed).toBe(false);
-    // wick_ratio: body bottom = 48000, wick = (48000-40000)/10000 = 0.8 → fail
+    // wick_ratio: wick = (49800-48000)/2000 = 0.9 > 0.1 → fail
     expect(result.reasons).toContain("wick_ratio_exceeded");
-    // outside_box: close=47000 < 48400 → fail
+    // outside_box: close=49000 < 49400 → fail
     expect(result.reasons).toContain("outside_box_range");
-    // abnormal: range=10000, atr=400, threshold=1200 → 10000>1200 → fail
+    // abnormal: range=2000, atr=400, threshold=800 → 2000>800 → fail
     expect(result.reasons).toContain("abnormal_candle");
   });
 });

@@ -77,7 +77,8 @@ export type CommonCodeGroup =
   | "TIME_DECAY"
   | "WFO"
   | "ANCHOR"
-  | "NOTIFICATION";
+  | "NOTIFICATION"
+  | "TRANSFER";
 
 // ---------------------------------------------------------------------------
 // Composite key types

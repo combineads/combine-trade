@@ -327,10 +327,11 @@ describe("config/schema — CONFIG_SCHEMAS registry", () => {
     "WFO",
     "ANCHOR",
     "NOTIFICATION",
+    "TRANSFER",
   ] as const;
 
-  it("has entries for all 12 groups", () => {
-    expect(Object.keys(CONFIG_SCHEMAS)).toHaveLength(12);
+  it("has entries for all 13 groups", () => {
+    expect(Object.keys(CONFIG_SCHEMAS)).toHaveLength(13);
   });
 
   for (const group of expectedGroups) {

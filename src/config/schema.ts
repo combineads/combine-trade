@@ -135,6 +135,27 @@ export const NotificationConfigSchema = z.object({
 export type NotificationConfig = z.infer<typeof NotificationConfigSchema>;
 
 // ---------------------------------------------------------------------------
+// TRANSFER — auto-transfer configuration
+// Heterogeneous values vary by code, so per-code schemas are used for
+// validation. The group-level schema accepts the full union; validateConfigValue
+// resolves the correct per-code schema when available.
+// ---------------------------------------------------------------------------
+
+export const TransferConfigSchema = z.union([z.boolean(), z.string(), z.number()]);
+
+export type TransferConfig = z.infer<typeof TransferConfigSchema>;
+
+/** Per-code schemas for TRANSFER group (stricter than group-level union) */
+export const TRANSFER_CODE_SCHEMAS: Record<string, z.ZodType> = {
+  transfer_enabled: z.boolean(),
+  transfer_schedule: z.string(),
+  transfer_time_utc: z.string(),
+  transfer_pct: z.number(),
+  min_transfer_usdt: z.string(),
+  reserve_multiplier: z.number(),
+};
+
+// ---------------------------------------------------------------------------
 // Schema registry — maps every CommonCodeGroup to its ZodSchema
 // ---------------------------------------------------------------------------
 
@@ -151,6 +172,7 @@ export const CONFIG_SCHEMAS: Record<CommonCodeGroup, z.ZodType> = {
   WFO: WfoConfigSchema,
   ANCHOR: AnchorConfigSchema,
   NOTIFICATION: NotificationConfigSchema,
+  TRANSFER: TransferConfigSchema,
 };
 
 // ---------------------------------------------------------------------------
@@ -168,7 +190,7 @@ export const ANCHOR_GROUPS: readonly string[] = ["ANCHOR"] as const;
 
 export function validateConfigValue(
   group: string,
-  _code: string,
+  code: string,
   value: unknown,
 ): { success: true; data: unknown } | { success: false; error: z.ZodError } {
   const schema = CONFIG_SCHEMAS[group as CommonCodeGroup];
@@ -185,7 +207,15 @@ export function validateConfigValue(
     };
   }
 
-  const result = schema.safeParse(value);
+  // For groups that provide per-code schemas, use the more specific schema
+  // when the code is known, to enforce strict type constraints per entry.
+  const codeSchemas: Partial<Record<string, Record<string, z.ZodType>>> = {
+    TRANSFER: TRANSFER_CODE_SCHEMAS,
+  };
+  const perCodeSchema = codeSchemas[group]?.[code];
+  const activeSchema = perCodeSchema ?? schema;
+
+  const result = activeSchema.safeParse(value);
   if (result.success) {
     return { success: true, data: result.data };
   }

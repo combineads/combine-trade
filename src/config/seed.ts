@@ -329,6 +329,50 @@ export const SEED_DATA: SeedEntry[] = [
     description: "Slack webhook notification settings for trade and system alerts",
     sort_order: 0,
   },
+
+  // ── TRANSFER ─────────────────────────────────────────────────────────────
+  {
+    group_code: "TRANSFER",
+    code: "transfer_enabled",
+    value: false,
+    description: "Auto-transfer activation flag (disabled by default for safety)",
+    sort_order: 0,
+  },
+  {
+    group_code: "TRANSFER",
+    code: "transfer_schedule",
+    value: "daily",
+    description: "Transfer execution schedule: daily | weekly",
+    sort_order: 1,
+  },
+  {
+    group_code: "TRANSFER",
+    code: "transfer_time_utc",
+    value: "00:30",
+    description: "Transfer execution time in UTC (HH:MM)",
+    sort_order: 2,
+  },
+  {
+    group_code: "TRANSFER",
+    code: "transfer_pct",
+    value: 50,
+    description: "Percentage of available surplus balance to transfer",
+    sort_order: 3,
+  },
+  {
+    group_code: "TRANSFER",
+    code: "min_transfer_usdt",
+    value: "10",
+    description: "Minimum transfer amount in USDT (Decimal-compatible string)",
+    sort_order: 4,
+  },
+  {
+    group_code: "TRANSFER",
+    code: "reserve_multiplier",
+    value: 10,
+    description: "Reserve multiplier applied to margin requirement before transferring",
+    sort_order: 5,
+  },
 ];
 
 // ---------------------------------------------------------------------------

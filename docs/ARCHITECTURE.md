@@ -138,8 +138,8 @@ L9  daemon                     — orchestrates all layers
 | `orders` | L6 | Order executor, slippage check | `executeEntry()`, `emergencyClose()`, `recordOrder()`, `checkSlippage()` | core, db |
 | `exits` | L6 | 3-stage exit checker, trailing stop, exit manager | `checkExit()`, `processExit()`, `processTrailing()`, `calculateTrailingSl()` | core, db, orders |
 | `labeling` | L6 | Trade result classification, Vector label | `classifyResult()`, `classifyGrade()`, `finalizeLabel()` | core, db |
-| `reconciliation` | L7 | DB↔exchange sync, panic close | `ReconciliationWorker.run()` | core, db, positions, exchanges |
-| `notifications` | L7 | Slack webhook | `SlackNotifier.send(event)` | core, config |
+| `reconciliation` | L7 | 60s interval position reconciliation | `comparePositions()`, `runOnce()`, `startReconciliation()` | core, db, orders, exchanges (via ports) |
+| `notifications` | L7 | Slack webhook alerts (fire-and-forget) | `sendSlackAlert()`, `formatMessage()`, `getWebhookUrl()` | core, db (CommonCode) |
 | `api` | L8 | REST routes | `createRouter(): Router` | core, positions, candles, signals, knn, limits, labeling, config |
 | `backtest` | L8 | Backtest runner, WFO | `BacktestRunner.run(): BacktestResult` | full pipeline (candles→labeling) |
 | `daemon` | L9 | Main entry, orchestration, shutdown | `startDaemon()`, `gracefulShutdown()` | all |

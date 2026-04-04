@@ -25,3 +25,15 @@ Patterns tried and failed, or guardrails discovered during implementation. Check
 - Discovered: 2026-04-03, EP-02
 - Problem: @ixjb94/indicators는 number[] 기반. Decimal으로 변환하면 성능 100배 저하
 - Instead: Float64로 내부 계산 → 결과만 Decimal 변환. 지표 계산은 "통계 연산"이므로 Float64 정밀도 충분
+
+## Database Patterns
+
+### DB 연동 로직을 mock 테스트로 검증하지 말 것
+- Discovered: 2026-04-04, EP-04 (T-04-000)
+- Problem: ON CONFLICT DO UPDATE WHERE, FK 제약, SQL 기반 갭 감지 등 PostgreSQL 고유 동작은 mock으로 검증 불가. mock 테스트가 통과해도 실제 DB에서 실패하는 경우 발생
+- Instead: Docker PostgreSQL + test-db 헬퍼로 실제 DB 통합 테스트. `describe.skipIf(!isTestDbAvailable())` 패턴으로 DB 미연결 시 skip
+
+### 타임프레임 duration 같은 도메인 상수를 여러 파일에 인라인하지 말 것
+- Discovered: 2026-04-04, EP-04
+- Problem: 동일한 상수 매핑이 여러 파일에 중복 정의되면 불일치 위험 (예: collector.ts TIMEFRAME_DURATION_MS vs gap-detection.ts getTimeframeDurationMs)
+- Instead: 단일 소스에서 정의하고 임포트. 변경 시 한 곳만 수정

@@ -1,0 +1,24 @@
+# EP-04 Market Data — Archive Summary
+
+- **Completed:** 2026-04-04
+- **Tasks:** 11 (T-04-000 ~ T-04-010)
+- **Key decisions:**
+  - DB 테스트 인프라 도입 (Docker PostgreSQL 16 + pgvector, test-db 헬퍼) — mock DB 금지, 실제 DB 통합 테스트
+  - Binance public data (data.binance.vision) 히스토리 다운로드: Monthly ZIP + Daily ZIP 2단계 전략
+  - CCXT REST API fallback: public data 실패 시 어댑터 기반 복구
+  - 조건부 UPSERT: ON CONFLICT DO UPDATE WHERE is_closed = false (마감 캔들 보호)
+  - 캔들 마감 이벤트: EventEmitter 대신 함수 콜백 패턴 (타입 안전)
+  - 갭 감지: SQL 경량 쿼리 (open_time만) + 인접 갭 병합
+  - 1M 캔들 6개월 rolling 삭제: 배치 DELETE 패턴 (1000행 단위)
+  - CandleManager 통합 API: sync -> collect -> gap recovery 순서 보장
+- **Patterns discovered:**
+  - describe.skipIf(!isTestDbAvailable()) — DB 미연결 시 통합 테스트 skip
+  - DI를 통한 테스트 가능성: SyncOptions에 downloadFn/fetchRestFn/upsertFn 주입
+  - 재연결 감지: 마지막 수신 시각 대비 timeframe * 3 초과 시 reconnect 판정
+  - Dedup: Set 기반 최근 마감 캔들 중복 제거 (최대 1000건 LRU)
+- **Outputs produced:**
+  - `docker-compose.yml` — 테스트 PostgreSQL + pgvector 컨테이너
+  - `tests/helpers/test-db.ts` — 통합 테스트 DB 헬퍼
+  - `src/db/schema.ts` — candleTable 추가 (FK, UNIQUE, CHECK 제약)
+  - `src/candles/` — history-loader, repository, sync, cleanup, collector, types, gap-detection, gap-recovery, index (CandleManager)
+  - 9개 테스트 파일, 865 tests 중 상당수가 candles 관련

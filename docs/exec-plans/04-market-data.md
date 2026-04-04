@@ -105,3 +105,4 @@
 - 2026-04-04: 태스크 생성 완료 (10개). 의존성 체인: T-04-001(스키마) → T-04-002/003(로더/repo) → T-04-004(sync) / T-04-006→007(수집기) / T-04-008→009(갭) → T-04-010(통합).
 - 2026-04-04: 태스크 리뷰 완료. Critical 3건 수정: (1) fetchCandlesViaREST를 T-04-003→T-04-002로 이동 (one-deliverable 준수), (2) getCandleGaps 중복 제거 — T-04-008이 갭 감지 전���, (3) T-04-006에 reconnection 이벤트 추���. Important 4건 수정: exchange 파라미터/is_closed 감지/DELETE 패턴/심볼 소스 명확화.
 - 2026-04-04: DB 테스트 인프라 추가. T-04-000 신설 (docker-compose + test-db 헬퍼). EP-04부터 모든 DB 연동 태스크가 실제 PostgreSQL에서 통합 테스트 실행. mock DB 금지. 의존성 체인: T-04-000→T-04-001→나머지 (전이적 의존).
+- 2026-04-04: **에픽 완료.** 11개 태스크 (T-04-000 ~ T-04-010) 모두 done. 865 tests, 0 fail, typecheck pass, lint pass. 아카이빙: `docs/tasks/archive/ep-04-market-data/`. EP-03도 함께 아카이빙 (`docs/tasks/archive/ep-03-exchanges/`).

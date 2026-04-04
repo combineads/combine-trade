@@ -24,6 +24,12 @@ export type ApiServerDeps = {
 
   /** Directory to serve static files from (default: "./public") */
   staticDir?: string;
+
+  /** JWT secret for auth guard middleware. When omitted, auth guard is not applied. */
+  jwtSecret?: string;
+
+  /** Query timeout in milliseconds (default: 5000) */
+  queryTimeoutMs?: number;
 };
 
 // ---------------------------------------------------------------------------

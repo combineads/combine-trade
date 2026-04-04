@@ -12,6 +12,7 @@
 
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
+import { corsMiddleware, createAuthGuard, errorHandler, queryTimeout } from "@/api/middleware";
 import type { ApiServerDeps, ApiServerHandle } from "@/api/types";
 
 // ---------------------------------------------------------------------------
@@ -56,9 +57,23 @@ function createApiRouter(): Hono {
  * ```
  */
 export function createApiServer(deps: ApiServerDeps): ApiServerHandle {
-  const { logger, port = DEFAULT_PORT, staticDir = DEFAULT_STATIC_DIR } = deps;
+  const {
+    logger,
+    port = DEFAULT_PORT,
+    staticDir = DEFAULT_STATIC_DIR,
+    jwtSecret,
+    queryTimeoutMs = 5000,
+  } = deps;
 
   const app = new Hono();
+
+  // ---- Middleware (order: CORS → errorHandler → authGuard → queryTimeout) ----
+  app.use("*", corsMiddleware());
+  app.onError(errorHandler());
+  if (jwtSecret !== undefined) {
+    app.use("*", createAuthGuard(jwtSecret));
+  }
+  app.use("*", queryTimeout(queryTimeoutMs));
 
   // ---- Mount /api/* routes ----
   const apiRouter = createApiRouter();

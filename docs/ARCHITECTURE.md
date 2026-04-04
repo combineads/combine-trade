@@ -145,7 +145,7 @@ L9  daemon                     — orchestrates all layers
 | `reconciliation` | L7 | 60s interval position reconciliation | `comparePositions()`, `runOnce()`, `startReconciliation()` | core, db, orders, exchanges (via ports) |
 | `notifications` | L7 | Slack webhook alerts (fire-and-forget) | `sendSlackAlert()`, `formatMessage()`, `getWebhookUrl()` | core, db (CommonCode) |
 | `api` | L8 | REST routes | `createRouter(): Router` | core, positions, candles, signals, knn, limits, labeling, config |
-| `backtest` | L8 | Backtest runner, WFO | `BacktestRunner.run(): BacktestResult` | full pipeline (candles→labeling) |
+| `backtest` | L8 | Backtest runner, WFO | `BacktestRunner`, `MockExchangeAdapter`, `calcFullMetrics()`, `generateWfoWindows()`, `runWfo()`, `parseArgs()`, `runCli()` | full pipeline (candles→labeling) |
 | `daemon` | L9 | Main entry, pipeline, crash recovery, shutdown | `startDaemon()`, `handleCandleClose()`, `recoverFromCrash()`, `gracefulShutdown()`, `getExecutionMode()`, `killSwitch()` | all |
 
 ## Data ownership

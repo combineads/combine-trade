@@ -51,7 +51,7 @@ import {
   detectWatching,
 } from "@/signals/watching";
 import { vectorize } from "@/vectors/vectorizer";
-import type { ActiveSymbol, PipelineDeps } from "@/daemon/pipeline";
+import type { PipelineDeps } from "@/daemon/pipeline";
 import { determineDailyBias } from "@/filters/daily-direction";
 import type { MockExchangeAdapter } from "./mock-adapter";
 
@@ -612,20 +612,3 @@ export function createBacktestPipelineDeps(
   return { deps, collectors };
 }
 
-// ---------------------------------------------------------------------------
-// createBacktestActiveSymbol — convenience helper
-// ---------------------------------------------------------------------------
-
-/**
- * Creates an ActiveSymbol configured for backtest (executionMode='live').
- */
-export function createBacktestActiveSymbol(
-  symbol: string,
-  exchange: Exchange,
-): ActiveSymbol {
-  return {
-    symbol,
-    exchange,
-    executionMode: "live",
-  };
-}

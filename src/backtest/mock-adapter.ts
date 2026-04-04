@@ -192,6 +192,45 @@ export class MockExchangeAdapter implements ExchangeAdapter {
     });
   }
 
+  // ── Position-close helper ────────────────────────────────────────────────
+
+  /**
+   * Apply a reduceOnly fill against the tracked position for `symbol`.
+   * Handles both full and partial closes, updating balances and position size.
+   * Returns the actual closeSize used (capped to position.size).
+   */
+  private closePosition(symbol: string, fillPrice: Decimal, closeSize: Decimal): Decimal {
+    const position = this.positions.get(symbol);
+    if (!position) return d("0");
+
+    const actualCloseSize = closeSize.greaterThan(position.size) ? position.size : closeSize;
+
+    if (actualCloseSize.equals(position.size)) {
+      // Full close — free locked cost + realise profit/loss
+      const pnl =
+        position.side === "LONG"
+          ? fillPrice.minus(position.entryPrice).times(actualCloseSize)
+          : position.entryPrice.minus(fillPrice).times(actualCloseSize);
+      this.availableBalance = this.availableBalance.plus(position.lockedCost).plus(pnl);
+      this.totalBalance = this.availableBalance;
+      this.positions.delete(symbol);
+    } else {
+      // Partial close
+      const fraction = actualCloseSize.dividedBy(position.size);
+      const releasedCost = position.lockedCost.times(fraction);
+      const pnl =
+        position.side === "LONG"
+          ? fillPrice.minus(position.entryPrice).times(actualCloseSize)
+          : position.entryPrice.minus(fillPrice).times(actualCloseSize);
+      this.availableBalance = this.availableBalance.plus(releasedCost).plus(pnl);
+      this.totalBalance = this.availableBalance.plus(position.lockedCost.minus(releasedCost));
+      position.size = position.size.minus(actualCloseSize);
+      position.lockedCost = position.lockedCost.minus(releasedCost);
+    }
+
+    return actualCloseSize;
+  }
+
   // ── ExchangeAdapter — order methods ──────────────────────────────────────
 
   async createOrder(params: CreateOrderParams): Promise<OrderResult> {
@@ -210,50 +249,13 @@ export class MockExchangeAdapter implements ExchangeAdapter {
 
       if (reduceOnly) {
         // Close (reduce) an existing position
-        const position = this.positions.get(symbol);
-        if (position) {
-          const closeSize = size.greaterThan(position.size) ? position.size : size;
-
-          if (closeSize.equals(position.size)) {
-            // Full close — free locked cost + add profit/loss
-            this.availableBalance = this.availableBalance.plus(position.lockedCost).plus(
-              position.side === "LONG"
-                ? fillPrice.minus(position.entryPrice).times(closeSize)
-                : position.entryPrice.minus(fillPrice).times(closeSize),
-            );
-            this.totalBalance = this.availableBalance;
-            this.positions.delete(symbol);
-          } else {
-            // Partial close
-            const fraction = closeSize.dividedBy(position.size);
-            const releasedCost = position.lockedCost.times(fraction);
-            const pnl =
-              position.side === "LONG"
-                ? fillPrice.minus(position.entryPrice).times(closeSize)
-                : position.entryPrice.minus(fillPrice).times(closeSize);
-            this.availableBalance = this.availableBalance.plus(releasedCost).plus(pnl);
-            this.totalBalance = this.availableBalance.plus(position.lockedCost.minus(releasedCost));
-            position.size = position.size.minus(closeSize);
-            position.lockedCost = position.lockedCost.minus(releasedCost);
-          }
-
-          return {
-            orderId,
-            exchangeOrderId: orderId,
-            status: "FILLED",
-            filledPrice: fillPrice,
-            filledSize: closeSize,
-            timestamp,
-          };
-        }
-
-        // No position to reduce — return FILLED with 0 size (no-op)
+        const filledSize = this.closePosition(symbol, fillPrice, size);
         return {
           orderId,
           exchangeOrderId: orderId,
           status: "FILLED",
           filledPrice: fillPrice,
-          filledSize: d("0"),
+          filledSize,
           timestamp,
         };
       }
@@ -377,33 +379,7 @@ export class MockExchangeAdapter implements ExchangeAdapter {
 
       // Apply position changes for reduceOnly fills
       if (pending.reduceOnly) {
-        const position = this.positions.get(pending.symbol);
-        if (position) {
-          const closeSize = pending.size.greaterThan(position.size) ? position.size : pending.size;
-
-          if (closeSize.equals(position.size)) {
-            this.availableBalance = this.availableBalance.plus(position.lockedCost).plus(
-              position.side === "LONG"
-                ? fillPrice.minus(position.entryPrice).times(closeSize)
-                : position.entryPrice.minus(fillPrice).times(closeSize),
-            );
-            this.totalBalance = this.availableBalance;
-            this.positions.delete(pending.symbol);
-          } else {
-            const fraction = closeSize.dividedBy(position.size);
-            const releasedCost = position.lockedCost.times(fraction);
-            const pnl =
-              position.side === "LONG"
-                ? fillPrice.minus(position.entryPrice).times(closeSize)
-                : position.entryPrice.minus(fillPrice).times(closeSize);
-            this.availableBalance = this.availableBalance.plus(releasedCost).plus(pnl);
-            this.totalBalance = this.availableBalance.plus(
-              position.lockedCost.minus(releasedCost),
-            );
-            position.size = position.size.minus(closeSize);
-            position.lockedCost = position.lockedCost.minus(releasedCost);
-          }
-        }
+        this.closePosition(pending.symbol, fillPrice, pending.size);
       }
 
       // Mark as filled

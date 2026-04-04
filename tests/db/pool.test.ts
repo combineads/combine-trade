@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 // Import the module under test. We use dynamic-import in each test block so
 // that module-level state (pool/db singletons) is reset between tests via the
@@ -11,8 +11,12 @@ import {
   isHealthy,
 } from "../../src/db/pool";
 
-// Reset the singleton state after every test by calling closePool(), which
-// sets both pool and db back to null even when they were never initialised.
+// Reset the singleton state before and after every test by calling closePool(),
+// which sets both pool and db back to null even when they were never initialised.
+// beforeEach ensures clean state even if another parallel test file initialized the pool.
+beforeEach(async () => {
+  await closePool();
+});
 afterEach(async () => {
   await closePool();
 });

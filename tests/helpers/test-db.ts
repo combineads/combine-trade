@@ -54,23 +54,31 @@ async function readTestDatabaseUrl(): Promise<string | undefined> {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
+let _cachedAvailability: boolean | null = null;
+
 /**
  * Attempts to connect to the test database and returns true if successful.
  * Never throws — returns false on any error (missing .env.test, DB down, etc.).
+ * Result is cached to avoid creating multiple throwaway connections.
  */
 export async function isTestDbAvailable(): Promise<boolean> {
+  if (_cachedAvailability !== null) return _cachedAvailability;
+
   const url = await readTestDatabaseUrl();
   if (!url) {
+    _cachedAvailability = false;
     return false;
   }
 
   let client: ReturnType<typeof import("postgres").default> | null = null;
   try {
     const postgres = (await import("postgres")).default;
-    client = postgres(url, { max: 1, connect_timeout: 3 });
+    client = postgres(url, { max: 1, connect_timeout: 3, idle_timeout: 1 });
     await client`SELECT 1`;
+    _cachedAvailability = true;
     return true;
   } catch {
+    _cachedAvailability = false;
     return false;
   } finally {
     if (client) {

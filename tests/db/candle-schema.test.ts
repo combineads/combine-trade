@@ -88,12 +88,8 @@ describe.skipIf(!dbAvailable)("candle-schema — integration", () => {
     await initTestDb();
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
     await cleanupTables();
-  });
-
-  afterAll(async () => {
-    await closeTestDb();
   });
 
   // Helper: insert a parent symbol row required by the FK constraint

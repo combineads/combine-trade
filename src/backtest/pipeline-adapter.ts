@@ -15,7 +15,6 @@
  * Layer: L9 (backtest — may import any lower layer)
  */
 
-// No crypto import — use globalThis.crypto.randomUUID() or a simple counter
 import { d } from "@/core/decimal";
 import type { ExchangeAdapter } from "@/core/ports";
 import type {
@@ -74,24 +73,6 @@ export type BacktestCollectors = {
   /** Currently active watch session per symbol@exchange */
   activeWatchSessions: Map<string, string>;
 };
-
-// ---------------------------------------------------------------------------
-// ID generator
-// ---------------------------------------------------------------------------
-
-let _uuidCounter = 0;
-
-function newUuid(): string {
-  // Use globalThis.crypto if available (Bun/browser), otherwise a deterministic fallback
-  if (typeof globalThis.crypto !== "undefined" && typeof globalThis.crypto.randomUUID === "function") {
-    return globalThis.crypto.randomUUID();
-  }
-  // Fallback: generate a pseudo-UUID using counter + timestamp
-  _uuidCounter += 1;
-  const ts = Date.now().toString(16).padStart(12, "0");
-  const seq = _uuidCounter.toString(16).padStart(4, "0");
-  return `00000000-0000-4000-8000-${ts}${seq}`;
-}
 
 // ---------------------------------------------------------------------------
 // In-memory watch session state
@@ -168,42 +149,7 @@ export function createBacktestPipelineDeps(
     timeframe: Timeframe,
     limit: number,
   ): Promise<Candle[]> {
-    const candles = await adapter.fetchOHLCV(symbol, timeframe, undefined, limit);
-    return candles;
-  }
-
-  // ---------------------------------------------------------------------------
-  // getSymbolState — returns null (no DB state in backtest)
-  // ---------------------------------------------------------------------------
-  async function getSymbolState(
-    _db: DbInstance,
-    _symbol: string,
-    _exchange: string,
-  ) {
-    return null;
-  }
-
-  // ---------------------------------------------------------------------------
-  // updateDailyBias — no-op (backtest doesn't persist bias)
-  // ---------------------------------------------------------------------------
-  async function updateDailyBias(
-    _db: DbInstance,
-    _symbol: string,
-    _exchange: string,
-    _bias: DailyBias,
-    _dailyOpen: ReturnType<typeof d>,
-  ): Promise<void> {
-    // no-op
-  }
-
-  // ---------------------------------------------------------------------------
-  // isTradeBlocked — never blocked in backtest
-  // ---------------------------------------------------------------------------
-  async function isTradeBlocked(
-    _db: DbInstance,
-    _now: Date,
-  ): Promise<{ blocked: boolean; reason?: string }> {
-    return { blocked: false };
+    return adapter.fetchOHLCV(symbol, timeframe, undefined, limit);
   }
 
   // ---------------------------------------------------------------------------
@@ -236,16 +182,15 @@ export function createBacktestPipelineDeps(
     if (existingId !== undefined) {
       const existing = collectors.watchSessions.get(existingId);
       if (existing !== undefined) {
-        const invalidated: WatchSession = {
+        collectors.watchSessions.set(existingId, {
           ...existing,
           invalidated_at: new Date(),
           invalidation_reason: "new_session_started",
-        };
-        collectors.watchSessions.set(existingId, invalidated);
+        });
       }
     }
 
-    const id = newUuid();
+    const id = globalThis.crypto.randomUUID();
     const session = buildWatchSession(id, {
       symbol: params.symbol,
       exchange: params.exchange,
@@ -270,14 +215,12 @@ export function createBacktestPipelineDeps(
   ): Promise<void> {
     const session = collectors.watchSessions.get(sessionId);
     if (session !== undefined) {
-      const invalidated: WatchSession = {
+      collectors.watchSessions.set(sessionId, {
         ...session,
         invalidated_at: new Date(),
         invalidation_reason: reason,
-      };
-      collectors.watchSessions.set(sessionId, invalidated);
+      });
 
-      // Remove from active sessions
       const key = watchSessionKey(session.symbol, session.exchange);
       if (collectors.activeWatchSessions.get(key) === sessionId) {
         collectors.activeWatchSessions.delete(key);
@@ -293,24 +236,12 @@ export function createBacktestPipelineDeps(
   ): Promise<void> {
     const session = collectors.watchSessions.get(sessionId);
     if (session !== undefined) {
-      const updated: WatchSession = {
+      collectors.watchSessions.set(sessionId, {
         ...session,
         tp1_price: tp1,
         tp2_price: tp2,
-      };
-      collectors.watchSessions.set(sessionId, updated);
+      });
     }
-  }
-
-  // ---------------------------------------------------------------------------
-  // getActiveTicket — returns null (use collectors for ticket tracking)
-  // ---------------------------------------------------------------------------
-  async function getActiveTicket(
-    _db: DbInstance,
-    _symbol: string,
-    _exchange: string,
-  ): Promise<Ticket | null> {
-    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -322,7 +253,7 @@ export function createBacktestPipelineDeps(
   ): Promise<Ticket> {
     const now = new Date();
     const ticket: Ticket = {
-      id: newUuid(),
+      id: globalThis.crypto.randomUUID(),
       symbol: params.symbol,
       exchange: params.exchange as Exchange,
       signal_id: params.signalId,
@@ -367,16 +298,13 @@ export function createBacktestPipelineDeps(
     params: Parameters<PipelineDeps["insertVector"]>[1],
   ): Promise<VectorRow> {
     const now = new Date();
-    // Store embedding as pgvector string format
-    const embeddingStr = `[${Array.from(params.embedding).join(",")}]`;
-
     const row: VectorRow = {
-      id: newUuid(),
+      id: globalThis.crypto.randomUUID(),
       candle_id: params.candleId,
       symbol: params.symbol,
       exchange: params.exchange,
       timeframe: params.timeframe,
-      embedding: embeddingStr,
+      embedding: `[${Array.from(params.embedding).join(",")}]`,
       label: null,
       grade: null,
       labeled_at: null,
@@ -388,49 +316,6 @@ export function createBacktestPipelineDeps(
   }
 
   // ---------------------------------------------------------------------------
-  // searchKnn — returns empty array (no labeled vectors in backtest)
-  // ---------------------------------------------------------------------------
-  async function searchKnnBacktest(
-    _db: DbInstance,
-    _embedding: Float32Array,
-    _options: Parameters<PipelineDeps["searchKnn"]>[2],
-  ): Promise<ReturnType<PipelineDeps["searchKnn"]> extends Promise<infer T> ? T : never> {
-    return [];
-  }
-
-  // ---------------------------------------------------------------------------
-  // loadKnnConfig — returns default config
-  // ---------------------------------------------------------------------------
-  async function loadKnnConfigBacktest(
-    _db: DbInstance,
-  ): Promise<ReturnType<typeof loadKnnConfig> extends Promise<infer T> ? T : never> {
-    return { topK: 50, distanceMetric: "cosine" };
-  }
-
-  // ---------------------------------------------------------------------------
-  // loadLossLimitConfig — returns permissive config (no real loss limits for backtest)
-  // ---------------------------------------------------------------------------
-  async function loadLossLimitConfigBacktest(
-    _db: DbInstance,
-  ) {
-    return {
-      maxDailyLossPct: d("1"), // 100% — effectively no daily limit
-      maxSessionLosses: 999,
-      maxHourly5m: 999,
-      maxHourly1m: 999,
-    };
-  }
-
-  // ---------------------------------------------------------------------------
-  // loadSlippageConfig — returns default config
-  // ---------------------------------------------------------------------------
-  async function loadSlippageConfigBacktest(
-    _db: DbInstance,
-  ) {
-    return { maxSpreadPct: d("0.05") };
-  }
-
-  // ---------------------------------------------------------------------------
   // insertEvent — in-memory collector
   // ---------------------------------------------------------------------------
   async function insertEventBacktest(
@@ -439,7 +324,7 @@ export function createBacktestPipelineDeps(
   ): Promise<EventLogRow> {
     const now = new Date();
     const row: EventLogRow = {
-      id: newUuid(),
+      id: globalThis.crypto.randomUUID(),
       event_type: params.event_type,
       symbol: params.symbol ?? null,
       exchange: params.exchange ?? null,
@@ -451,13 +336,6 @@ export function createBacktestPipelineDeps(
 
     collectors.events.push(row);
     return row;
-  }
-
-  // ---------------------------------------------------------------------------
-  // sendSlackAlert — no-op
-  // ---------------------------------------------------------------------------
-  async function sendSlackAlert(): Promise<void> {
-    // no-op
   }
 
   // ---------------------------------------------------------------------------
@@ -529,7 +407,6 @@ export function createBacktestPipelineDeps(
     });
 
     if (sizeResult === null) {
-      // Fallback: use min order size
       return { size: symbolInfo.minOrderSize, leverage: 1 };
     }
 
@@ -551,12 +428,12 @@ export function createBacktestPipelineDeps(
     calcBB4,
 
     // Symbol state
-    getSymbolState,
+    getSymbolState: async (_db, _symbol, _exchange) => null,
 
     // Filters
     determineDailyBias,
-    updateDailyBias,
-    isTradeBlocked,
+    updateDailyBias: async (_db, _symbol, _exchange, _bias: DailyBias, _dailyOpen) => {},
+    isTradeBlocked: async (_db, _now) => ({ blocked: false }),
 
     // Watch sessions
     detectWatching,
@@ -575,21 +452,21 @@ export function createBacktestPipelineDeps(
     insertVector: insertVectorBacktest,
 
     // KNN
-    searchKnn: searchKnnBacktest,
+    searchKnn: async (_db, _embedding, _options) => [],
     applyTimeDecay,
     loadTimeDecayConfig,
     makeDecision,
-    loadKnnConfig: loadKnnConfigBacktest,
+    loadKnnConfig: async (_db) => ({ topK: 50, distanceMetric: "cosine" } as ReturnType<typeof loadKnnConfig> extends Promise<infer T> ? T : never),
 
     // Positions
-    getActiveTicket,
+    getActiveTicket: async (_db, _symbol, _exchange) => null,
     canPyramid: canPyramidBacktest,
     computeEntrySize,
     createTicket,
 
     // Orders
     executeEntry,
-    loadSlippageConfig: loadSlippageConfigBacktest,
+    loadSlippageConfig: async (_db) => ({ maxSpreadPct: d("0.05") }),
 
     // Exits — real implementations
     checkExit,
@@ -600,10 +477,15 @@ export function createBacktestPipelineDeps(
 
     // Loss limits
     checkLossLimit,
-    loadLossLimitConfig: loadLossLimitConfigBacktest,
+    loadLossLimitConfig: async (_db) => ({
+      maxDailyLossPct: d("1"), // 100% — effectively no daily limit
+      maxSessionLosses: 999,
+      maxHourly5m: 999,
+      maxHourly1m: 999,
+    }),
 
     // Notifications
-    sendSlackAlert,
+    sendSlackAlert: async () => {},
 
     // Event log
     insertEvent: insertEventBacktest,
@@ -611,4 +493,3 @@ export function createBacktestPipelineDeps(
 
   return { deps, collectors };
 }
-

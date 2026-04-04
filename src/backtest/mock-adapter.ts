@@ -231,12 +231,123 @@ export class MockExchangeAdapter implements ExchangeAdapter {
     return actualCloseSize;
   }
 
+  // ── Order fill helpers ───────────────────────────────────────────────────
+
+  private fillMarketEntry(
+    params: CreateOrderParams,
+    orderId: string,
+    fillPrice: Decimal,
+    timestamp: Date,
+  ): OrderResult {
+    const { symbol, side, size } = params;
+    const cost = fillPrice.times(size);
+
+    if (cost.greaterThan(this.availableBalance)) {
+      throw new Error(
+        `MockExchangeAdapter: insufficient balance. Required: ${cost.toString()}, Available: ${this.availableBalance.toString()}`,
+      );
+    }
+
+    this.availableBalance = this.availableBalance.minus(cost);
+    // totalBalance stays the same (cost moves from available → locked in position)
+
+    const direction = side === "BUY" ? "LONG" : "SHORT";
+    const existing = this.positions.get(symbol);
+
+    if (existing && existing.side === direction) {
+      // Average into existing position
+      const totalSize = existing.size.plus(size);
+      const totalCost = existing.entryPrice.times(existing.size).plus(fillPrice.times(size));
+      existing.entryPrice = totalCost.dividedBy(totalSize);
+      existing.size = totalSize;
+      existing.lockedCost = existing.lockedCost.plus(cost);
+    } else {
+      // Open new position (opposing positions cancel for simplicity)
+      if (existing) {
+        // Release locked cost for the opposing position
+        this.availableBalance = this.availableBalance.plus(existing.lockedCost);
+      }
+      this.positions.set(symbol, {
+        symbol,
+        side: direction,
+        size,
+        entryPrice: fillPrice,
+        lockedCost: cost,
+      });
+    }
+
+    return {
+      orderId,
+      exchangeOrderId: orderId,
+      status: "FILLED",
+      filledPrice: fillPrice,
+      filledSize: size,
+      timestamp,
+    };
+  }
+
+  private fillMarketReduceOnly(
+    params: CreateOrderParams,
+    orderId: string,
+    fillPrice: Decimal,
+    timestamp: Date,
+  ): OrderResult {
+    const filledSize = this.closePosition(params.symbol, fillPrice, params.size);
+    return {
+      orderId,
+      exchangeOrderId: orderId,
+      status: "FILLED",
+      filledPrice: fillPrice,
+      filledSize,
+      timestamp,
+    };
+  }
+
+  private registerPendingOrder(
+    params: CreateOrderParams,
+    orderId: string,
+    timestamp: Date,
+  ): OrderResult {
+    const { symbol, side, size, reduceOnly } = params;
+    const triggerPrice = params.price;
+    if (!triggerPrice) {
+      throw new Error(
+        `MockExchangeAdapter: stop_market order requires a price (trigger price) for ${symbol}`,
+      );
+    }
+
+    const pending: PendingOrder = {
+      orderId,
+      symbol,
+      side,
+      size,
+      triggerPrice,
+      reduceOnly: reduceOnly ?? false,
+      timestamp,
+      status: "PENDING",
+    };
+    this.pendingOrders.set(orderId, pending);
+
+    return {
+      orderId,
+      exchangeOrderId: orderId,
+      status: "PENDING",
+      filledPrice: null,
+      filledSize: null,
+      timestamp,
+    };
+  }
+
   // ── ExchangeAdapter — order methods ──────────────────────────────────────
 
   async createOrder(params: CreateOrderParams): Promise<OrderResult> {
-    const { symbol, side, size, type, reduceOnly } = params;
+    const { symbol, side, type, reduceOnly } = params;
     const orderId = this.nextOrderId();
     const timestamp = new Date(this.currentTimestamp);
+
+    if (type === "stop_market") {
+      return this.registerPendingOrder(params, orderId, timestamp);
+    }
 
     if (type === "market") {
       const candle = this.getCurrentCandle(symbol);
@@ -246,96 +357,10 @@ export class MockExchangeAdapter implements ExchangeAdapter {
         );
       }
       const fillPrice = this.applySlippage(candle.close, side);
-
       if (reduceOnly) {
-        // Close (reduce) an existing position
-        const filledSize = this.closePosition(symbol, fillPrice, size);
-        return {
-          orderId,
-          exchangeOrderId: orderId,
-          status: "FILLED",
-          filledPrice: fillPrice,
-          filledSize,
-          timestamp,
-        };
+        return this.fillMarketReduceOnly(params, orderId, fillPrice, timestamp);
       }
-
-      // Regular entry order
-      const cost = fillPrice.times(size);
-
-      if (cost.greaterThan(this.availableBalance)) {
-        throw new Error(
-          `MockExchangeAdapter: insufficient balance. Required: ${cost.toString()}, Available: ${this.availableBalance.toString()}`,
-        );
-      }
-
-      this.availableBalance = this.availableBalance.minus(cost);
-      // totalBalance stays the same (cost moves from available → locked in position)
-
-      const direction = side === "BUY" ? "LONG" : "SHORT";
-      const existing = this.positions.get(symbol);
-
-      if (existing && existing.side === direction) {
-        // Average into existing position
-        const totalSize = existing.size.plus(size);
-        const totalCost = existing.entryPrice.times(existing.size).plus(fillPrice.times(size));
-        existing.entryPrice = totalCost.dividedBy(totalSize);
-        existing.size = totalSize;
-        existing.lockedCost = existing.lockedCost.plus(cost);
-      } else {
-        // Open new position (opposing positions cancel for simplicity)
-        if (existing) {
-          // Release locked cost for the opposing position
-          this.availableBalance = this.availableBalance.plus(existing.lockedCost);
-        }
-        this.positions.set(symbol, {
-          symbol,
-          side: direction,
-          size,
-          entryPrice: fillPrice,
-          lockedCost: cost,
-        });
-      }
-
-      return {
-        orderId,
-        exchangeOrderId: orderId,
-        status: "FILLED",
-        filledPrice: fillPrice,
-        filledSize: size,
-        timestamp,
-      };
-    }
-
-    if (type === "stop_market") {
-      // Register as pending order; triggers when candle reaches price
-      const triggerPrice = params.price;
-      if (!triggerPrice) {
-        throw new Error(
-          `MockExchangeAdapter: stop_market order requires a price (trigger price) for ${symbol}`,
-        );
-      }
-
-      const pending: PendingOrder = {
-        orderId,
-        symbol,
-        side,
-        size,
-        triggerPrice,
-        reduceOnly: reduceOnly ?? false,
-        timestamp,
-        status: "PENDING",
-      };
-      this.pendingOrders.set(orderId, pending);
-
-      return {
-        orderId,
-        exchangeOrderId: orderId,
-        status: "PENDING",
-        filledPrice: null,
-        filledSize: null,
-        timestamp,
-      };
+      return this.fillMarketEntry(params, orderId, fillPrice, timestamp);
     }
 
     // Limit: record as PENDING (fill logic not yet implemented)

@@ -95,10 +95,17 @@ harness-discovery → harness-project-bootstrap → harness-architect → [harne
 - Prefer small, testable changes with explicit validation steps.
 
 ### Trading-specific rules
-- All monetary calculations use Decimal.js — never `number` for prices, sizes, or PnL.
+- All monetary calculations use Decimal.js — never `number` for prices, sizes, or PnL. This applies equally to backtest and live code (code path identity).
 - Structural anchors (BB20, BB4, MA periods, normalization) are code-fixed — never tunable.
 - SL must be registered on the exchange before any other post-entry action.
 - Reconciliation worker must never be disabled in production modes.
+
+### Backtest & testability rules
+- Backtest must use identical code paths as live trading — no strategy branching. Use PipelineDeps DI to swap adapters.
+- Mock adapters must implement the full port interface (ExchangeAdapter). No method trimming.
+- MockExchangeAdapter must enforce temporal ordering: `fetchOHLCV` only returns candles ≤ currentTimestamp (lookahead bias prevention).
+- Backtest trades are collected in-memory; only aggregates are saved to DB.
+- Prefer callback/DI injection over direct dependencies for testability (e.g., `runBacktest: (params) => Promise<FullMetrics>`).
 
 ## Source of truth
 

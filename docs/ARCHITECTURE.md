@@ -81,7 +81,7 @@ The reconciliation worker runs on a separate 60-second interval timer, independe
 │   ├── reconciliation/         # L7: DB↔exchange sync, panic close
 │   ├── notifications/          # L7: Slack webhook
 │   ├── transfer/               # L7: 선물→현물 자동 이체 (스케줄러, 잔고 계산, 실행기)
-│   ├── kpi/                    # L7: 런타임 KPI 모니터링 (MDD, 연속 손실, expectancy, reconciliation rate)
+│   ├── kpi/                    # L7: 런타임 KPI 모니터링 (MDD, 연속 손실, expectancy, reconciliation rate) [EP-16 미구현]
 │   ├── api/                    # L8: REST routes (Bun.serve)
 │   ├── backtest/               # L8: backtest runner, WFO optimizer
 │   ├── web/                    # standalone: React UI (Vite build → ./public)
@@ -147,7 +147,7 @@ L9  daemon                     — orchestrates all layers
 | `reconciliation` | L7 | 60s interval position reconciliation | `comparePositions()`, `runOnce()`, `startReconciliation()` | core, db, orders, exchanges (via ports) |
 | `notifications` | L7 | Slack webhook alerts (fire-and-forget) | `sendSlackAlert()`, `formatMessage()`, `getWebhookUrl()` | core, db (CommonCode) |
 | `transfer` | L7 | 선물→현물 자동 이체 | `calculateTransferable()`, `executeTransfer()`, `TransferScheduler` | core, db, config, exchanges (via ports) |
-| `kpi` | L7 | 런타임 KPI 모니터링 (MDD, 연속 손실, expectancy, reconciliation rate) | `calcMDD()`, `calcConsecutiveLosses()`, `calcRecentExpectancy()`, `checkThresholds()` | core, db |
+| `kpi` | L7 | 런타임 KPI 모니터링 (MDD, 연속 손실, expectancy, reconciliation rate) — **EP-16 미구현** | `calcMDD()`, `calcConsecutiveLosses()`, `calcRecentExpectancy()`, `checkThresholds()` | core, db |
 | `api` | L8 | REST routes | `createRouter(): Router` | core, positions, candles, signals, knn, limits, labeling, config |
 | `backtest` | L8 | Backtest runner, WFO | `BacktestRunner`, `MockExchangeAdapter`, `calcFullMetrics()`, `generateWfoWindows()`, `runWfo()`, `parseArgs()`, `runCli()` | full pipeline (candles→labeling) |
 | `daemon` | L9 | Main entry, pipeline, crash recovery, shutdown | `startDaemon()`, `handleCandleClose()`, `recoverFromCrash()`, `gracefulShutdown()`, `getExecutionMode()`, `killSwitch()` | all |
@@ -193,7 +193,7 @@ L9  daemon                     — orchestrates all layers
 | Bitget Futures | WS + REST | `exchanges/bitget.ts` | 20 req/s | Candles + orders |
 | MEXC Futures | WS + REST | `exchanges/mexc.ts` | 20 req/s | Candles + orders. May need 2-step SL |
 | Slack | HTTPS webhook | `notifications/slack.ts` | — | Fire-and-forget |
-| Investing.com | REST/scrape | `filters/economic-calendar.ts` | TBD | Fail-closed (assume trade block on failure) |
+| Investing.com | REST/scrape | `filters/economic-calendar.ts` | TBD | Fail-closed (assume trade block on failure) — **미구현, 파일 없음** |
 | PostgreSQL | TCP | `db/pool.ts` | — | pgvector extension required |
 
 **Rate limiting strategy:** Each exchange adapter maintains its own rate limiter (token bucket). CCXT provides built-in rate limiting per exchange instance. Additional guard: if rate limit error received, back off exponentially (1s, 2s, 4s, max 30s) and alert via Slack. Each exchange collects its own candles via WebSocket. Rate limit budgets must account for both candle streams and order operations per exchange.

@@ -13,7 +13,7 @@
  */
 
 import { describe, expect, it } from "bun:test";
-import { VECTOR_DIM } from "../../src/vectors/features";
+import { VECTOR_DIM } from "../../src/vectors/feature-spec";
 import { computeNormParams, normalize } from "../../src/vectors/normalizer";
 import type { NormParams } from "../../src/vectors/normalizer";
 
@@ -415,5 +415,254 @@ describe("normalizer — computeNormParams() lookback", () => {
     );
     const params = computeNormParams(vecs);
     expect(params[0]!.median).toBeCloseTo(1, 5);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PRD §3.1 상수 검증 (T-15-005)
+// ---------------------------------------------------------------------------
+
+describe("normalizer — PRD §3.1 상수 검증", () => {
+  it("CLAMP_MIN=-3: z=-3 → output exactly 0.0", () => {
+    // clamp boundary at -3: (-3 - (-3)) / 6 = 0/6 = 0.0
+    const raw = new Float32Array(VECTOR_DIM).fill(-3.0);
+    const params: NormParams = Array.from({ length: VECTOR_DIM }, () => ({
+      median: 0.0,
+      iqr: 1.0,
+    }));
+    const result = normalize(raw, params);
+    for (let i = 0; i < VECTOR_DIM; i++) {
+      expect(result[i]).toBeCloseTo(0.0, 8);
+    }
+  });
+
+  it("CLAMP_MAX=3: z=3 → output exactly 1.0", () => {
+    // clamp boundary at 3: (3 - (-3)) / 6 = 6/6 = 1.0
+    const raw = new Float32Array(VECTOR_DIM).fill(3.0);
+    const params: NormParams = Array.from({ length: VECTOR_DIM }, () => ({
+      median: 0.0,
+      iqr: 1.0,
+    }));
+    const result = normalize(raw, params);
+    for (let i = 0; i < VECTOR_DIM; i++) {
+      expect(result[i]).toBeCloseTo(1.0, 8);
+    }
+  });
+
+  it("CENTER=0.5: IQR=0 피처 → 정확히 0.5", () => {
+    const raw = new Float32Array(VECTOR_DIM).fill(999.0);
+    const params: NormParams = Array.from({ length: VECTOR_DIM }, () => ({
+      median: 0.0,
+      iqr: 0,
+    }));
+    const result = normalize(raw, params);
+    for (let i = 0; i < VECTOR_DIM; i++) {
+      expect(result[i]).toBe(0.5);
+    }
+  });
+
+  it("DEFAULT_LOOKBACK=60: 100개 벡터 중 마지막 60개만 사용", () => {
+    // 첫 40개: 값=0, 마지막 60개: 값=42 → default lookback → median=42
+    const vecs = Array.from({ length: 100 }, (_, i) =>
+      constantVector(i < 40 ? 0.0 : 42.0),
+    );
+    const params = computeNormParams(vecs); // lookback 생략 → DEFAULT_LOOKBACK=60
+    expect(params[0]!.median).toBeCloseTo(42.0, 5);
+    expect(params[0]!.iqr).toBeCloseTo(0.0, 5);
+  });
+
+  it("VECTOR_DIM=202: computeNormParams 출력 길이 정확히 202", () => {
+    const vecs = Array.from({ length: 5 }, () => constantVector(1.0));
+    const params = computeNormParams(vecs);
+    expect(params.length).toBe(202);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 38봉 candle-features 분포 대응 검증 (T-15-005)
+// ---------------------------------------------------------------------------
+
+describe("normalizer — 38봉 candle-features 분포 대응", () => {
+  /**
+   * 실제 BTC 캔들 피처 스케일 시뮬레이션:
+   *   body   ≈ 0.001  (|close-open|/close ≈ 0.1%)
+   *   range  ≈ 0.005  (high-low/close ≈ 0.5%)
+   *   ret    ≈ 0.002  (수익률 ±0.2%)
+   *   wick   ≈ 0.002  (가중치 1.5 적용 전)
+   */
+
+  /**
+   * 202차원 Float32Array 생성 헬퍼.
+   * 각 피처에 캔들 스케일 값을 반복 패딩.
+   */
+  function makeCandleLikeVector(
+    body: number,
+    range: number,
+    ret: number,
+    upperWick: number,
+    lowerWick: number,
+  ): Float32Array {
+    // 5개 피처 패턴을 VECTOR_DIM까지 반복
+    const pattern = [body, upperWick, lowerWick, range, ret];
+    return new Float32Array(
+      Array.from({ length: VECTOR_DIM }, (_, i) => pattern[i % 5]!),
+    );
+  }
+
+  it("캔들 스케일 입력(body~0.001)에서 모든 출력값이 [0,1] 범위", () => {
+    // 60개 랜덤-ish 캔들 스케일 벡터로 NormParams 계산
+    const vecs: Float32Array[] = Array.from({ length: 60 }, (_, idx) => {
+      const jitter = (idx - 30) / 30; // [-1, 1]
+      return makeCandleLikeVector(
+        0.001 + jitter * 0.0005, // body: 0.0005 ~ 0.0015
+        0.005 + jitter * 0.002, // range: 0.003 ~ 0.007
+        jitter * 0.002, // ret: -0.002 ~ 0.002
+        0.002 + Math.abs(jitter) * 0.001, // upperWick: 0.002 ~ 0.003
+        0.002 + Math.abs(jitter) * 0.001, // lowerWick: 0.002 ~ 0.003
+      );
+    });
+    const params = computeNormParams(vecs, 60);
+
+    // 새 입력 벡터 (중간 스케일값)
+    const rawVec = makeCandleLikeVector(0.001, 0.005, 0.0, 0.002, 0.002);
+    const normalized = normalize(rawVec, params);
+
+    for (let i = 0; i < VECTOR_DIM; i++) {
+      expect(normalized[i]!).toBeGreaterThanOrEqual(0.0);
+      expect(normalized[i]!).toBeLessThanOrEqual(1.0);
+    }
+  });
+
+  it("캔들 스케일 100배 극단값 → clamp되어 0 또는 1", () => {
+    // 정상 분포로 params 계산
+    const vecs: Float32Array[] = Array.from({ length: 60 }, (_, idx) => {
+      const jitter = (idx - 30) / 30;
+      return makeCandleLikeVector(
+        0.001 + jitter * 0.0005,
+        0.005 + jitter * 0.002,
+        jitter * 0.002,
+        0.002 + Math.abs(jitter) * 0.001,
+        0.002 + Math.abs(jitter) * 0.001,
+      );
+    });
+    const params = computeNormParams(vecs, 60);
+
+    // 100배 극단값 입력 (z >> 3 → clamp to 1.0)
+    const extremeVec = makeCandleLikeVector(0.1, 0.5, 0.2, 0.2, 0.2);
+    const normalized = normalize(extremeVec, params);
+
+    for (let i = 0; i < VECTOR_DIM; i++) {
+      // clamp 덕분에 항상 [0,1]
+      expect(normalized[i]!).toBeGreaterThanOrEqual(0.0);
+      expect(normalized[i]!).toBeLessThanOrEqual(1.0);
+      // 100배 극단값은 clamp 상한에 걸려 1.0에 근접
+      expect(normalized[i]!).toBeCloseTo(1.0, 5);
+    }
+  });
+
+  it("all-zero 202차원 벡터 + IQR>0 params → 출력이 [0,1] 범위", () => {
+    // params: median=0.001, iqr=0.001 (캔들 스케일 대표값)
+    const params: NormParams = Array.from({ length: VECTOR_DIM }, () => ({
+      median: 0.001,
+      iqr: 0.001,
+    }));
+    const raw = new Float32Array(VECTOR_DIM).fill(0.0);
+    const result = normalize(raw, params);
+
+    for (let i = 0; i < VECTOR_DIM; i++) {
+      expect(result[i]!).toBeGreaterThanOrEqual(0.0);
+      expect(result[i]!).toBeLessThanOrEqual(1.0);
+    }
+    // z = (0 - 0.001) / 0.001 = -1 → (−1+3)/6 ≈ 0.333
+    for (let i = 0; i < VECTOR_DIM; i++) {
+      expect(result[i]!).toBeCloseTo(2 / 6, 5);
+    }
+  });
+
+  it("모든 피처가 같은 값(상수 피처) → IQR=0 → normalize 출력 0.5", () => {
+    // 60개 벡터 전부 동일값 → IQR=0
+    const vecs = Array.from({ length: 60 }, () =>
+      makeCandleLikeVector(0.001, 0.005, 0.0, 0.002, 0.002),
+    );
+    const params = computeNormParams(vecs, 60);
+
+    // IQR=0이므로 모든 출력이 0.5
+    const rawVec = makeCandleLikeVector(0.001, 0.005, 0.0, 0.002, 0.002);
+    const result = normalize(rawVec, params);
+    for (let i = 0; i < VECTOR_DIM; i++) {
+      expect(result[i]!).toBe(0.5);
+    }
+  });
+
+  it("60개 벡터로 computeNormParams → 202쌍의 {median, iqr} 반환", () => {
+    const vecs: Float32Array[] = Array.from({ length: 60 }, (_, idx) => {
+      const jitter = (idx - 30) / 30;
+      return makeCandleLikeVector(
+        0.001 + jitter * 0.0005,
+        0.005 + jitter * 0.002,
+        jitter * 0.002,
+        0.002 + Math.abs(jitter) * 0.001,
+        0.002 + Math.abs(jitter) * 0.001,
+      );
+    });
+    const params = computeNormParams(vecs, 60);
+
+    expect(params).toHaveLength(202);
+    for (const p of params) {
+      expect(typeof p.median).toBe("number");
+      expect(typeof p.iqr).toBe("number");
+      expect(Number.isFinite(p.median)).toBe(true);
+      expect(Number.isFinite(p.iqr)).toBe(true);
+      expect(p.iqr).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("60개 미만 벡터 → 가용 전체 사용, 오류 없음", () => {
+    // 20개만 제공 (lookback=60보다 작음)
+    const vecs: Float32Array[] = Array.from({ length: 20 }, (_, idx) => {
+      const jitter = (idx - 10) / 10;
+      return makeCandleLikeVector(
+        0.001 + jitter * 0.0005,
+        0.005 + jitter * 0.002,
+        jitter * 0.002,
+        0.002 + Math.abs(jitter) * 0.001,
+        0.002 + Math.abs(jitter) * 0.001,
+      );
+    });
+    expect(() => computeNormParams(vecs, 60)).not.toThrow();
+    const params = computeNormParams(vecs, 60);
+    expect(params).toHaveLength(202);
+  });
+
+  it("중앙값 근처 캔들 벡터 → normalize 출력이 0.4~0.6 근방", () => {
+    // 분포 중앙(median) 값을 입력 → z≈0 → output≈0.5
+    const vecs: Float32Array[] = Array.from({ length: 60 }, (_, idx) => {
+      const jitter = (idx - 30) / 30;
+      return makeCandleLikeVector(
+        0.001 + jitter * 0.0005,
+        0.005 + jitter * 0.002,
+        jitter * 0.002,
+        0.002 + Math.abs(jitter) * 0.001,
+        0.002 + Math.abs(jitter) * 0.001,
+      );
+    });
+    const params = computeNormParams(vecs, 60);
+
+    // 중앙값과 근사한 벡터 (idx=30 ≈ median)
+    const medianVec = new Float32Array(VECTOR_DIM);
+    for (let i = 0; i < VECTOR_DIM; i++) {
+      medianVec[i] = params[i]!.median;
+    }
+    const result = normalize(medianVec, params);
+
+    for (let i = 0; i < VECTOR_DIM; i++) {
+      // IQR>0인 피처는 0.5에 근접
+      if (params[i]!.iqr > 0) {
+        expect(result[i]!).toBeCloseTo(0.5, 5);
+      } else {
+        // IQR=0인 경우 CENTER=0.5
+        expect(result[i]!).toBe(0.5);
+      }
+    }
   });
 });

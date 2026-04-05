@@ -52,6 +52,8 @@ function makeStatsResult(overrides?: Partial<StatsResult>): StatsResult {
     win_rate: "0.60",
     avg_risk_reward: "1.50",
     mdd: "-200.00",
+    expectancy: "0.0072",
+    max_consecutive_losses: 2,
     ...overrides,
   };
 }
@@ -384,6 +386,8 @@ describe("GET /stats", () => {
       win_rate: null,
       avg_risk_reward: "0",
       mdd: "0",
+      expectancy: "0",
+      max_consecutive_losses: 0,
     };
     const getStats = mock(async () => emptyStats);
     const app = buildStatsApp({ getStats });

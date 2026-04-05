@@ -1,5 +1,5 @@
 import type { FullMetrics } from "@/backtest/metrics";
-import type { ParamSet, ParamResult } from "@/backtest/param-search";
+import type { ParamResult, ParamSet } from "@/backtest/param-search";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -66,9 +66,7 @@ export class ParallelSearchManager {
       const batch = combinations.slice(i, i + batchSize);
 
       // Run the batch concurrently
-      const settled = await Promise.allSettled(
-        batch.map((params) => this.runWithRetry(params)),
-      );
+      const settled = await Promise.allSettled(batch.map((params) => this.runWithRetry(params)));
 
       for (const outcome of settled) {
         if (outcome.status === "fulfilled") {
@@ -94,7 +92,7 @@ export class ParallelSearchManager {
     try {
       const metrics = await this.runBacktest(params);
       return { params, metrics };
-    } catch (firstError) {
+    } catch (_firstError) {
       // Retry once
       try {
         const metrics = await this.runBacktest(params);

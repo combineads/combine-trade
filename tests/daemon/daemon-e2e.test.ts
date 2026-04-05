@@ -112,6 +112,7 @@ function makeIndicators(): AllIndicators {
     bb4_1h: null,
     sma20: new Decimal("40000"),
     prevSma20: new Decimal("39900"),
+    sma20_5m: null,
     sma60: new Decimal("39000"),
     sma120: new Decimal("38000"),
     ema20: new Decimal("40000"),
@@ -322,6 +323,13 @@ function createMockPipelineDeps(overrides?: Partial<PipelineDeps>): PipelineDeps
     applyTimeDecay: mock(() => []),
     makeDecision: mock(() => makeKnnPass()),
     loadKnnConfig: mock(async () => ({ topK: 50, distanceMetric: "cosine" as const })),
+    loadKnnDecisionConfig: mock(async () => ({
+      winrateThreshold: 0.55,
+      minSamples: 30,
+      aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 20,
+      commissionPct: 0.0008,
+    })),
     loadTimeDecayConfig: mock(async () => ({})),
 
     getActiveTicket: mock(async () => null),

@@ -2,12 +2,12 @@ import { d } from "@/core/decimal";
 import type { Candle } from "@/core/types";
 import { calcAllIndicators } from "@/indicators";
 
-// Generate synthetic candles
+// 합성 캔들 데이터 생성
 function generateCandles(count: number): Candle[] {
   const candles: Candle[] = [];
   let price = 85000;
   for (let i = 0; i < count; i++) {
-    price += (Math.random() - 0.48) * 100; // slight upward drift
+    price += (Math.random() - 0.48) * 100; // 약간의 상승 편향
     const high = price + Math.random() * 50;
     const low = price - Math.random() * 50;
     candles.push({
@@ -34,12 +34,12 @@ const ITERATIONS = 1000;
 const candles = generateCandles(CANDLE_COUNT);
 const times: number[] = [];
 
-// Warmup
+// 워밍업
 for (let i = 0; i < 10; i++) {
   calcAllIndicators(candles);
 }
 
-// Benchmark
+// 벤치마크 측정
 for (let i = 0; i < ITERATIONS; i++) {
   const start = performance.now();
   calcAllIndicators(candles);

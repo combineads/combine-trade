@@ -11,6 +11,7 @@ function makeParams(overrides: Partial<TransferableParams> = {}): TransferablePa
   return {
     walletBalance: new Decimal("1000"),
     openMargin: new Decimal("200"),
+    dailyProfit: new Decimal("600"), // amount = 600 * 50% = 300; safety: 1000-300=700 >= 200+300=500 ✓
     riskPct: new Decimal("0.03"),
     reserveMultiplier: 10,
     transferPct: 50,
@@ -76,20 +77,13 @@ describe("transfer-executor", () => {
     });
   });
 
-  describe("executeTransfer() with skip (balance below minimum)", () => {
+  describe("executeTransfer() with skip (dailyProfit <= 0)", () => {
     it("does NOT call adapter.transfer() and logs TRANSFER_SKIP", async () => {
-      // Make transferAmount < minTransferUsdt:
-      // walletBalance=100, openMargin=0
-      // reserve = max(100 * 0.03 * 10, 50) = max(30, 50) = 50
-      // available = 100 - 0 - 50 = 50
-      // transferAmount = 50 * 3 / 100 = 1.5 < 10 → skip
+      // dailyProfit=0 → no_daily_profit → skip
       const adapter = makeMockAdapter();
       const logEvent = mock(() => Promise.resolve());
       const params = makeParams({
-        walletBalance: new Decimal("100"),
-        openMargin: new Decimal("0"),
-        transferPct: 3,
-        minTransferUsdt: new Decimal("10"),
+        dailyProfit: new Decimal("0"),
       });
       const deps = makeDeps(adapter, params, logEvent);
 
@@ -169,7 +163,7 @@ describe("transfer-executor", () => {
   });
 
   describe("TRANSFER_SUCCESS event data", () => {
-    it("contains exchange, currency, amount, from, to, balance_before, balance_after, reserve", async () => {
+    it("contains exchange, currency, amount, from, to, balance_before, balance_after, reserve, daily_profit", async () => {
       const logEvent = mock(() => Promise.resolve());
       const deps = makeDeps(makeMockAdapter(), makeParams(), logEvent);
 
@@ -188,6 +182,7 @@ describe("transfer-executor", () => {
       expect(data.balance_after).toBeInstanceOf(Decimal);
       expect(data.reserve).toBeInstanceOf(Decimal);
       expect(data.amount).toBeInstanceOf(Decimal);
+      expect(data.daily_profit).toBeInstanceOf(Decimal);
     });
   });
 

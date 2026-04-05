@@ -18,28 +18,17 @@
 import type Decimal from "decimal.js";
 import { d } from "@/core/decimal";
 import type { ExchangeAdapter } from "@/core/ports";
-import type {
-  Candle,
-  DailyBias,
-  Exchange,
-  Ticket,
-  Timeframe,
-  WatchSession,
-} from "@/core/types";
+import type { Candle, DailyBias, Exchange, Ticket, Timeframe, WatchSession } from "@/core/types";
 import type { InsertEventParams } from "@/db/event-log";
 import type { DbInstance } from "@/db/pool";
 import type { EventLogRow, VectorRow } from "@/db/schema";
 import { checkExit } from "@/exits/checker";
-import {
-  processExit,
-  processTrailing,
-  updateMfeMae,
-  updateTpPrices,
-} from "@/exits/manager";
+import { processExit, processTrailing, updateMfeMae, updateTpPrices } from "@/exits/manager";
+import { determineDailyBias } from "@/filters/daily-direction";
 import { calcAllIndicators, calcBB4 } from "@/indicators/index";
-import { loadKnnConfig, type KnnSearchOptions } from "@/knn/engine";
-import { applyTimeDecay, loadTimeDecayConfig, type KnnNeighbor } from "@/knn/time-decay";
-import { makeDecision } from "@/knn/decision";
+import { loadKnnDecisionConfig, makeDecision } from "@/knn/decision";
+import type { KnnSearchOptions, loadKnnConfig } from "@/knn/engine";
+import { applyTimeDecay, type KnnNeighbor, loadTimeDecayConfig } from "@/knn/time-decay";
 import { checkLossLimit } from "@/limits/loss-limit";
 import type { SlackAlertDetails, SlackEventType } from "@/notifications/slack";
 import { executeEntry } from "@/orders/executor";
@@ -48,14 +37,9 @@ import { calculateSize, getRiskPct } from "@/positions/sizer";
 import type { CreateTicketParams } from "@/positions/ticket-manager";
 import { checkEvidence, type EvidenceResult } from "@/signals/evidence-gate";
 import { checkSafety } from "@/signals/safety-gate";
-import {
-  checkInvalidation,
-  detectWatching,
-  type OpenWatchSessionParams,
-} from "@/signals/watching";
+import { checkInvalidation, detectWatching, type OpenWatchSessionParams } from "@/signals/watching";
 import type { InsertVectorParams } from "@/vectors/repository";
 import { vectorize } from "@/vectors/vectorizer";
-import { determineDailyBias } from "@/filters/daily-direction";
 import type { MockExchangeAdapter } from "./mock-adapter";
 
 // ---------------------------------------------------------------------------
@@ -251,10 +235,7 @@ export function createBacktestPipelineDeps(
   // ---------------------------------------------------------------------------
   // createTicket — in-memory collector
   // ---------------------------------------------------------------------------
-  async function createTicket(
-    _db: DbInstance,
-    params: CreateTicketParams,
-  ): Promise<Ticket> {
+  async function createTicket(_db: DbInstance, params: CreateTicketParams): Promise<Ticket> {
     const now = new Date();
     const ticket: Ticket = {
       id: globalThis.crypto.randomUUID(),
@@ -436,7 +417,13 @@ export function createBacktestPipelineDeps(
 
     // Filters
     determineDailyBias,
-    updateDailyBias: async (_db: DbInstance, _symbol: string, _exchange: string, _bias: DailyBias, _dailyOpen: Decimal) => {},
+    updateDailyBias: async (
+      _db: DbInstance,
+      _symbol: string,
+      _exchange: string,
+      _bias: DailyBias,
+      _dailyOpen: Decimal,
+    ) => {},
     isTradeBlocked: async (_db: DbInstance, _now: Date) => ({ blocked: false as const }),
 
     // Watch sessions
@@ -456,14 +443,22 @@ export function createBacktestPipelineDeps(
     insertVector: insertVectorBacktest,
 
     // KNN
-    searchKnn: async (_db: DbInstance, _embedding: Float32Array, _options: KnnSearchOptions) => [] as KnnNeighbor[],
+    searchKnn: async (_db: DbInstance, _embedding: Float32Array, _options: KnnSearchOptions) =>
+      [] as KnnNeighbor[],
     applyTimeDecay,
     loadTimeDecayConfig,
     makeDecision,
-    loadKnnConfig: async (_db: DbInstance) => ({ topK: 50, distanceMetric: "cosine" } as ReturnType<typeof loadKnnConfig> extends Promise<infer T> ? T : never),
+    loadKnnDecisionConfig,
+    loadKnnConfig: async (_db: DbInstance) =>
+      ({ topK: 50, distanceMetric: "cosine" }) as ReturnType<typeof loadKnnConfig> extends Promise<
+        infer T
+      >
+        ? T
+        : never,
 
     // Positions
-    getActiveTicket: async (_db: DbInstance, _symbol: string, _exchange: string) => null as Ticket | null,
+    getActiveTicket: async (_db: DbInstance, _symbol: string, _exchange: string) =>
+      null as Ticket | null,
     canPyramid: canPyramidBacktest,
     computeEntrySize,
     createTicket,
@@ -489,7 +484,11 @@ export function createBacktestPipelineDeps(
     }),
 
     // Notifications
-    sendSlackAlert: async (_eventType: SlackEventType, _details: SlackAlertDetails, _db?: DbInstance) => {},
+    sendSlackAlert: async (
+      _eventType: SlackEventType,
+      _details: SlackAlertDetails,
+      _db?: DbInstance,
+    ) => {},
 
     // Event log
     insertEvent: insertEventBacktest,

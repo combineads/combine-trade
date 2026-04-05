@@ -16,7 +16,7 @@ import type { DbInstance } from "../../src/db/pool";
 import { getDb, getPool } from "../../src/db/pool";
 import { commonCodeTable } from "../../src/db/schema";
 import { loadKnnConfig, searchKnn } from "../../src/knn/engine";
-import { VECTOR_DIM } from "../../src/vectors/features";
+import { VECTOR_DIM } from "../../src/vectors/feature-spec";
 import {
   cleanupTables,
   initTestDb,

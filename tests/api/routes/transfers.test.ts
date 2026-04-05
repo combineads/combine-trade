@@ -39,8 +39,8 @@ function makeTransferResult(success = true): TransferResult {
     transferable: {
       walletBalance: new Decimal("1000"),
       openMargin: new Decimal("100"),
+      dailyProfit: new Decimal("200"),
       reserve: new Decimal("50"),
-      available: new Decimal("850"),
       transferAmount: new Decimal("100"),
       skip: false,
     },

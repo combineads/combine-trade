@@ -111,6 +111,7 @@ describe("integration/indicators-imports — type exports", () => {
       bb4: null,
       bb4_1h: null,
       sma20: null,
+      sma20_5m: null,
       sma60: null,
       sma120: null,
       ema20: null,

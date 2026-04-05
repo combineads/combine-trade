@@ -52,6 +52,7 @@ function makeIndicators(overrides: Partial<AllIndicators> = {}): AllIndicators {
     bb4_1h: null,
     sma20: new Decimal("50000"),
     prevSma20: new Decimal("49900"),
+    sma20_5m: null,
     sma60: new Decimal("49500"),
     sma120: new Decimal("49000"),
     ema20: new Decimal("50100"),
@@ -551,27 +552,38 @@ describe("safety-gate — abnormal candle filter — avg_range_5", () => {
 });
 
 // ---------------------------------------------------------------------------
-// safety-gate — checkSafety — 1M noise filter
+// safety-gate — checkSafety — 1M noise filter (PRD §7.7)
+//
+// Uses 5M MA20 direction (indicators.sma20_5m), NOT 1M SMA20.
+// close > sma20_5m → 5M MA20 bullish; close <= sma20_5m → 5M MA20 bearish.
+//
+// LONG_ONLY + 5M MA20 bullish → pass
+// LONG_ONLY + 5M MA20 bearish → fail ("noise_1m")
+// SHORT_ONLY + 5M MA20 bearish → pass
+// SHORT_ONLY + 5M MA20 bullish → fail ("noise_1m")
+// NEUTRAL / null → pass
+// sma20_5m null → pass (no data)
+// timeframe=5M → skip entirely
 // ---------------------------------------------------------------------------
 
-describe("safety-gate — 1M noise filter", () => {
+describe("safety-gate — 1M noise filter — uses 5M MA20 (PRD §7.7)", () => {
   it("skips 1M filter when timeframe is 5M", () => {
-    // sma20=50000, close=49000 (bearish), daily_bias=LONG_ONLY → but 5M → skip
+    // Even with 5M MA20 bearish + LONG_ONLY bias → but 5M timeframe → skip
     const candle = makeCandle({ close: new Decimal("49000") });
     const result = checkSafety(
       candle,
-      makeIndicators({ sma20: new Decimal("50000") }),
+      makeIndicators({ sma20_5m: new Decimal("50000") }),
       makeSignal({ timeframe: "5M" }),
       makeSymbolState({ daily_bias: "LONG_ONLY" }),
     );
     expect(result.reasons).not.toContain("noise_1m");
   });
 
-  it("passes when timeframe is 1M but sma20 is null", () => {
+  it("passes when timeframe is 1M but sma20_5m is null (no 5M data)", () => {
     const candle = makeCandle({ close: new Decimal("49000") });
     const result = checkSafety(
       candle,
-      makeIndicators({ sma20: null }),
+      makeIndicators({ sma20_5m: null }),
       makeSignal({ timeframe: "1M" }),
       makeSymbolState({ daily_bias: "LONG_ONLY" }),
     );
@@ -582,7 +594,7 @@ describe("safety-gate — 1M noise filter", () => {
     const candle = makeCandle({ close: new Decimal("49000") });
     const result = checkSafety(
       candle,
-      makeIndicators({ sma20: new Decimal("50000") }),
+      makeIndicators({ sma20_5m: new Decimal("50000") }),
       makeSignal({ timeframe: "1M" }),
       makeSymbolState({ daily_bias: "NEUTRAL" }),
     );
@@ -593,19 +605,19 @@ describe("safety-gate — 1M noise filter", () => {
     const candle = makeCandle({ close: new Decimal("49000") });
     const result = checkSafety(
       candle,
-      makeIndicators({ sma20: new Decimal("50000") }),
+      makeIndicators({ sma20_5m: new Decimal("50000") }),
       makeSignal({ timeframe: "1M" }),
       makeSymbolState({ daily_bias: null }),
     );
     expect(result.reasons).not.toContain("noise_1m");
   });
 
-  it("fails when 1M + sma20 bearish + daily_bias LONG_ONLY", () => {
-    // close=49000 < sma20=50000 → bearish; but bias=LONG_ONLY expects bullish → noise
+  it("fails when 1M + 5M MA20 bearish + LONG_ONLY bias", () => {
+    // close=49000 < sma20_5m=50000 → 5M MA20 bearish; LONG_ONLY expects bullish → noise
     const candle = makeCandle({ close: new Decimal("49000") });
     const result = checkSafety(
       candle,
-      makeIndicators({ sma20: new Decimal("50000") }),
+      makeIndicators({ sma20_5m: new Decimal("50000") }),
       makeSignal({ timeframe: "1M" }),
       makeSymbolState({ daily_bias: "LONG_ONLY" }),
     );
@@ -613,12 +625,12 @@ describe("safety-gate — 1M noise filter", () => {
     expect(result.reasons).toContain("noise_1m");
   });
 
-  it("fails when 1M + sma20 bullish + daily_bias SHORT_ONLY", () => {
-    // close=51000 > sma20=50000 → bullish; but bias=SHORT_ONLY expects bearish → noise
+  it("fails when 1M + 5M MA20 bullish + SHORT_ONLY bias", () => {
+    // close=51000 > sma20_5m=50000 → 5M MA20 bullish; SHORT_ONLY expects bearish → noise
     const candle = makeCandle({ close: new Decimal("51000") });
     const result = checkSafety(
       candle,
-      makeIndicators({ sma20: new Decimal("50000") }),
+      makeIndicators({ sma20_5m: new Decimal("50000") }),
       makeSignal({ timeframe: "1M" }),
       makeSymbolState({ daily_bias: "SHORT_ONLY" }),
     );
@@ -626,26 +638,40 @@ describe("safety-gate — 1M noise filter", () => {
     expect(result.reasons).toContain("noise_1m");
   });
 
-  it("passes when 1M + sma20 bullish + daily_bias LONG_ONLY", () => {
-    // close=51000 > sma20=50000 → bullish; bias=LONG_ONLY → aligned → pass
+  it("passes when 1M + 5M MA20 bullish + LONG_ONLY bias", () => {
+    // close=51000 > sma20_5m=50000 → 5M MA20 bullish; LONG_ONLY → aligned → pass
     const candle = makeCandle({ close: new Decimal("51000") });
     const result = checkSafety(
       candle,
-      makeIndicators({ sma20: new Decimal("50000") }),
+      makeIndicators({ sma20_5m: new Decimal("50000") }),
       makeSignal({ timeframe: "1M" }),
       makeSymbolState({ daily_bias: "LONG_ONLY" }),
     );
     expect(result.reasons).not.toContain("noise_1m");
   });
 
-  it("passes when 1M + sma20 bearish + daily_bias SHORT_ONLY", () => {
-    // close=49000 < sma20=50000 → bearish; bias=SHORT_ONLY → aligned → pass
+  it("passes when 1M + 5M MA20 bearish + SHORT_ONLY bias", () => {
+    // close=49000 < sma20_5m=50000 → 5M MA20 bearish; SHORT_ONLY → aligned → pass
     const candle = makeCandle({ close: new Decimal("49000") });
     const result = checkSafety(
       candle,
-      makeIndicators({ sma20: new Decimal("50000") }),
+      makeIndicators({ sma20_5m: new Decimal("50000") }),
       makeSignal({ timeframe: "1M" }),
       makeSymbolState({ daily_bias: "SHORT_ONLY" }),
+    );
+    expect(result.reasons).not.toContain("noise_1m");
+  });
+
+  it("does NOT use 1M sma20 for noise filter — only sma20_5m matters", () => {
+    // sma20 (1M) = 50000, sma20_5m = 48000
+    // close=49000: 1M sma20 would say bearish, but 5M sma20=48000 → close > 48000 → bullish
+    // LONG_ONLY + 5M MA20 bullish → pass
+    const candle = makeCandle({ close: new Decimal("49000") });
+    const result = checkSafety(
+      candle,
+      makeIndicators({ sma20: new Decimal("50000"), sma20_5m: new Decimal("48000") }),
+      makeSignal({ timeframe: "1M" }),
+      makeSymbolState({ daily_bias: "LONG_ONLY" }),
     );
     expect(result.reasons).not.toContain("noise_1m");
   });

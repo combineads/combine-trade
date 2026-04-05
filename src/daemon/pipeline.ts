@@ -25,7 +25,6 @@ import type {
   DailyBias,
   Direction,
   Exchange,
-  SignalType,
   SymbolState,
   Ticket,
   Timeframe,
@@ -223,12 +222,13 @@ export type PipelineDeps = {
   /** Derive a trading decision from weighted neighbors */
   makeDecision: (
     neighbors: WeightedNeighbor[],
-    signalType: SignalType,
-    safetyPassed: boolean,
+    isAGrade: boolean,
     config?: KnnDecisionConfig,
   ) => KnnDecisionResult;
   /** Load KNN config from CommonCode */
   loadKnnConfig: (db: DbInstance) => Promise<KnnConfig>;
+  /** Load KNN decision thresholds (winrate, min_samples, a_grade variants) from CommonCode */
+  loadKnnDecisionConfig: (db: DbInstance) => Promise<KnnDecisionConfig>;
 
   // ---- Positions ----
   /** Get the active (open) ticket for a symbol, or null */
@@ -688,6 +688,16 @@ async function processEntry(
     }
   }
 
+  // ---- 3c. Inject 5M SMA20 into indicators for 1M noise filter (PRD §7.7) ----
+  // When processing a 1M candle, load 5M candle indicators and inject sma20_5m.
+  // This allows checkNoise1M() to compare the 5M MA20 direction against the
+  // daily bias, filtering 1M entries that contradict the 5M trend.
+  if (timeframe === "1M") {
+    const candles5M = await deps.getCandles(deps.db, symbol, exchange, "5M", 25);
+    const indicators5M = deps.calcAllIndicators(candles5M);
+    indicators.sma20_5m = indicators5M.sma20;
+  }
+
   // ---- 4. Evidence check (BB4 touch) ----
   const evidence = deps.checkEvidence(candle, indicators, activeSession);
   if (evidence === null) {
@@ -744,11 +754,8 @@ async function processEntry(
   // ---- 9. Time-decay + decision ----
   const timeDecayConfig = await deps.loadTimeDecayConfig();
   const weightedNeighbors = deps.applyTimeDecay(rawNeighbors, new Date(), timeDecayConfig);
-  const knnDecision = deps.makeDecision(
-    weightedNeighbors,
-    evidence.signalType,
-    safetyResult.passed,
-  );
+  const knnDecisionConfig = await deps.loadKnnDecisionConfig(deps.db);
+  const knnDecision = deps.makeDecision(weightedNeighbors, evidence.aGrade, knnDecisionConfig);
 
   log.info("pipeline_knn_decision", {
     symbol,

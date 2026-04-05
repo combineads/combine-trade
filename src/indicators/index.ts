@@ -54,6 +54,9 @@ export function calcAllIndicators(candles: Candle[]): AllIndicators {
     bb4_1h: null,
     sma20,
     prevSma20,
+    // sma20_5m is not available from same-timeframe candles — the daemon pipeline
+    // injects this from 5M candle indicators when processing 1M timeframe entries.
+    sma20_5m: null,
     sma60,
     sma120,
     ema20,

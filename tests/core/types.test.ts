@@ -186,8 +186,9 @@ describe('core/types — enum runtime values', () => {
       'WFO',
       'ANCHOR',
       'NOTIFICATION',
+      'TRANSFER',
     ];
-    expect(values).toHaveLength(12);
+    expect(values).toHaveLength(13);
   });
 });
 

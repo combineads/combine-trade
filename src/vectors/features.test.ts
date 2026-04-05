@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { FEATURE_CATEGORIES, FEATURE_NAMES, FEATURE_WEIGHTS, VECTOR_DIM } from "./features";
+import { FEATURE_CATEGORIES, FEATURE_NAMES, FEATURE_WEIGHTS, VECTOR_DIM } from "./feature-spec";
 
 describe("features", () => {
   it("VECTOR_DIM equals 202", () => {
@@ -89,10 +89,23 @@ describe("features", () => {
       expect(FEATURE_WEIGHTS.session_box_position).toBe(1.5);
     });
 
-    it("all FEATURE_WEIGHTS keys are valid FEATURE_NAMES", () => {
+    it("upperWick has weight 1.5", () => {
+      expect(FEATURE_WEIGHTS.upperWick).toBe(1.5);
+    });
+
+    it("lowerWick has weight 1.5", () => {
+      expect(FEATURE_WEIGHTS.lowerWick).toBe(1.5);
+    });
+
+    it("all FEATURE_WEIGHTS keys are valid FEATURE_NAMES or PRD §3.2 logical group keys", () => {
       const nameSet = new Set(FEATURE_NAMES);
+      // PRD §3.2 logical group keys apply to multiple features by category name.
+      // upperWick maps to upper_wick_* features; lowerWick maps to lower_wick_* features.
+      const prdLogicalGroupKeys = new Set(["upperWick", "lowerWick"]);
       for (const key of Object.keys(FEATURE_WEIGHTS)) {
-        expect(nameSet.has(key)).toBe(true);
+        const isValidFeatureName = nameSet.has(key);
+        const isPrdLogicalKey = prdLogicalGroupKeys.has(key);
+        expect(isValidFeatureName || isPrdLogicalKey).toBe(true);
       }
     });
 

@@ -1,5 +1,5 @@
-import type { Candle, Direction, Exchange, TradeResult } from "@/core/types";
 import type { Decimal } from "@/core/decimal";
+import type { Candle, Direction, Exchange, TradeResult } from "@/core/types";
 import type { MockExchangeAdapter } from "./mock-adapter";
 
 // ---------------------------------------------------------------------------

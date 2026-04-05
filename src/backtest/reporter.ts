@@ -92,9 +92,7 @@ export function printReport(
   console.log(divider);
   console.log(` ${"총 거래".padEnd(20)} ${String(metrics.totalTrades.toNumber()).padStart(16)}`);
   console.log(` ${"승률".padEnd(20)} ${`${winRatePct}%`.padStart(16)}`);
-  console.log(
-    ` ${"기대값".padEnd(20)} ${metrics.expectancy.toFixed(4).padStart(16)}`,
-  );
+  console.log(` ${"기대값".padEnd(20)} ${metrics.expectancy.toFixed(4).padStart(16)}`);
   console.log(` ${"MDD".padEnd(20)} ${`${mddPct}%`.padStart(16)}`);
   console.log(` ${"샤프 비율".padEnd(20)} ${metrics.sharpeRatio.toFixed(4).padStart(16)}`);
   console.log(` ${"프로핏팩터".padEnd(20)} ${metrics.profitFactor.toFixed(4).padStart(16)}`);

@@ -108,7 +108,7 @@ describe.skipIf(!dbAvailable)("candle-schema — integration", () => {
       symbol: "BTC/USDT" as string,
       exchange: "binance" as string,
       timeframe: "1H" as string,
-      open_time: new Date("2025-01-01T00:00:00Z"),
+      open_time: "2025-01-01T00:00:00Z",
       open: "100.00",
       high: "110.00",
       low: "90.00",

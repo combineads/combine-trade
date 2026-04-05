@@ -1,6 +1,5 @@
-import { Decimal } from "@/core/decimal";
-import { d } from "@/core/decimal";
 import type { BacktestTrade } from "@/backtest/engine";
+import { type Decimal, d } from "@/core/decimal";
 
 // ---------------------------------------------------------------------------
 // Public types

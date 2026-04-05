@@ -181,17 +181,19 @@ function checkAbnormalCandle(
 }
 
 /**
- * 1M noise filter (only for 1M timeframe).
+ * 1M noise filter (only for 1M timeframe) — PRD §7.7.
  *
  * When timeframe='1M':
- *   - Compare candle.close vs sma20 to determine sma20 direction:
- *     close > sma20 → bullish, close <= sma20 → bearish
- *   - LONG_ONLY daily_bias expects bullish sma20; if bearish → fail
- *   - SHORT_ONLY daily_bias expects bearish sma20; if bullish → fail
+ *   - Uses the 5M MA20 direction (indicators.sma20_5m) to filter noise,
+ *     NOT the 1M SMA20. The 5M MA20 direction is compared against the daily bias.
+ *   - 5M MA20 bullish: close > sma20_5m
+ *   - 5M MA20 bearish: close <= sma20_5m
+ *   - LONG_ONLY daily_bias expects bullish 5M MA20; if bearish → fail ("noise_1m")
+ *   - SHORT_ONLY daily_bias expects bearish 5M MA20; if bullish → fail ("noise_1m")
  *   - NEUTRAL daily_bias → pass
  *
  * When timeframe='5M' → skip (return null).
- * When sma20 is null → pass.
+ * When sma20_5m is null → pass (no 5M indicator data available).
  */
 function checkNoise1M(
   candle: Candle,
@@ -204,9 +206,9 @@ function checkNoise1M(
   }
 
   const { daily_bias } = symbolState;
-  const { sma20 } = indicators;
+  const { sma20_5m } = indicators;
 
-  if (sma20 === null) {
+  if (sma20_5m === null) {
     return null;
   }
 
@@ -214,14 +216,14 @@ function checkNoise1M(
     return null;
   }
 
-  // sma20 direction: close > sma20 → bullish; otherwise bearish
-  const sma20Bullish = gt(candle.close, sma20);
+  // 5M MA20 direction: close > sma20_5m → bullish; otherwise bearish
+  const sma20_5mBullish = gt(candle.close, sma20_5m);
 
-  if (daily_bias === "LONG_ONLY" && !sma20Bullish) {
+  if (daily_bias === "LONG_ONLY" && !sma20_5mBullish) {
     return "noise_1m";
   }
 
-  if (daily_bias === "SHORT_ONLY" && sma20Bullish) {
+  if (daily_bias === "SHORT_ONLY" && sma20_5mBullish) {
     return "noise_1m";
   }
 

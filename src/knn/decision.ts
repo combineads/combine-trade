@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 
-import type { KnnDecision, SignalType } from "@/core/types";
+import type { KnnDecision } from "@/core/types";
 import type { DbInstance } from "@/db/pool";
 import { commonCodeTable, signalTable } from "@/db/schema";
 import type { WeightedNeighbor } from "@/knn/time-decay";
@@ -30,6 +30,10 @@ export type KnnDecisionConfig = {
   winrateThreshold: number;
   minSamples: number;
   aGradeWinrateThreshold: number;
+  /** Minimum labeled-neighbor count required when the signal is A-grade (default 20). */
+  aGradeMinSamples: number;
+  /** Round-trip commission rate deducted from raw expectancy (default 0.0008 = 0.08%). */
+  commissionPct: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -39,9 +43,8 @@ export type KnnDecisionConfig = {
 const DEFAULT_WINRATE_THRESHOLD = 0.55;
 const DEFAULT_MIN_SAMPLES = 30;
 const DEFAULT_A_GRADE_WINRATE_THRESHOLD = 0.5;
-
-/** Round-trip fee rate (0.08%) deducted from raw expectancy. Hard-coded — exchange fees are structurally fixed. */
-export const FEE_RATE = 0.0008;
+const DEFAULT_A_GRADE_MIN_SAMPLES = 20;
+const DEFAULT_COMMISSION_PCT = 0.0008;
 
 // ---------------------------------------------------------------------------
 // Pure decision function
@@ -51,37 +54,47 @@ export const FEE_RATE = 0.0008;
  * Derives a KNN decision from a set of time-decay-weighted neighbors.
  *
  * Decision rules (evaluated in order):
- *  1. SKIP  — sampleCount < minSamples (or neighbors array is empty)
- *  2. PASS  — winRate ≥ winrateThreshold AND expectancy > 0
+ *  1. SKIP  — sampleCount < effectiveMinSamples (or neighbors array is empty)
+ *  2. PASS  — winRate ≥ effectiveWinrateThreshold AND expectancy > 0
  *  3. FAIL  — otherwise
  *
- * A-grade criteria (all must be true):
- *  - signalType === 'DOUBLE_B'
- *  - safetyPassed === true
- *  - winRate ≥ aGradeWinrateThreshold
+ * A-grade branching (PRD §7.9):
+ *  - isAGrade=true  → effectiveMinSamples = aGradeMinSamples (default 20),
+ *                     effectiveWinrateThreshold = aGradeWinrateThreshold (default 0.50)
+ *  - isAGrade=false → effectiveMinSamples = minSamples (default 30),
+ *                     effectiveWinrateThreshold = winrateThreshold (default 0.55)
  *
- * @param neighbors   - Time-decay-weighted KNN neighbors (labeled only).
- * @param signalType  - Signal type of the candidate entry.
- * @param safetyPassed - Whether the pre-entry safety check passed.
- * @param config      - Optional override for decision thresholds.
+ * The isAGrade flag is determined externally (evidence-gate.ts: 1H BB4 touch)
+ * and passed in — this function never derives it internally.
+ *
+ * @param neighbors - Time-decay-weighted KNN neighbors (labeled only).
+ * @param isAGrade  - Whether the signal qualifies as A-grade (1H BB4 touch detected).
+ * @param config    - Optional override for decision thresholds.
  * @returns KnnDecisionResult with decision, winRate, expectancy, sampleCount, aGrade.
  */
 export function makeDecision(
   neighbors: WeightedNeighbor[],
-  signalType: SignalType,
-  safetyPassed: boolean,
+  isAGrade: boolean,
   config: KnnDecisionConfig = {
     winrateThreshold: DEFAULT_WINRATE_THRESHOLD,
     minSamples: DEFAULT_MIN_SAMPLES,
     aGradeWinrateThreshold: DEFAULT_A_GRADE_WINRATE_THRESHOLD,
+    aGradeMinSamples: DEFAULT_A_GRADE_MIN_SAMPLES,
+    commissionPct: DEFAULT_COMMISSION_PCT,
   },
 ): KnnDecisionResult {
+  // A급 분기: 완화된 임계값 vs 엄격한 임계값
+  const effectiveMinSamples = isAGrade ? config.aGradeMinSamples : config.minSamples;
+  const effectiveWinrateThreshold = isAGrade
+    ? config.aGradeWinrateThreshold
+    : config.winrateThreshold;
+
   // Filter to neighbors with non-null labels
   const labeled = neighbors.filter((n) => n.label !== null);
   const sampleCount = labeled.length;
 
-  // Not enough data
-  if (sampleCount < config.minSamples) {
+  // Not enough data — aGrade=false when insufficient samples regardless of isAGrade
+  if (sampleCount < effectiveMinSamples) {
     return { decision: "SKIP", winRate: 0, expectancy: 0, sampleCount, aGrade: false };
   }
 
@@ -112,15 +125,15 @@ export function makeDecision(
 
   const winRate = weightSum > 0 ? winWeightedSum / weightSum : 0;
   const rawExpectancy = weightSum > 0 ? expectancyWeightedSum / weightSum : 0;
-  const expectancy = rawExpectancy - FEE_RATE;
+  const expectancy = rawExpectancy - config.commissionPct;
 
   // PASS / FAIL — expectancy condition uses net (fee-deducted) value
   const decision: KnnDecision =
-    winRate >= config.winrateThreshold && expectancy > 0 ? "PASS" : "FAIL";
+    winRate >= effectiveWinrateThreshold && expectancy > 0 ? "PASS" : "FAIL";
 
-  // A-grade
-  const aGrade =
-    signalType === "DOUBLE_B" && safetyPassed === true && winRate >= config.aGradeWinrateThreshold;
+  // aGrade: isAGrade pass-through — 내부에서 재결정하지 않는다.
+  // FAIL인 경우에도 aGrade=isAGrade를 유지하여 DB 기록에서 등급 정보를 보존한다.
+  const aGrade = isAGrade;
 
   return { decision, winRate, expectancy, sampleCount, aGrade };
 }
@@ -163,9 +176,11 @@ export async function updateSignalKnnDecision(
  * Loads the KNN decision thresholds from the CommonCode table (KNN group).
  *
  * Reads:
- *  - `KNN.winrate_threshold`       → default 0.55
- *  - `KNN.min_samples`             → default 30
+ *  - `KNN.winrate_threshold`         → default 0.55
+ *  - `KNN.min_samples`               → default 30
  *  - `KNN.a_grade_winrate_threshold` → default 0.50
+ *  - `KNN.a_grade_min_samples`       → default 20
+ *  - `KNN.commission_pct`            → default 0.0008
  *
  * Falls back to the hard-coded default for any row that is absent, inactive,
  * or contains an invalid value.
@@ -182,6 +197,8 @@ export async function loadKnnDecisionConfig(db: DbInstance): Promise<KnnDecision
   let winrateThreshold = DEFAULT_WINRATE_THRESHOLD;
   let minSamples = DEFAULT_MIN_SAMPLES;
   let aGradeWinrateThreshold = DEFAULT_A_GRADE_WINRATE_THRESHOLD;
+  let aGradeMinSamples = DEFAULT_A_GRADE_MIN_SAMPLES;
+  let commissionPct = DEFAULT_COMMISSION_PCT;
 
   for (const row of rows) {
     if (row.code === "winrate_threshold") {
@@ -199,8 +216,18 @@ export async function loadKnnDecisionConfig(db: DbInstance): Promise<KnnDecision
       if (typeof raw === "number" && Number.isFinite(raw) && raw > 0 && raw <= 1) {
         aGradeWinrateThreshold = raw;
       }
+    } else if (row.code === "a_grade_min_samples") {
+      const raw = row.value;
+      if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) {
+        aGradeMinSamples = Math.floor(raw);
+      }
+    } else if (row.code === "commission_pct") {
+      const raw = row.value;
+      if (typeof raw === "number" && Number.isFinite(raw) && raw >= 0) {
+        commissionPct = raw;
+      }
     }
   }
 
-  return { winrateThreshold, minSamples, aGradeWinrateThreshold };
+  return { winrateThreshold, minSamples, aGradeWinrateThreshold, aGradeMinSamples, commissionPct };
 }

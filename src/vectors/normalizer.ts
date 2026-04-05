@@ -15,7 +15,7 @@
  * computation.
  */
 
-import { VECTOR_DIM } from "@/vectors/features";
+import { VECTOR_DIM } from "@/vectors/feature-spec";
 
 // ---------------------------------------------------------------------------
 // Types

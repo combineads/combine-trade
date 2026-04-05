@@ -70,8 +70,8 @@ describe("transfer-now", () => {
       const calculateTransferableMock = mock(() => ({
         walletBalance: new Decimal("1000"),
         openMargin: new Decimal("200"),
+        dailyProfit: new Decimal("500"),
         reserve: new Decimal("300"),
-        available: new Decimal("500"),
         transferAmount: new Decimal("250"),
         skip: false,
       }));
@@ -94,6 +94,7 @@ describe("transfer-now", () => {
         calculateTransferable({
           walletBalance: new Decimal("1000"),
           openMargin: new Decimal("200"),
+          dailyProfit: new Decimal("500"),
           riskPct: new Decimal("0.03"),
           reserveMultiplier: 10,
           transferPct: 50,
@@ -115,8 +116,8 @@ describe("transfer-now", () => {
       const calculateTransferableMock = mock(() => ({
         walletBalance: new Decimal("1000"),
         openMargin: new Decimal("200"),
+        dailyProfit: new Decimal("500"),
         reserve: new Decimal("300"),
-        available: new Decimal("500"),
         transferAmount: new Decimal("250"),
         skip: false,
       }));
@@ -138,6 +139,7 @@ describe("transfer-now", () => {
         calculateTransferable({
           walletBalance: new Decimal("1000"),
           openMargin: new Decimal("200"),
+          dailyProfit: new Decimal("500"),
           riskPct: new Decimal("0.03"),
           reserveMultiplier: 10,
           transferPct: 50,

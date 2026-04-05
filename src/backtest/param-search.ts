@@ -213,9 +213,7 @@ export async function runParameterSearch(
   }
 
   // Sort grid results by expectancy DESC to identify top-N seeds
-  allResults.sort(
-    (a, b) => b.metrics.expectancy.toNumber() - a.metrics.expectancy.toNumber(),
-  );
+  allResults.sort((a, b) => b.metrics.expectancy.toNumber() - a.metrics.expectancy.toNumber());
 
   // ── Stage 2: Random search (optional) ────────────────────────────────────
 
@@ -235,9 +233,7 @@ export async function runParameterSearch(
 
   // ── Final sort by expectancy DESC ────────────────────────────────────────
 
-  allResults.sort(
-    (a, b) => b.metrics.expectancy.toNumber() - a.metrics.expectancy.toNumber(),
-  );
+  allResults.sort((a, b) => b.metrics.expectancy.toNumber() - a.metrics.expectancy.toNumber());
 
   return allResults;
 }

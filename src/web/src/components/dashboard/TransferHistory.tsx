@@ -196,10 +196,7 @@ function TransferRow({ event }: { event: TransferEvent }) {
   const timeStr = formatTime(event.created_at);
 
   return (
-    <tr
-      className="border-b last:border-b-0 transition-colors"
-      style={{ borderColor: "#334155" }}
-    >
+    <tr className="border-b last:border-b-0 transition-colors" style={{ borderColor: "#334155" }}>
       <td className="px-3 py-2 font-mono tabular-nums text-xs" style={{ color: "#64748b" }}>
         {timeStr}
       </td>

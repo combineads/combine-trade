@@ -14,7 +14,6 @@ import { getDb, getPool } from "../../src/db/pool";
 import { commonCodeTable } from "../../src/db/schema";
 import type { KnnDecisionConfig } from "../../src/knn/decision";
 import {
-  FEE_RATE,
   loadKnnDecisionConfig,
   makeDecision,
   updateSignalKnnDecision,
@@ -34,6 +33,8 @@ const DEFAULT_CONFIG: KnnDecisionConfig = {
   winrateThreshold: 0.55,
   minSamples: 30,
   aGradeWinrateThreshold: 0.5,
+  aGradeMinSamples: 20,
+  commissionPct: 0.0008,
 };
 
 function makeWeightedNeighbor(
@@ -70,7 +71,7 @@ function makeNeighbors(count: number, wins: number): WeightedNeighbor[] {
 
 describe("knn-decision: makeDecision — SKIP when sample count < minSamples", () => {
   it("returns SKIP with 0 samples (empty array)", () => {
-    const result = makeDecision([], "DOUBLE_B", true, DEFAULT_CONFIG);
+    const result = makeDecision([], false, DEFAULT_CONFIG);
     expect(result.decision).toBe("SKIP");
     expect(result.winRate).toBe(0);
     expect(result.expectancy).toBe(0);
@@ -78,10 +79,10 @@ describe("knn-decision: makeDecision — SKIP when sample count < minSamples", (
     expect(result.aGrade).toBe(false);
   });
 
-  it("returns SKIP when sample count is below minSamples (10 < 30)", () => {
-    // winRate 0.70, but only 10 samples — below the new DEFAULT_MIN_SAMPLES=30
+  it("returns SKIP when sample count is below minSamples (10 < 30, isAGrade=false)", () => {
+    // winRate 0.70, but only 10 samples — below DEFAULT_MIN_SAMPLES=30 (비A급 기준)
     const neighbors = makeNeighbors(10, 7); // 7 of 10 WIN → winRate 0.70
-    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     expect(result.decision).toBe("SKIP");
     expect(result.sampleCount).toBe(10);
   });
@@ -90,60 +91,52 @@ describe("knn-decision: makeDecision — SKIP when sample count < minSamples", (
     const unlabeled = Array.from({ length: 40 }, (_, i) =>
       makeWeightedNeighbor({ vectorId: `vec-${i}`, label: null }),
     );
-    const result = makeDecision(unlabeled, "DOUBLE_B", true, DEFAULT_CONFIG);
+    const result = makeDecision(unlabeled, false, DEFAULT_CONFIG);
     expect(result.decision).toBe("SKIP");
     expect(result.sampleCount).toBe(0);
   });
 });
 
 describe("knn-decision: makeDecision — PASS scenarios", () => {
-  it("returns PASS with winRate=0.60, expectancy>0, 50 samples", () => {
+  it("returns PASS with winRate=0.60, expectancy>0, 50 samples (isAGrade=false)", () => {
     // 30 WIN, 20 LOSS out of 50 → winRate = 0.60, expectancy = (30-20)/50 = 0.20
     const neighbors = makeNeighbors(50, 30);
-    const result = makeDecision(neighbors, "DOUBLE_B", false, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     expect(result.decision).toBe("PASS");
     expect(result.winRate).toBeCloseTo(0.6, 5);
     expect(result.expectancy).toBeGreaterThan(0);
     expect(result.sampleCount).toBe(50);
   });
 
-  it("returns PASS exactly at winrateThreshold=0.55 with expectancy>0", () => {
-    // 11 WIN, 9 LOSS of 20, but we need 30 samples minimum
+  it("returns PASS exactly at winrateThreshold=0.55 with expectancy>0 (isAGrade=false)", () => {
     // 33 WIN, 27 LOSS of 60 → winRate = 0.55
     const neighbors = makeNeighbors(60, 33);
-    const result = makeDecision(neighbors, "ONE_B", false, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     expect(result.decision).toBe("PASS");
     expect(result.winRate).toBeCloseTo(0.55, 5);
   });
 });
 
 describe("knn-decision: makeDecision — FAIL scenarios", () => {
-  it("returns FAIL with winRate=0.45, 50 samples", () => {
+  it("returns FAIL with winRate=0.45, 50 samples (isAGrade=false)", () => {
     // 22 WIN, 28 LOSS → winRate = 0.44, expectancy = (22-28)/50 = -0.12
     const neighbors = makeNeighbors(50, 22);
-    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     expect(result.decision).toBe("FAIL");
     expect(result.winRate).toBeCloseTo(0.44, 5);
     expect(result.sampleCount).toBe(50);
   });
 
-  it("returns FAIL when winRate >= threshold but expectancy <= 0 (TIME_EXIT heavy)", () => {
-    // Build neighbors: 17 WIN, 3 LOSS, 20 TIME_EXIT out of 40
-    // winRate = 17/40 = 0.425 — this is FAIL on winRate alone
-    // Let's build a scenario where winRate is OK but expectancy is borderline negative
-    // 22 WIN, 8 LOSS, 10 TIME_EXIT → winRate=22/40=0.55, expectancy=(22-8+10*(-0.5))/40=(22-8-5)/40=9/40=0.225
-    // For expectancy ≤ 0: we need wins to not outweigh losses + time_exits
-    // 22 WIN, 18 LOSS, 0 TIME_EXIT → winRate=22/40=0.55, expectancy=(22-18)/40=0.1 (PASS)
-    // To get negative expectancy with sufficient winRate is hard with uniform weights
-    // Instead test: winRate just below threshold
-    const neighbors = makeNeighbors(50, 27); // 27/50=0.54, below 0.55 threshold
-    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
+  it("returns FAIL when winRate just below threshold (isAGrade=false)", () => {
+    // 27/50=0.54, below 0.55 threshold
+    const neighbors = makeNeighbors(50, 27);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     expect(result.decision).toBe("FAIL");
   });
 
-  it("returns FAIL when winRate < threshold, sampleCount >= minSamples", () => {
+  it("returns FAIL when winRate < threshold, sampleCount >= minSamples (isAGrade=false)", () => {
     const neighbors = makeNeighbors(50, 20); // 20/50=0.40
-    const result = makeDecision(neighbors, "ONE_B", false, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     expect(result.decision).toBe("FAIL");
   });
 });
@@ -157,7 +150,7 @@ describe("knn-decision: makeDecision — weighted calculations", () => {
       // Fill the rest with uniform WIN to push count ≥ 30 but use low weights
       return makeWeightedNeighbor({ vectorId: `filler-${i}`, label: "WIN", weight: 0.01 });
     });
-    const result = makeDecision(neighbors, "ONE_B", false, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     // Weighted sum: heavy WIN (0.9) + light LOSS (0.1) + 28 tiny WINs (0.01*28 = 0.28)
     // Total weight = 0.9 + 0.1 + 0.28 = 1.28
     // Win weighted = 0.9 + 0.28 = 1.18
@@ -171,7 +164,7 @@ describe("knn-decision: makeDecision — weighted calculations", () => {
       const label = i < 20 ? "WIN" : "TIME_EXIT";
       return makeWeightedNeighbor({ vectorId: `vec-${i}`, label, weight: 1.0 });
     });
-    const result = makeDecision(neighbors, "DOUBLE_B", false, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     // raw_expectancy = (20*1 + 10*(-0.5)) / 30 = 15/30 = 0.5
     // net_expectancy = 0.5 - 0.0008 = 0.4992
     expect(result.expectancy).toBeCloseTo(0.4992, 4);
@@ -181,7 +174,7 @@ describe("knn-decision: makeDecision — weighted calculations", () => {
     const neighbors = Array.from({ length: 30 }, (_, i) =>
       makeWeightedNeighbor({ vectorId: `vec-${i}`, label: "LOSS", weight: 1.0 }),
     );
-    const result = makeDecision(neighbors, "ONE_B", false, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     // raw = -1.0, net = -1.0 - 0.0008 = -1.0008
     expect(result.expectancy).toBeCloseTo(-1.0008, 4);
     expect(result.decision).toBe("FAIL");
@@ -191,7 +184,7 @@ describe("knn-decision: makeDecision — weighted calculations", () => {
     const neighbors = Array.from({ length: 30 }, (_, i) =>
       makeWeightedNeighbor({ vectorId: `vec-${i}`, label: "WIN", weight: 1.0 }),
     );
-    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     // raw = 1.0, net = 1.0 - 0.0008 = 0.9992
     expect(result.expectancy).toBeCloseTo(0.9992, 4);
     expect(result.winRate).toBeCloseTo(1.0, 5);
@@ -199,54 +192,63 @@ describe("knn-decision: makeDecision — weighted calculations", () => {
   });
 });
 
-describe("knn-decision: makeDecision — A-grade criteria", () => {
-  it("aGrade=true when DOUBLE_B + safetyPassed + winRate >= 0.50 (50 samples, 70% win)", () => {
-    // 35 WIN, 15 LOSS → winRate = 0.70
+describe("knn-decision: makeDecision — A-grade (isAGrade pass-through)", () => {
+  it("isAGrade=true + PASS → aGrade=true (pass-through)", () => {
+    // 35 WIN, 15 LOSS of 50 → winRate = 0.70 (A급 기준 0.50 충족, A급 min_samples=20 충족)
     const neighbors = makeNeighbors(50, 35);
-    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, true, DEFAULT_CONFIG);
     expect(result.aGrade).toBe(true);
     expect(result.decision).toBe("PASS");
   });
 
-  it("aGrade=false when signalType is ONE_B even with high winRate", () => {
+  it("isAGrade=false + PASS → aGrade=false (pass-through)", () => {
     const neighbors = makeNeighbors(50, 35); // winRate=0.70
-    const result = makeDecision(neighbors, "ONE_B", true, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     expect(result.aGrade).toBe(false);
+    expect(result.decision).toBe("PASS");
   });
 
-  it("aGrade=false when safetyPassed=false even with DOUBLE_B + high winRate", () => {
-    const neighbors = makeNeighbors(50, 35); // winRate=0.70
-    const result = makeDecision(neighbors, "DOUBLE_B", false, DEFAULT_CONFIG);
-    expect(result.aGrade).toBe(false);
-  });
-
-  it("aGrade=false when winRate < aGradeWinrateThreshold (0.50)", () => {
-    // 22 WIN, 28 LOSS → winRate=0.44 (below A-grade threshold of 0.50)
+  it("isAGrade=true + FAIL → aGrade=true (pass-through, even on FAIL)", () => {
+    // winRate=0.44 → A급 완화 기준(0.50)도 미달 → FAIL
+    // 22 WIN, 28 LOSS of 50
     const neighbors = makeNeighbors(50, 22);
-    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, true, DEFAULT_CONFIG);
+    // A급 완화 winrate=0.50 기준에도 0.44는 미달 → FAIL
+    expect(result.decision).toBe("FAIL");
+    expect(result.aGrade).toBe(true); // pass-through: isAGrade=true는 유지됨
+  });
+
+  it("isAGrade=false + FAIL → aGrade=false (pass-through)", () => {
+    const neighbors = makeNeighbors(50, 22); // winRate=0.44
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
+    expect(result.decision).toBe("FAIL");
     expect(result.aGrade).toBe(false);
-    expect(result.decision).toBe("FAIL"); // winRate < 0.55 threshold → FAIL
   });
 
-  it("aGrade=true exactly at aGradeWinrateThreshold=0.50", () => {
-    // 30 WIN, 30 LOSS of 60 → winRate=0.50
-    const neighbors = makeNeighbors(60, 30);
-    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
-    expect(result.winRate).toBeCloseTo(0.5, 5);
-    expect(result.aGrade).toBe(true);
-  });
-
-  it("aGrade=false when decision is SKIP (insufficient samples)", () => {
-    const neighbors = makeNeighbors(10, 8); // 80% win but only 10 samples
-    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
+  it("isAGrade=true + SKIP (insufficient samples) → aGrade=false", () => {
+    // 10 샘플은 A급 완화 기준 20에도 미달 → SKIP
+    const neighbors = makeNeighbors(10, 8);
+    const result = makeDecision(neighbors, true, DEFAULT_CONFIG);
     expect(result.decision).toBe("SKIP");
-    expect(result.aGrade).toBe(false);
+    expect(result.aGrade).toBe(false); // SKIP은 항상 aGrade=false
+  });
+
+  it("isAGrade=true: 25 샘플은 A급 기준(20)은 통과, 비A급 기준(30)은 미달", () => {
+    // 25 샘플: A급 완화 기준 min_samples=20 통과
+    const neighbors = makeNeighbors(25, 15); // winRate=0.60 >= 0.50
+    const result = makeDecision(neighbors, true, DEFAULT_CONFIG);
+    expect(result.decision).toBe("PASS"); // A급 기준으로 PASS
+    expect(result.sampleCount).toBe(25);
+
+    // 같은 25 샘플을 비A급 기준으로는 SKIP
+    const resultNonA = makeDecision(neighbors, false, DEFAULT_CONFIG);
+    expect(resultNonA.decision).toBe("SKIP"); // 비A급 min_samples=30 미달
   });
 });
 
-describe("knn-decision: FEE_RATE constant", () => {
-  it("FEE_RATE === 0.0008", () => {
-    expect(FEE_RATE).toBe(0.0008);
+describe("knn-decision: commissionPct default", () => {
+  it("DEFAULT_CONFIG.commissionPct === 0.0008 (기본값 유지)", () => {
+    expect(DEFAULT_CONFIG.commissionPct).toBe(0.0008);
   });
 });
 
@@ -258,158 +260,154 @@ describe("knn-decision: makeDecision — fee deduction", () => {
       winrateThreshold: 0.55,
       minSamples: 5,
       aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 5,
+      commissionPct: 0.0008,
     };
     // 4 WIN, 1 LOSS → winRate=0.80, raw_expectancy=(4-1)/5=0.6, net=0.6-0.0008>0 → PASS
     const neighbors = makeNeighbors(5, 4);
-    const result = makeDecision(neighbors, "DOUBLE_B", false, config);
+    const result = makeDecision(neighbors, false, config);
     expect(result.decision).toBe("PASS");
     // Verify expectancy is net (0.6 - 0.0008 = 0.5992)
     expect(result.expectancy).toBeCloseTo(0.5992, 4);
   });
 
-  it("raw_expectancy=0.0005 → net=-0.0003 < 0 → FAIL (even though winRate >= threshold)", () => {
-    // We need raw expectancy of ~0.0005 with winRate >= 0.55
-    // With uniform weights, WIN→+1, LOSS→-1: expectancy = (wins - losses) / total
-    // For a tiny positive expectancy we'd need wins barely exceeding losses
-    // Use custom expectancy via a heavily TIME_EXIT mix:
-    // Many WIN barely outweigh losses + time_exits
-    // Use custom config with small minSamples
+  it("expectancy returned equals raw - commissionPct", () => {
     const config: KnnDecisionConfig = {
       winrateThreshold: 0.55,
       minSamples: 5,
       aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 5,
+      commissionPct: 0.0008,
     };
-    // Craft scenario: 3 WIN (w=1), 1 LOSS (w=1), 1 TIME_EXIT (w=1) → total=5
-    // winRate = 3/5 = 0.60 >= 0.55 ✓
-    // raw_expectancy = (3*1 + 1*(-1) + 1*(-0.5)) / 5 = (3 - 1 - 0.5)/5 = 1.5/5 = 0.30
-    // That's too large. Use very unequal weights to engineer a tiny raw expectancy.
-    // Instead, use a direct test: 100 neighbors where raw expectancy is just above 0 but net < 0
-    // raw = 0.0005 requires (win - loss*1 - timeExit*0.5) / total = 0.0005
-    // Simpler: use 1000 neighbors with carefully chosen WIN/LOSS/TIME_EXIT count
-    // We need raw_e barely positive: e.g., 501 WIN, 499 LOSS of 1000 → raw=2/1000=0.002 > 0.0008 → still PASS
-    // For raw < 0.0008: need wins only barely exceed losses
-    // 5001 WIN, 4999 LOSS of 10000 → raw=2/10000=0.0002 < 0.0008 → FAIL
-    // But minSamples would need to be 10000+ which is slow. Use weight trick instead.
-    // Use 2 neighbors: WIN (weight=1.0004), LOSS (weight=1.0) → raw=(1.0004-1.0)/(2.0004)≈0.0001998 < 0.0008 → net < 0
-    // winRate = 1.0004/2.0004 ≈ 0.5001 (below 0.55 threshold — fails on winRate too)
-    // Better approach: test raw_expectancy exactly 0.0008 gives net=0 → FAIL (not > 0)
-    // Use config minSamples=2, 2 neighbors with weights to get raw=0.0008 and winRate >= 0.55
-    // This is hard to craft precisely. Use a known FAIL case: raw <= 0 is definitely FAIL.
-    // Test the meaningful case: expectancy returned equals raw - FEE_RATE even when FAIL
-    const neighbors = makeNeighbors(5, 3); // 3 WIN, 2 LOSS → raw=(3-2)/5=0.2, net=0.1992, winRate=0.6
-    const result = makeDecision(neighbors, "ONE_B", false, config);
-    expect(result.expectancy).toBeCloseTo(0.2 - FEE_RATE, 5);
+    // 3 WIN, 2 LOSS → raw=(3-2)/5=0.2, net=0.1992, winRate=0.6
+    const neighbors = makeNeighbors(5, 3);
+    const result = makeDecision(neighbors, false, config);
+    expect(result.expectancy).toBeCloseTo(0.2 - config.commissionPct, 5);
     expect(result.decision).toBe("PASS");
   });
 
-  it("raw_expectancy=0.0008 (exactly FEE_RATE) → net=0.0 → FAIL (not > 0)", () => {
-    // Craft: need raw_expectancy exactly 0.0008
-    // Using weights: WIN (weight w), LOSS (weight L) → raw = (w - L) / (w + L) = 0.0008
-    // → w - L = 0.0008(w + L) → 0.9992w = 1.0008L → w/L = 1.0008/0.9992 ≈ 1.001602
-    // winRate = w/(w+L); with w=1.001602, L=1: winRate≈1.001602/2.001602≈0.5004 < 0.55 → FAIL on winRate too
-    // Use a different approach: all neighbors TIME_EXIT → raw=-0.5, net=-0.5008 → FAIL
-    // The key property to test: expectancy > 0 check uses net, not raw
-    // Definitive test: raw > 0 but net <= 0 → FAIL
-    // Engineer: 3 WIN (w=0.1 each), 2 LOSS (w=0.14 each)
-    //   win_wsum = 0.3, loss_wsum = 0.28, total = 0.58
-    //   winRate = 0.3/0.58 ≈ 0.517 < 0.55 → FAIL on winRate
-    // Need winRate >= 0.55 and raw_expectancy barely positive (< 0.0008)
-    // This is tricky with simple WIN/LOSS labels. Use a 5-neighbor custom config test.
-    // Let's instead verify: when expectancy ≈ 0 (raw barely > 0), decision is FAIL
-    // 2 WIN, 2 LOSS, 1 TIME_EXIT of 5 neighbors, minSamples=5:
-    //   raw = (2 - 2 + (-0.5)) / 5 = -0.5/5 = -0.1 → FAIL
-    // Simpler proof: verify that makeDecision returns net expectancy even on FAIL
+  it("net expectancy ≤ 0 → FAIL", () => {
     const config: KnnDecisionConfig = {
       winrateThreshold: 0.55,
       minSamples: 5,
       aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 5,
+      commissionPct: 0.0008,
     };
-    // 3 WIN, 2 LOSS: raw = (3-2)/5 = 0.2 > 0, net = 0.2 - 0.0008 = 0.1992 > 0 → PASS
-    // To get net ≤ 0: need raw ≤ 0.0008. With integer labels only, minimum positive raw = 1/total
-    // Use 1000 samples with 1001 WIN, 999 LOSS → raw=2/2000=0.001 > 0.0008 still PASS
-    // Use 5000 samples: 2501 WIN, 2499 LOSS → raw=2/5000=0.0004 < 0.0008 → net=-0.0004 → FAIL
-    // But slow. Use 1 WIN + 2499 LOSS + lots of neighbors? → winRate too low.
-    // Final approach: use known scenario from task spec directly with comment
-    // The task spec says: "makeDecision with raw expectancy exactly 0.0008 → net=0.0 → FAIL"
-    // We can't easily construct exactly 0.0008 raw with integer labels,
-    // but we CAN test the boundary behavior: net <= 0 → FAIL
-    const allLossNeighbors = makeNeighbors(5, 0); // all LOSS → raw=-1, net=-1.0008
-    const result = makeDecision(allLossNeighbors, "ONE_B", false, config);
+    // all LOSS → raw=-1, net=-1.0008
+    const allLossNeighbors = makeNeighbors(5, 0);
+    const result = makeDecision(allLossNeighbors, false, config);
     expect(result.expectancy).toBeLessThanOrEqual(0);
     expect(result.decision).toBe("FAIL");
   });
 
-  it("makeDecision with 15 samples → SKIP (below new DEFAULT_MIN_SAMPLES=30)", () => {
+  it("비A급: 15 samples → SKIP (minSamples=30 미달)", () => {
     const neighbors = makeNeighbors(15, 12); // 80% win but only 15 samples
-    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     expect(result.decision).toBe("SKIP");
     expect(result.sampleCount).toBe(15);
   });
 
-  it("makeDecision with exactly 29 samples → SKIP (below new DEFAULT_MIN_SAMPLES=30)", () => {
-    const neighbors = makeNeighbors(29, 20); // 29 samples — below threshold of 30
-    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
+  it("비A급: 29 samples → SKIP (minSamples=30 미달)", () => {
+    const neighbors = makeNeighbors(29, 20);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     expect(result.decision).toBe("SKIP");
     expect(result.sampleCount).toBe(29);
   });
 
-  it("makeDecision with exactly 30 samples → not SKIP (proceeds to PASS or FAIL)", () => {
+  it("비A급: 30 samples → not SKIP (minSamples=30 정확히 충족)", () => {
     const neighbors = makeNeighbors(30, 21); // 21/30=0.70 winRate
-    const result = makeDecision(neighbors, "DOUBLE_B", true, DEFAULT_CONFIG);
+    const result = makeDecision(neighbors, false, DEFAULT_CONFIG);
     expect(result.decision).not.toBe("SKIP");
     expect(result.sampleCount).toBe(30);
   });
 });
 
-describe("knn-decision: makeDecision — A-grade threshold calibration (0.50)", () => {
-  it("A-grade: winrate=0.55, samples=30, DOUBLE_B, safety=true → aGrade=true (0.55 >= 0.50)", () => {
+describe("knn-decision: makeDecision — A-grade 임계값 분기 (PRD §7.9)", () => {
+  it("isAGrade=true: A급 winrateThreshold=0.50 적용 — winrate=0.52 → PASS", () => {
     const config: KnnDecisionConfig = {
       winrateThreshold: 0.55,
       minSamples: 30,
       aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 20,
+      commissionPct: 0.0008,
     };
-    // 17 WIN, 13 LOSS of 30 → winRate ≈ 0.567
-    const neighbors = makeNeighbors(30, 17);
-    const result = makeDecision(neighbors, "DOUBLE_B", true, config);
-    expect(result.winRate).toBeGreaterThanOrEqual(0.5);
+    // 25 샘플 중 13 WIN = winrate 0.52 (A급 0.50 기준 통과, 비A급 0.55 기준 미달)
+    const neighbors = makeNeighbors(25, 13);
+    const result = makeDecision(neighbors, true, config);
+    expect(result.decision).toBe("PASS"); // A급 완화 기준 적용
     expect(result.aGrade).toBe(true);
   });
 
-  it("A-grade: winrate=0.45, samples=30, DOUBLE_B, safety=true → aGrade=false (0.45 < 0.50)", () => {
+  it("isAGrade=false: 비A급 winrateThreshold=0.55 적용 — winrate=0.52 → FAIL", () => {
     const config: KnnDecisionConfig = {
       winrateThreshold: 0.55,
       minSamples: 30,
       aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 20,
+      commissionPct: 0.0008,
     };
-    // 13 WIN, 17 LOSS of 30 → winRate ≈ 0.433
-    const neighbors = makeNeighbors(30, 13);
-    const result = makeDecision(neighbors, "DOUBLE_B", true, config);
-    expect(result.winRate).toBeLessThan(0.5);
+    // 35 샘플 중 18 WIN = winrate ~0.514 (비A급 0.55 기준 미달)
+    const neighbors = makeNeighbors(35, 18);
+    const result = makeDecision(neighbors, false, config);
+    expect(result.decision).toBe("FAIL"); // 비A급 엄격 기준 적용
     expect(result.aGrade).toBe(false);
+  });
+
+  it("isAGrade=true: A급 min_samples=20 적용 — 20 샘플 → SKIP하지 않음", () => {
+    const config: KnnDecisionConfig = {
+      winrateThreshold: 0.55,
+      minSamples: 30,
+      aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 20,
+      commissionPct: 0.0008,
+    };
+    // 20 샘플 (A급 완화 기준 정확히 충족)
+    const neighbors = makeNeighbors(20, 12); // winRate 0.60 >= 0.50
+    const result = makeDecision(neighbors, true, config);
+    expect(result.decision).not.toBe("SKIP");
+    expect(result.sampleCount).toBe(20);
+  });
+
+  it("isAGrade=true: 19 샘플 → SKIP (A급 완화 기준 min_samples=20에도 미달)", () => {
+    const config: KnnDecisionConfig = {
+      winrateThreshold: 0.55,
+      minSamples: 30,
+      aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 20,
+      commissionPct: 0.0008,
+    };
+    const neighbors = makeNeighbors(19, 15);
+    const result = makeDecision(neighbors, true, config);
+    expect(result.decision).toBe("SKIP");
   });
 });
 
 describe("knn-decision: makeDecision — custom config override", () => {
-  it("uses custom minSamples of 5", () => {
+  it("uses custom minSamples of 5 (isAGrade=false)", () => {
     const config: KnnDecisionConfig = {
       winrateThreshold: 0.55,
       minSamples: 5,
       aGradeWinrateThreshold: 0.65,
+      aGradeMinSamples: 5,
+      commissionPct: 0.0008,
     };
     const neighbors = makeNeighbors(5, 4); // exactly 5 samples, 80% win
-    const result = makeDecision(neighbors, "ONE_B", false, config);
+    const result = makeDecision(neighbors, false, config);
     expect(result.decision).toBe("PASS");
   });
 
-  it("uses custom winrateThreshold of 0.60", () => {
+  it("uses custom winrateThreshold of 0.60 (isAGrade=false)", () => {
     const config: KnnDecisionConfig = {
       winrateThreshold: 0.60,
       minSamples: 30,
       aGradeWinrateThreshold: 0.75,
+      aGradeMinSamples: 20,
+      commissionPct: 0.0008,
     };
     // 33 WIN, 27 LOSS of 60 → winRate = 0.55 (FAIL with 0.60 threshold)
     const neighbors = makeNeighbors(60, 33);
-    const result = makeDecision(neighbors, "ONE_B", false, config);
+    const result = makeDecision(neighbors, false, config);
     expect(result.decision).toBe("FAIL");
   });
 });
@@ -661,6 +659,8 @@ describe.skipIf(!dbAvailable)("knn-decision: loadKnnDecisionConfig — DB integr
       winrateThreshold: 0.55,
       minSamples: 30,
       aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 20,
+      commissionPct: 0.0008,
     });
   });
 
@@ -675,6 +675,7 @@ describe.skipIf(!dbAvailable)("knn-decision: loadKnnDecisionConfig — DB integr
     expect(config.winrateThreshold).toBe(0.60);
     expect(config.minSamples).toBe(30);
     expect(config.aGradeWinrateThreshold).toBe(0.5);
+    expect(config.aGradeMinSamples).toBe(20);
   });
 
   it("reads min_samples from CommonCode KNN group", async () => {
@@ -699,16 +700,29 @@ describe.skipIf(!dbAvailable)("knn-decision: loadKnnDecisionConfig — DB integr
     expect(config.aGradeWinrateThreshold).toBe(0.70);
   });
 
-  it("reads all three thresholds together", async () => {
+  it("reads a_grade_min_samples from CommonCode KNN group", async () => {
+    await db.insert(commonCodeTable).values({
+      group_code: "KNN",
+      code: "a_grade_min_samples",
+      value: 15,
+      is_active: true,
+    });
+    const config = await loadKnnDecisionConfig(db);
+    expect(config.aGradeMinSamples).toBe(15);
+  });
+
+  it("reads all four thresholds together", async () => {
     await db.insert(commonCodeTable).values([
       { group_code: "KNN", code: "winrate_threshold", value: 0.58, is_active: true },
-      { group_code: "KNN", code: "min_samples", value: 20, is_active: true },
+      { group_code: "KNN", code: "min_samples", value: 25, is_active: true },
       { group_code: "KNN", code: "a_grade_winrate_threshold", value: 0.72, is_active: true },
+      { group_code: "KNN", code: "a_grade_min_samples", value: 15, is_active: true },
     ]);
     const config = await loadKnnDecisionConfig(db);
     expect(config.winrateThreshold).toBe(0.58);
-    expect(config.minSamples).toBe(20);
+    expect(config.minSamples).toBe(25);
     expect(config.aGradeWinrateThreshold).toBe(0.72);
+    expect(config.aGradeMinSamples).toBe(15);
   });
 
   it("falls back to default when is_active=false", async () => {
@@ -733,14 +747,13 @@ describe.skipIf(!dbAvailable)("knn-decision: loadKnnDecisionConfig — DB integr
     expect(config.minSamples).toBe(30);
   });
 
-  it("floors min_samples to integer", async () => {
-    await db.insert(commonCodeTable).values({
-      group_code: "KNN",
-      code: "min_samples",
-      value: 25.9,
-      is_active: true,
-    });
+  it("floors min_samples and a_grade_min_samples to integer", async () => {
+    await db.insert(commonCodeTable).values([
+      { group_code: "KNN", code: "min_samples", value: 25.9, is_active: true },
+      { group_code: "KNN", code: "a_grade_min_samples", value: 17.8, is_active: true },
+    ]);
     const config = await loadKnnDecisionConfig(db);
     expect(config.minSamples).toBe(25);
+    expect(config.aGradeMinSamples).toBe(17);
   });
 });

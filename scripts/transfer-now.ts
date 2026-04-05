@@ -15,9 +15,10 @@
 
 import { Decimal } from "@/core/decimal";
 import type { ExchangePosition } from "@/core/ports";
-import { calculateTransferable } from "@/transfer/balance";
 import type { TransferableParams } from "@/transfer/balance";
+import { calculateTransferable } from "@/transfer/balance";
 import { executeTransfer } from "@/transfer/executor";
+import { getDailyProfit } from "@/transfer/scheduler";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -117,21 +118,26 @@ async function main(): Promise<void> {
     );
   }
 
-  const adapter = createExchangeAdapter(args.exchange as Parameters<typeof createExchangeAdapter>[0], {
-    apiKey: exchangeCreds.key,
-    apiSecret: exchangeCreds.secret,
-  });
+  const adapter = createExchangeAdapter(
+    args.exchange as Parameters<typeof createExchangeAdapter>[0],
+    {
+      apiKey: exchangeCreds.key,
+      apiSecret: exchangeCreds.secret,
+    },
+  );
 
   if (args.dryRun) {
     // ---- Dry-run mode: calculate and print, no actual transfer ----
     const balance = await adapter.fetchBalance();
     const positions = await adapter.fetchPositions();
+    const dailyProfit = await getDailyProfit(db, args.exchange);
 
     const openMargin = computeOpenMargin(positions);
 
     const params: TransferableParams = {
       walletBalance: balance.total,
       openMargin,
+      dailyProfit,
       riskPct: new Decimal(riskPctStr),
       reserveMultiplier,
       transferPct,
@@ -144,9 +150,11 @@ async function main(): Promise<void> {
     console.log(`  walletBalance:  ${result.walletBalance.toFixed(2)} USDT`);
     console.log(`  openMargin:     ${result.openMargin.toFixed(2)} USDT`);
     console.log(`  reserve:        ${result.reserve.toFixed(2)} USDT`);
-    console.log(`  available:      ${result.available.toFixed(2)} USDT`);
+    console.log(`  dailyProfit:    ${result.dailyProfit.toFixed(2)} USDT`);
     console.log(`  transferAmount: ${result.transferAmount.toFixed(2)} USDT`);
-    console.log(`  skip:           ${result.skip}${result.skipReason ? ` (${result.skipReason})` : ""}`);
+    console.log(
+      `  skip:           ${result.skip}${result.skipReason ? ` (${result.skipReason})` : ""}`,
+    );
     console.log("\n[transfer-now] No transfer performed (dry-run mode).");
   } else {
     // ---- Normal mode: execute transfer ----
@@ -157,12 +165,14 @@ async function main(): Promise<void> {
       getTransferParams: async (): Promise<TransferableParams> => {
         const balance = await adapter.fetchBalance();
         const positions = await adapter.fetchPositions();
+        const dailyProfit = await getDailyProfit(db, args.exchange);
 
         const openMargin = computeOpenMargin(positions);
 
         return {
           walletBalance: balance.total,
           openMargin,
+          dailyProfit,
           riskPct: new Decimal(riskPctStr),
           reserveMultiplier,
           transferPct,
@@ -179,7 +189,9 @@ async function main(): Promise<void> {
     console.log("\n[transfer-now] Transfer result:");
     console.log(`  success:        ${result.success}`);
     console.log(`  transferAmount: ${result.transferable.transferAmount.toFixed(2)} USDT`);
-    console.log(`  skip:           ${result.transferable.skip}${result.transferable.skipReason ? ` (${result.transferable.skipReason})` : ""}`);
+    console.log(
+      `  skip:           ${result.transferable.skip}${result.transferable.skipReason ? ` (${result.transferable.skipReason})` : ""}`,
+    );
     if (result.balanceBefore !== undefined) {
       console.log(`  balanceBefore:  ${result.balanceBefore.toFixed(2)} USDT`);
     }

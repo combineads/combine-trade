@@ -14,7 +14,7 @@ import { determineDailyBias } from "../../src/filters/daily-direction";
 import type { AllIndicators } from "../../src/indicators/types";
 import { calcBB4, candlesToCloses, candlesToOpens } from "../../src/indicators/bollinger";
 import { calcBB } from "../../src/indicators/bollinger";
-import { FEE_RATE, makeDecision } from "../../src/knn/decision";
+import { makeDecision } from "../../src/knn/decision";
 import type { WeightedNeighbor } from "../../src/knn/time-decay";
 import { calcTimeDecay } from "../../src/knn/time-decay";
 import { checkSpread } from "../../src/orders/slippage";
@@ -22,7 +22,7 @@ import { InvalidSymbolStateTransitionError, validateSymbolStateTransition } from
 import { checkEvidence } from "../../src/signals/evidence-gate";
 import { checkSafety } from "../../src/signals/safety-gate";
 import { normalize } from "../../src/vectors/normalizer";
-import { VECTOR_DIM } from "../../src/vectors/features";
+import { VECTOR_DIM } from "../../src/vectors/feature-spec";
 import type { NormParams } from "../../src/vectors/normalizer";
 
 // ---------------------------------------------------------------------------
@@ -60,6 +60,7 @@ function makeIndicators(overrides: Partial<AllIndicators> = {}): AllIndicators {
     bb4_1h: null,
     sma20: null,
     prevSma20: null,
+    sma20_5m: null,
     sma60: null,
     sma120: null,
     ema20: null,
@@ -438,12 +439,14 @@ describe("EP-10 S5: normalizer degenerate cases map to 0.5", () => {
 // ---------------------------------------------------------------------------
 
 describe("EP-10 S6: KNN fee deduction — borderline expectancy", () => {
-  it("FEE_RATE is 0.0008 (0.08%)", () => {
-    expect(FEE_RATE).toBe(0.0008);
+  const DEFAULT_COMMISSION_PCT = 0.0008;
+
+  it("commissionPct default is 0.0008 (0.08%)", () => {
+    expect(DEFAULT_COMMISSION_PCT).toBe(0.0008);
   });
 
-  it("raw expectancy barely positive (< FEE_RATE) → net negative → FAIL despite winRate >= threshold", () => {
-    // Engineer a raw expectancy of ~0.0004 (< 0.0008 = FEE_RATE) with winRate >= 0.55
+  it("raw expectancy barely positive (< commissionPct) → net negative → FAIL despite winRate >= threshold", () => {
+    // Engineer a raw expectancy of ~0.0004 (< 0.0008 = commissionPct) with winRate >= 0.55
     // Use weighted neighbors:
     //   - WIN (weight=1.1004): pnlDir=+1
     //   - LOSS (weight=1.0):   pnlDir=-1
@@ -462,7 +465,7 @@ describe("EP-10 S6: KNN fee deduction — borderline expectancy", () => {
     //   winRate = 1.0002 / 2.0002 ≈ 0.5001 → FAILS on winRate < 0.55
     //
     // The cleanest approach: use a custom config with low winrateThreshold
-    // and craft raw_expectancy in (0, FEE_RATE).
+    // and craft raw_expectancy in (0, commissionPct).
     //
     // Custom config: winrateThreshold=0.50, minSamples=2
     // 2 neighbors: WIN (weight=1.0004), LOSS (weight=1.0000)
@@ -473,6 +476,8 @@ describe("EP-10 S6: KNN fee deduction — borderline expectancy", () => {
       winrateThreshold: 0.50,
       minSamples: 2,
       aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 2,
+      commissionPct: DEFAULT_COMMISSION_PCT,
     };
 
     const neighbors: WeightedNeighbor[] = [
@@ -480,7 +485,7 @@ describe("EP-10 S6: KNN fee deduction — borderline expectancy", () => {
       makeNeighbor("LOSS", 1.0),
     ];
 
-    const result = makeDecision(neighbors, "ONE_B", false, config);
+    const result = makeDecision(neighbors, false, config);
 
     // Confirm raw expectancy would be positive (without fee, barely positive)
     // net expectancy should be negative
@@ -488,13 +493,15 @@ describe("EP-10 S6: KNN fee deduction — borderline expectancy", () => {
     expect(result.decision).toBe("FAIL");
   });
 
-  it("raw expectancy above FEE_RATE + winRate >= threshold → PASS", () => {
+  it("raw expectancy above commissionPct + winRate >= threshold → PASS", () => {
     // 4 WIN, 1 LOSS with uniform weights, custom minSamples=5
     // winRate=0.8, raw=(4-1)/5=0.6, net=0.6-0.0008=0.5992 → PASS
     const config = {
       winrateThreshold: 0.55,
       minSamples: 5,
       aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 5,
+      commissionPct: DEFAULT_COMMISSION_PCT,
     };
 
     const neighbors: WeightedNeighbor[] = [
@@ -502,10 +509,10 @@ describe("EP-10 S6: KNN fee deduction — borderline expectancy", () => {
       makeNeighbor("LOSS"),
     ];
 
-    const result = makeDecision(neighbors, "DOUBLE_B", true, config);
+    const result = makeDecision(neighbors, false, config);
     expect(result.expectancy).toBeGreaterThan(0);
     expect(result.decision).toBe("PASS");
-    expect(result.expectancy).toBeCloseTo(0.6 - FEE_RATE, 4);
+    expect(result.expectancy).toBeCloseTo(0.6 - DEFAULT_COMMISSION_PCT, 4);
   });
 });
 

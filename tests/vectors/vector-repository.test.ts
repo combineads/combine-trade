@@ -7,7 +7,7 @@
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 import { getDb, getPool } from "../../src/db/pool";
-import { VECTOR_DIM } from "../../src/vectors/features";
+import { VECTOR_DIM } from "../../src/vectors/feature-spec";
 import {
   getVectorByCandle,
   getVectorsForNormalization,

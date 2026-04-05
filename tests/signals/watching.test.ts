@@ -62,6 +62,7 @@ function makeIndicators(overrides: Partial<AllIndicators> = {}): AllIndicators {
     bb4_1h: null,
     sma20: new Decimal("50000"),
     prevSma20: new Decimal("49900"),
+    sma20_5m: null,
     sma60: new Decimal("49500"),
     sma120: new Decimal("49000"),
     ema20: new Decimal("50100"),

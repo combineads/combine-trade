@@ -27,7 +27,7 @@ import { insertVector } from "@/vectors/repository";
 import { searchKnn } from "@/knn/engine";
 import { applyTimeDecay } from "@/knn/time-decay";
 import { makeDecision, updateSignalKnnDecision } from "@/knn/decision";
-import { VECTOR_DIM } from "@/vectors/features";
+import { VECTOR_DIM } from "@/vectors/feature-spec";
 import {
   cleanupTables,
   closeTestDb,
@@ -92,6 +92,7 @@ function makeTestIndicators(overrides: Partial<AllIndicators> = {}): AllIndicato
     bb4_1h: null,
     sma20: new Decimal("42100"),
     prevSma20: new Decimal("42000"),
+    sma20_5m: null,
     sma60: new Decimal("41500"),
     sma120: new Decimal("41000"),
     ema20: new Decimal("42100"),
@@ -372,7 +373,7 @@ describe.skipIf(!dbAvailable)("[E2E] LONG 전체 흐름: bias=LONG_ONLY → WATC
     // 12. Apply time decay and make decision
     const now = new Date();
     const weighted = applyTimeDecay(neighbors, now, {} as Record<string, never>);
-    const decision = makeDecision(weighted, "ONE_B", true);
+    const decision = makeDecision(weighted, false);
     expect(decision.decision).toBe("PASS"); // 40 WIN / 50 total = 0.80 winrate > 0.55
     expect(decision.winRate).toBeGreaterThan(0.55);
 
@@ -501,7 +502,7 @@ describe.skipIf(!dbAvailable)("[E2E] SHORT A-grade 흐름: bias=SHORT_ONLY → W
     // 11. Decision: DOUBLE_B + safetyPassed + winrate >= 0.65 → a_grade=true
     const now = new Date();
     const weighted = applyTimeDecay(neighbors, now, {} as Record<string, never>);
-    const decision = makeDecision(weighted, "DOUBLE_B", true);
+    const decision = makeDecision(weighted, true);
     expect(decision.decision).toBe("PASS");
     expect(decision.winRate).toBeGreaterThanOrEqual(0.65);
     expect(decision.aGrade).toBe(true);
@@ -740,7 +741,7 @@ describe.skipIf(!dbAvailable)("[E2E] KNN SKIP: labeled 벡터 부족 → knn_dec
     // 10. Apply time decay and make decision — should be SKIP
     const now = new Date();
     const weighted = applyTimeDecay(neighbors, now, {} as Record<string, never>);
-    const decision = makeDecision(weighted, "ONE_B", true);
+    const decision = makeDecision(weighted, false);
     expect(decision.decision).toBe("SKIP");
     expect(decision.sampleCount).toBeLessThan(30);
 

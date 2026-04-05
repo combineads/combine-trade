@@ -485,12 +485,7 @@ export class BinanceAdapter extends BaseExchangeAdapter {
     toAccount: string,
   ): Promise<{ id: string; status: string }> {
     return this.withRetry(async () => {
-      const result = await this.ccxt.transfer(
-        currency,
-        amount.toNumber(),
-        fromAccount,
-        toAccount,
-      );
+      const result = await this.ccxt.transfer(currency, amount.toNumber(), fromAccount, toAccount);
 
       return {
         id: String((result as Record<string, unknown>).id ?? ""),

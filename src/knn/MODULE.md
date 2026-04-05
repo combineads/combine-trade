@@ -20,7 +20,7 @@
 ## Files
 | File | Purpose | Exports | Lines |
 |------|---------|---------|-------|
-| decision.ts | KNN verdict (long/short/skip) | `makeDecision`, `KnnDecisionResult`, `FEE_RATE` | 206 |
+| decision.ts | KNN verdict (long/short/skip) | `makeDecision`, `KnnDecisionResult`, `KnnDecisionConfig` | 234 |
 | engine.ts | pgvector HNSW search | `searchKnn`, `KnnConfig`, `loadKnnConfig` | 203 |
 | time-decay.ts | Neighbor time weighting | `applyTimeDecay`, `calcTimeDecay`, `TimeDecayConfig` | 138 |
 | index.ts | Barrel re-exports | — | 11 |

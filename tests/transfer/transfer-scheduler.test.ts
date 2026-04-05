@@ -11,8 +11,8 @@ function makeTransferResult(success = true): TransferResult {
   const transferable: TransferableResult = {
     walletBalance: new Decimal("1000"),
     openMargin: new Decimal("200"),
+    dailyProfit: new Decimal("500"),
     reserve: new Decimal("300"),
-    available: new Decimal("500"),
     transferAmount: new Decimal("250"),
     skip: false,
   };

@@ -31,9 +31,20 @@ export function PerformanceSummary({ period }: PerformanceSummaryProps) {
 
   const winRateColor = stats.winRate >= 50 ? "#22c55e" : "#ef4444";
 
+  const expectancyNum = Number(stats.expectancy);
+  const expectancyColor = expectancyNum >= 0 ? "#22c55e" : "#ef4444";
+  const expectancyPrefix = expectancyNum >= 0 ? "+" : "";
+  // pnl_pct 단위(소수)를 퍼센트로 변환해서 표시
+  const expectancyPct = (expectancyNum * 100).toFixed(3);
+
+  const mddNum = Number(stats.maxDrawdown);
+  const mddDisplay = Number.isFinite(mddNum) ? mddNum.toFixed(2) : "0.00";
+
   return (
     <section aria-label="성과 요약">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {/* 7개 성과 카드: 모바일 2열 → sm 3열 → lg 4열 → xl 7열 */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+        {/* 카드 1: 총 수익 */}
         <SummaryCard title="총 수익" sub={periodLabel}>
           <span
             className="text-lg font-semibold font-mono tabular-nums sm:text-xl lg:text-2xl"
@@ -44,6 +55,7 @@ export function PerformanceSummary({ period }: PerformanceSummaryProps) {
           </span>
         </SummaryCard>
 
+        {/* 카드 2: 총 거래 */}
         <SummaryCard title="총 거래" sub={periodLabel}>
           <span
             className="text-lg font-semibold font-mono tabular-nums sm:text-xl lg:text-2xl"
@@ -53,6 +65,7 @@ export function PerformanceSummary({ period }: PerformanceSummaryProps) {
           </span>
         </SummaryCard>
 
+        {/* 카드 3: 승률 */}
         <SummaryCard title="승률" sub={periodLabel}>
           <span
             className="text-lg font-semibold font-mono tabular-nums sm:text-xl lg:text-2xl"
@@ -62,6 +75,18 @@ export function PerformanceSummary({ period }: PerformanceSummaryProps) {
           </span>
         </SummaryCard>
 
+        {/* 카드 4: Expectancy (수수료 차감 후) */}
+        <SummaryCard title="Expectancy" sub="수수료 차감 후">
+          <span
+            className="text-lg font-semibold font-mono tabular-nums sm:text-xl lg:text-2xl"
+            style={{ color: expectancyColor }}
+          >
+            {expectancyPrefix}
+            {expectancyPct}%
+          </span>
+        </SummaryCard>
+
+        {/* 카드 5: 평균 손익비 */}
         <SummaryCard title="평균 손익비" sub={periodLabel}>
           <span
             className="text-lg font-semibold font-mono tabular-nums sm:text-xl lg:text-2xl"
@@ -71,12 +96,23 @@ export function PerformanceSummary({ period }: PerformanceSummaryProps) {
           </span>
         </SummaryCard>
 
+        {/* 카드 6: MDD */}
         <SummaryCard title="최대 낙폭(MDD)" sub={periodLabel}>
           <span
             className="text-lg font-semibold font-mono tabular-nums sm:text-xl lg:text-2xl"
             style={{ color: "#ef4444" }}
           >
-            {stats.maxDrawdown}%
+            {mddDisplay}%
+          </span>
+        </SummaryCard>
+
+        {/* 카드 7: 최대 연속 손실 */}
+        <SummaryCard title="최대 연속 손실" sub={periodLabel}>
+          <span
+            className="text-lg font-semibold font-mono tabular-nums sm:text-xl lg:text-2xl"
+            style={{ color: stats.maxConsecutiveLosses > 0 ? "#ef4444" : "#f1f5f9" }}
+          >
+            {stats.maxConsecutiveLosses}연속
           </span>
         </SummaryCard>
       </div>
@@ -141,12 +177,11 @@ function SkeletonCard({ periodLabel }: { periodLabel: string }) {
 function SummarySkeleton({ periodLabel }: { periodLabel: string }) {
   return (
     <section aria-label="성과 요약">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <SkeletonCard periodLabel={periodLabel} />
-        <SkeletonCard periodLabel={periodLabel} />
-        <SkeletonCard periodLabel={periodLabel} />
-        <SkeletonCard periodLabel={periodLabel} />
-        <SkeletonCard periodLabel={periodLabel} />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+        {Array.from({ length: 7 }, (_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders have no stable identity
+          <SkeletonCard key={i} periodLabel={periodLabel} />
+        ))}
       </div>
     </section>
   );

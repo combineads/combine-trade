@@ -130,13 +130,14 @@ function makeSymbolState(overrides?: Partial<SymbolState>): SymbolState {
   };
 }
 
-function makeIndicators(): AllIndicators {
+function makeIndicators(overrides?: Partial<AllIndicators>): AllIndicators {
   return {
     bb20: null,
     bb4: null,
     bb4_1h: null,
     sma20: new Decimal("40000"),
     prevSma20: new Decimal("39900"),
+    sma20_5m: null,
     sma60: new Decimal("39000"),
     sma120: new Decimal("38000"),
     ema20: new Decimal("40000"),
@@ -145,6 +146,7 @@ function makeIndicators(): AllIndicators {
     rsi14: new Decimal("50"),
     atr14: new Decimal("100"),
     squeeze: "normal",
+    ...overrides,
   };
 }
 
@@ -291,6 +293,13 @@ function buildDeps(overrides?: Partial<PipelineDeps>): PipelineDeps {
     applyTimeDecay: mock(() => []),
     makeDecision: mock(() => makeKnnPass()),
     loadKnnConfig: mock(async () => ({ topK: 50, distanceMetric: "cosine" as const })),
+    loadKnnDecisionConfig: mock(async () => ({
+      winrateThreshold: 0.55,
+      minSamples: 30,
+      aGradeWinrateThreshold: 0.5,
+      aGradeMinSamples: 20,
+      commissionPct: 0.0008,
+    })),
     loadTimeDecayConfig: mock(async () => ({})),
 
     getActiveTicket: mock(async () => null),
@@ -1712,6 +1721,170 @@ describe("handleCandleClose", () => {
         (args) => (args[1] as { event_type: string }).event_type === "DAILY_BIAS_MISMATCH",
       );
       expect(mismatchCall).toBeUndefined();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5M SMA20 injection for 1M noise filter (PRD §7.7)
+  // ---------------------------------------------------------------------------
+
+  describe("1M noise filter — 5M SMA20 injection", () => {
+    it("injects sma20_5m into indicators when processing 1M candle", async () => {
+      const symbol = "NOISE_5M_INJECT_1";
+      let capturedIndicators: AllIndicators | null = null;
+
+      const sma20_5mValue = new Decimal("40500");
+
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        // Return different indicators for 5M vs other timeframes
+        getCandles: mock(async (_db: unknown, _sym: unknown, _exc: unknown, tf: unknown) => {
+          return [makeCandle({ symbol, timeframe: tf as Timeframe })];
+        }),
+        calcAllIndicators: mock((candles: Candle[]) => {
+          const tf = candles[0]?.timeframe;
+          if (tf === "5M") {
+            return makeIndicators({ sma20: sma20_5mValue });
+          }
+          return makeIndicators({ sma20: new Decimal("40000") });
+        }),
+        checkEvidence: mock((_c: unknown, indicators: AllIndicators) => {
+          capturedIndicators = indicators;
+          return null; // stop pipeline early
+        }),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "1M" });
+      await handleCandleClose(candle, "1M", [makeActiveSymbol({ symbol })], deps);
+
+      expect(capturedIndicators).not.toBeNull();
+      expect((capturedIndicators as unknown as AllIndicators).sma20_5m?.toString()).toBe("40500");
+    });
+
+    it("does NOT inject sma20_5m when processing 5M candle", async () => {
+      const symbol = "NOISE_5M_INJECT_2";
+      let capturedIndicators: AllIndicators | null = null;
+
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        checkEvidence: mock((_c: unknown, indicators: AllIndicators) => {
+          capturedIndicators = indicators;
+          return null;
+        }),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "5M" });
+      await handleCandleClose(candle, "5M", [makeActiveSymbol({ symbol })], deps);
+
+      expect(capturedIndicators).not.toBeNull();
+      // sma20_5m should remain null — not injected for 5M timeframe
+      expect((capturedIndicators as unknown as AllIndicators).sma20_5m).toBeNull();
+    });
+
+    it("sma20_5m is null when 5M indicator returns null sma20", async () => {
+      const symbol = "NOISE_5M_INJECT_3";
+      let capturedIndicators: AllIndicators | null = null;
+
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getActiveWatchSession: mock(async () => makeWatchSession({ symbol })),
+        calcAllIndicators: mock(() => makeIndicators({ sma20: null })),
+        checkEvidence: mock((_c: unknown, indicators: AllIndicators) => {
+          capturedIndicators = indicators;
+          return null;
+        }),
+      });
+
+      const candle = makeCandle({ symbol, timeframe: "1M" });
+      await handleCandleClose(candle, "1M", [makeActiveSymbol({ symbol })], deps);
+
+      expect(capturedIndicators).not.toBeNull();
+      expect((capturedIndicators as unknown as AllIndicators).sma20_5m).toBeNull();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Simultaneous 5M/1M signal suppression (PRD §7.16)
+  // ---------------------------------------------------------------------------
+
+  describe("simultaneous signal suppression — 1M priority (PRD §7.16)", () => {
+    it("suppresses 5M entry when 1M fires for the same symbol in the same cycle", async () => {
+      // Use a unique symbol to avoid cross-test state contamination with recent1MFired map.
+      const symbol = "SIMULTANEOUS_TEST_SYMBOL_1";
+      const exchange = "binance" as Exchange;
+
+      let evidenceCallCount = 0;
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getActiveWatchSession: mock(async () => makeWatchSession()),
+        checkEvidence: mock(() => {
+          evidenceCallCount++;
+          return null;
+        }),
+      });
+
+      // Fire 1M first (marks symbol in recent1MFired)
+      const candle1M = makeCandle({ symbol, exchange, timeframe: "1M" });
+      await handleCandleClose(candle1M, "1M", [makeActiveSymbol({ symbol, exchange })], deps);
+
+      const countAfter1M = evidenceCallCount;
+
+      // Immediately fire 5M for the same symbol — should be suppressed
+      const candle5M = makeCandle({ symbol, exchange, timeframe: "5M" });
+      await handleCandleClose(candle5M, "5M", [makeActiveSymbol({ symbol, exchange })], deps);
+
+      // 5M pipeline should have been skipped — evidenceCallCount unchanged
+      expect(evidenceCallCount).toBe(countAfter1M);
+    });
+
+    it("allows both signals when they are for different symbols", async () => {
+      const symbol5M = "SIMULTANEOUS_DIFF_SYMBOL_5M";
+      const symbol1M = "SIMULTANEOUS_DIFF_SYMBOL_1M";
+      const exchange = "binance" as Exchange;
+
+      let evidenceCallCount = 0;
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getActiveWatchSession: mock(async () => makeWatchSession()),
+        checkEvidence: mock(() => {
+          evidenceCallCount++;
+          return null;
+        }),
+      });
+
+      // Fire 1M for symbol1M
+      const candle1M = makeCandle({ symbol: symbol1M, exchange, timeframe: "1M" });
+      await handleCandleClose(candle1M, "1M", [makeActiveSymbol({ symbol: symbol1M, exchange })], deps);
+
+      // Fire 5M for symbol5M — different symbol, should NOT be suppressed
+      const candle5M = makeCandle({ symbol: symbol5M, exchange, timeframe: "5M" });
+      await handleCandleClose(candle5M, "5M", [makeActiveSymbol({ symbol: symbol5M, exchange })], deps);
+
+      // Both 1M (symbol1M) and 5M (symbol5M) should have called checkEvidence
+      expect(evidenceCallCount).toBe(2);
+    });
+
+    it("executes 1M signal normally when no 5M was pending", async () => {
+      const symbol = "SIMULTANEOUS_1M_ONLY";
+      const exchange = "binance" as Exchange;
+
+      let evidenceCallCount = 0;
+      const deps = buildDeps({
+        isTradeBlocked: mock(async () => ({ blocked: false })),
+        getActiveWatchSession: mock(async () => makeWatchSession()),
+        checkEvidence: mock(() => {
+          evidenceCallCount++;
+          return null;
+        }),
+      });
+
+      const candle1M = makeCandle({ symbol, exchange, timeframe: "1M" });
+      await handleCandleClose(candle1M, "1M", [makeActiveSymbol({ symbol, exchange })], deps);
+
+      // 1M should proceed normally
+      expect(evidenceCallCount).toBe(1);
     });
   });
 });

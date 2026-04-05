@@ -68,13 +68,13 @@ export async function executeTransfer(
       to: "spot",
       skip_reason: transferable.skipReason ?? "skip",
       reserve: transferable.reserve,
-      available: transferable.available,
+      daily_profit: transferable.dailyProfit,
     });
 
     return { success: false, transferable };
   }
 
-  const { transferAmount, reserve } = transferable;
+  const { transferAmount, reserve, dailyProfit } = transferable;
   const balanceBefore = (await adapter.fetchBalance()).total;
 
   try {
@@ -91,6 +91,7 @@ export async function executeTransfer(
       balance_before: balanceBefore,
       balance_after: balanceAfter,
       reserve,
+      daily_profit: dailyProfit,
     });
 
     return { success: true, transferable, balanceBefore, balanceAfter };
@@ -105,6 +106,7 @@ export async function executeTransfer(
       to: "spot",
       balance_before: balanceBefore,
       reserve,
+      daily_profit: dailyProfit,
       error_message: errorMessage,
     });
 

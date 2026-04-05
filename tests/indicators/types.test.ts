@@ -24,12 +24,13 @@ describe("indicators/types — BollingerResult construction", () => {
 });
 
 describe("indicators/types — AllIndicators construction", () => {
-  it("AllIndicators has all 11 fields", () => {
+  it("AllIndicators has all 12 fields", () => {
     const indicators: AllIndicators = {
       bb20: null,
       bb4: null,
       bb4_1h: null,
       sma20: null,
+      sma20_5m: null,
       sma60: null,
       sma120: null,
       ema20: null,
@@ -41,10 +42,11 @@ describe("indicators/types — AllIndicators construction", () => {
       squeeze: "normal",
     };
     const keys = Object.keys(indicators);
-    expect(keys).toHaveLength(13);
+    expect(keys).toHaveLength(14);
     expect(keys).toContain("bb20");
     expect(keys).toContain("bb4");
     expect(keys).toContain("sma20");
+    expect(keys).toContain("sma20_5m");
     expect(keys).toContain("sma60");
     expect(keys).toContain("sma120");
     expect(keys).toContain("ema20");
@@ -61,6 +63,7 @@ describe("indicators/types — AllIndicators construction", () => {
       bb4: null,
       bb4_1h: null,
       sma20: null,
+      sma20_5m: null,
       sma60: null,
       sma120: null,
       ema20: null,
@@ -74,6 +77,7 @@ describe("indicators/types — AllIndicators construction", () => {
     expect(indicators.bb20).toBeNull();
     expect(indicators.bb4).toBeNull();
     expect(indicators.sma20).toBeNull();
+    expect(indicators.sma20_5m).toBeNull();
     expect(indicators.rsi14).toBeNull();
     expect(indicators.atr14).toBeNull();
   });
@@ -91,6 +95,7 @@ describe("indicators/types — AllIndicators construction", () => {
       bb4: bb,
       bb4_1h: null,
       sma20: new Decimal("100"),
+      sma20_5m: null,
       sma60: new Decimal("99"),
       sma120: new Decimal("98"),
       ema20: new Decimal("100.1"),

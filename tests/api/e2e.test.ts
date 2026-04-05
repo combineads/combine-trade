@@ -92,6 +92,8 @@ function createMockRouteDeps(): RouteDeps {
       win_rate: null,
       avg_risk_reward: "0",
       mdd: "0",
+      expectancy: "0",
+      max_consecutive_losses: 0,
     })),
 
     // SignalsDeps
@@ -124,8 +126,8 @@ function createMockRouteDeps(): RouteDeps {
       transferable: {
         walletBalance: { toString: () => "1000" } as unknown as import("../../src/core/decimal").Decimal,
         openMargin: { toString: () => "0" } as unknown as import("../../src/core/decimal").Decimal,
+        dailyProfit: { toString: () => "200" } as unknown as import("../../src/core/decimal").Decimal,
         reserve: { toString: () => "50" } as unknown as import("../../src/core/decimal").Decimal,
-        available: { toString: () => "950" } as unknown as import("../../src/core/decimal").Decimal,
         transferAmount: { toString: () => "100" } as unknown as import("../../src/core/decimal").Decimal,
         skip: false,
       },

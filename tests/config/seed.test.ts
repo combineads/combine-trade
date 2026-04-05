@@ -48,8 +48,9 @@ describe("config/seed — group counts", () => {
     expect(entriesFor("SYMBOL_CONFIG")).toHaveLength(2);
   });
 
-  it("KNN group has 2 entries", () => {
-    expect(entriesFor("KNN")).toHaveLength(2);
+  it("KNN group has 4 entries", () => {
+    // EP-15 M4: a_grade_min_samples + commission_pct 추가
+    expect(entriesFor("KNN")).toHaveLength(4);
   });
 
   it("POSITION group has 2 entries", () => {
@@ -64,8 +65,9 @@ describe("config/seed — group counts", () => {
     expect(entriesFor("SLIPPAGE")).toHaveLength(2);
   });
 
-  it("FEATURE_WEIGHT group has 2 entries", () => {
-    expect(entriesFor("FEATURE_WEIGHT")).toHaveLength(2);
+  it("FEATURE_WEIGHT group has 7 entries", () => {
+    // EP-15 M1: wick_ratio→upperWick/lowerWick 분리 + bb4_position/pivot_distance/daily_open_distance/session_box_position/default 추가
+    expect(entriesFor("FEATURE_WEIGHT")).toHaveLength(7);
   });
 
   it("TIME_DECAY group has 4 entries", () => {

@@ -152,6 +152,22 @@ export const SEED_DATA: SeedEntry[] = [
     description: "Minimum number of historical samples required before prediction",
     sort_order: 1,
   },
+  {
+    group_code: "KNN",
+    code: "a_grade_min_samples",
+    value: 20,
+    description:
+      "Minimum samples for A-grade signals (1H BB4 touch detected); relaxed threshold per PRD §7.9",
+    sort_order: 2,
+  },
+  {
+    group_code: "KNN",
+    code: "commission_pct",
+    value: 0.0008,
+    description:
+      "Round-trip commission rate deducted from raw expectancy (0.0008 = 0.08%); operator-adjustable per PRD §7.9",
+    sort_order: 3,
+  },
 
   // ── POSITION ─────────────────────────────────────────────────────────────
   {
@@ -225,10 +241,49 @@ export const SEED_DATA: SeedEntry[] = [
   },
   {
     group_code: "FEATURE_WEIGHT",
-    code: "wick_ratio",
+    code: "pivot_distance",
     value: 1.5,
-    description: "Feature weight for candle wick ratio in KNN distance calculation",
+    description:
+      "Feature weight for distance to nearest support/resistance pivot in KNN distance calculation",
     sort_order: 1,
+  },
+  {
+    group_code: "FEATURE_WEIGHT",
+    code: "daily_open_distance",
+    value: 1.5,
+    description: "Feature weight for distance from daily open in KNN distance calculation",
+    sort_order: 2,
+  },
+  {
+    group_code: "FEATURE_WEIGHT",
+    code: "session_box_position",
+    value: 1.5,
+    description: "Feature weight for session box position in KNN distance calculation",
+    sort_order: 3,
+  },
+  {
+    group_code: "FEATURE_WEIGHT",
+    code: "upperWick",
+    value: 1.5,
+    description:
+      "Feature weight for upper wick features (PRD §3.2 logical group key) in KNN distance calculation",
+    sort_order: 4,
+  },
+  {
+    group_code: "FEATURE_WEIGHT",
+    code: "lowerWick",
+    value: 1.5,
+    description:
+      "Feature weight for lower wick features (PRD §3.2 logical group key) in KNN distance calculation",
+    sort_order: 5,
+  },
+  {
+    group_code: "FEATURE_WEIGHT",
+    code: "default",
+    value: 1.0,
+    description:
+      "Default feature weight applied to all features not listed explicitly in KNN distance calculation",
+    sort_order: 6,
   },
 
   // ── TIME_DECAY ───────────────────────────────────────────────────────────

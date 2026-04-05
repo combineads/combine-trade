@@ -2,10 +2,9 @@
 // WFO window types and generator
 // ---------------------------------------------------------------------------
 
-import { d } from "@/core/decimal";
-import { Decimal } from "@/core/decimal";
 import type { FullMetrics } from "@/backtest/metrics";
 import type { ParamSet, ParamSpace } from "@/backtest/param-search";
+import { type Decimal, d } from "@/core/decimal";
 
 /**
  * Configuration for Walk-Forward Optimization window generation.
@@ -232,10 +231,7 @@ export async function runWfo(
     }
 
     // OOS phase: run with best IS params
-    const oosMetrics = await deps.runBacktest(
-      { start: win.oosStart, end: win.oosEnd },
-      bestParams,
-    );
+    const oosMetrics = await deps.runBacktest({ start: win.oosStart, end: win.oosEnd }, bestParams);
 
     // efficiency = OOS expectancy / IS expectancy
     const efficiency = oosMetrics.expectancy.dividedBy(isMetrics.expectancy);

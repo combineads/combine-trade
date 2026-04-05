@@ -7,6 +7,29 @@
  * All public functions accept the Drizzle db instance for Drizzle-based
  * queries (CommonCode lookup) and call getPool() internally when raw SQL
  * is required.
+ *
+ * ## 가중 거리 전략 (D-005: pre-multiply)
+ *
+ * PRD §7.8은 피처별 가중치를 요구한다 (upperWick×1.5, lowerWick×1.5,
+ * bb4_position×2.0, pivot_distance×1.5 등).
+ *
+ * T-15-001 D-005 결정: pre-multiply 전략을 채택한다.
+ *
+ * 가중치는 벡터를 저장하기 전에 피처값에 직접 곱해진다:
+ *   - candle-features.ts: upperWick × 1.5, lowerWick × 1.5 (extractBarFeatures 내부)
+ *   - strategy-features.ts: bb4_pos × 2.0, pivot_distance × 1.5,
+ *                           daily_open_distance × 1.5, session_box_position × 1.5
+ *
+ * 결과적으로 pgvector의 네이티브 L2/cosine 연산자가 pre-multiply된 벡터에
+ * 적용되면, 고가중치 피처가 거리에 더 많이 기여한다:
+ *   - weight=2.0 피처는 squared distance에 4× 기여
+ *   - weight=1.5 피처는 squared distance에 2.25× 기여
+ *
+ * 따라서 이 engine.ts는 추가적인 post-rerank 없이 searchKnn()의
+ * 결과가 이미 가중 거리 기준으로 정렬된다.
+ *
+ * buildWeightIndexMap()은 FEATURE_NAMES 인덱스 → 가중치 매핑 유틸로,
+ * 디버깅/검증 목적으로 제공된다.
  */
 
 import { and, eq } from "drizzle-orm";
@@ -15,6 +38,7 @@ import type { DbInstance } from "@/db/pool";
 import { getPool } from "@/db/pool";
 import { commonCodeTable } from "@/db/schema";
 import type { KnnNeighbor } from "@/knn/time-decay";
+import { FEATURE_NAMES, FEATURE_WEIGHTS, VECTOR_DIM } from "@/vectors/feature-spec";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,6 +78,40 @@ const DEFAULT_DISTANCE_METRIC: "cosine" | "l2" = "cosine";
 
 /** ef_search controls HNSW recall/speed trade-off. 100 gives high recall. */
 const HNSW_EF_SEARCH = 100;
+
+// ---------------------------------------------------------------------------
+// Weight index map (diagnostic / validation utility)
+// ---------------------------------------------------------------------------
+
+/**
+ * FEATURE_NAMES 인덱스 → 가중치 매핑을 반환한다.
+ *
+ * pre-multiply 전략(D-005)에서 실제 가중치는 vectorizer/candle-features/
+ * strategy-features에서 피처값에 직접 곱해진다. 이 함수는 어떤 인덱스에
+ * 어떤 가중치가 매핑되는지 검사/디버깅할 때 사용한다.
+ *
+ * 규칙:
+ *   - FEATURE_WEIGHTS에 이름이 있는 피처 → 해당 가중치
+ *   - 명시적 가중치 없는 피처 → 기본 1.0
+ *   - upperWick/lowerWick은 논리 그룹 키로, candle-features.ts가
+ *     각 봉의 upperWick(i*5+1)과 lowerWick(i*5+2)에 적용한다.
+ *     이 함수에서는 FEATURE_NAMES에 해당 이름이 없으므로 1.0으로 표시된다.
+ *     (실제 pre-multiply는 extractBarFeatures 내에서 처리됨)
+ *
+ * @returns Float32Array(202) — 인덱스 i의 값 = 해당 피처의 논리적 가중치
+ */
+export function buildWeightIndexMap(): Float32Array {
+  const map = new Float32Array(VECTOR_DIM).fill(1.0);
+
+  for (let i = 0; i < FEATURE_NAMES.length; i++) {
+    const name = FEATURE_NAMES[i];
+    if (name !== undefined && Object.hasOwn(FEATURE_WEIGHTS, name)) {
+      map[i] = FEATURE_WEIGHTS[name] ?? 1.0;
+    }
+  }
+
+  return map;
+}
 
 // ---------------------------------------------------------------------------
 // Config loader

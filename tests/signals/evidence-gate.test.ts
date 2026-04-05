@@ -53,6 +53,7 @@ function makeIndicators(overrides: Partial<AllIndicators> = {}): AllIndicators {
     // Default: sma20 > prevSma20 → positive slope (LONG friendly)
     sma20: new Decimal("50100"),
     prevSma20: new Decimal("50000"),
+    sma20_5m: null,
     sma60: new Decimal("49500"),
     sma120: new Decimal("49000"),
     ema20: new Decimal("50100"),

@@ -53,6 +53,7 @@ function makeTransferParams(overrides: Partial<TransferableParams> = {}): Transf
   return {
     walletBalance: new Decimal("1000"),
     openMargin: new Decimal("200"),
+    dailyProfit: new Decimal("500"), // amount = 500 * 50% = 250; safety: 1000-250=750 >= 200+300=500 ✓
     riskPct: new Decimal("0.03"),
     reserveMultiplier: 10,
     transferPct: 50,
@@ -66,10 +67,10 @@ function makeTransferParams(overrides: Partial<TransferableParams> = {}): Transf
 describe("transfer-e2e", () => {
   // ── Scenario 1: Full pipeline success ────────────────────────────────────────
   describe("full pipeline success", () => {
-    it("balance=1000, margin=200 → TRANSFER_SUCCESS with amount=250", async () => {
-      // reserve = max(1000 * 0.03 * 10, 50) = max(300, 50) = 300
-      // available = 1000 - 200 - 300 = 500
-      // transferAmount = 500 * 50 / 100 = 250 (>= 10 min)
+    it("balance=1000, margin=200, dailyProfit=500 → TRANSFER_SUCCESS with amount=250", async () => {
+      // dailyProfit = 500
+      // amount = 500 * 50 / 100 = 250 (>= 10 min)
+      // safety: 1000 - 250 = 750 >= 200 + 300 = 500 ✓
       const { logEvent, events } = createMockLogger();
       const adapter = createMockAdapter();
 
@@ -101,10 +102,8 @@ describe("transfer-e2e", () => {
 
   // ── Scenario 2: Full pipeline insufficient balance ────────────────────────────
   describe("full pipeline insufficient balance", () => {
-    it("balance=50, margin=30 → TRANSFER_SKIP (transferAmount < min_transfer_usdt)", async () => {
-      // reserve = max(50 * 0.03 * 10, 50) = max(15, 50) = 50
-      // available = 50 - 30 - 50 = -30 → max(0, -30) = 0
-      // transferAmount = 0 * 50 / 100 = 0 < 10 → skip
+    it("dailyProfit=0 → TRANSFER_SKIP (no daily profit)", async () => {
+      // dailyProfit = 0 → skip (no_daily_profit)
       const { logEvent, events } = createMockLogger();
       const adapter = createMockAdapter();
 
@@ -113,8 +112,7 @@ describe("transfer-e2e", () => {
         getTransferParams: () =>
           Promise.resolve(
             makeTransferParams({
-              walletBalance: new Decimal("50"),
-              openMargin: new Decimal("30"),
+              dailyProfit: new Decimal("0"),
             }),
           ),
         logEvent,
@@ -187,8 +185,8 @@ describe("transfer-e2e", () => {
           transferable: {
             walletBalance: new Decimal("1000"),
             openMargin: new Decimal("200"),
+            dailyProfit: new Decimal("500"),
             reserve: new Decimal("300"),
-            available: new Decimal("500"),
             transferAmount: new Decimal("250"),
             skip: false,
           },
@@ -226,8 +224,8 @@ describe("transfer-e2e", () => {
           transferable: {
             walletBalance: new Decimal("1000"),
             openMargin: new Decimal("200"),
+            dailyProfit: new Decimal("500"),
             reserve: new Decimal("300"),
-            available: new Decimal("500"),
             transferAmount: new Decimal("250"),
             skip: false,
           },
@@ -263,6 +261,7 @@ describe("transfer-e2e", () => {
       expect(args.exchange).toBe("binance");
 
       // In dry-run mode we call calculateTransferable, not executeTransfer
+      // dailyProfit=500, transferPct=50 → amount=250
       const params = makeTransferParams();
       const result = calculateTransferable(params);
 
@@ -284,10 +283,9 @@ describe("transfer-e2e", () => {
 
   // ── Scenario 6: Config change — transfer_pct=80 ──────────────────────────────
   describe("config change — transfer_pct=80", () => {
-    it("transfer_pct=80 → transferAmount uses 80% of available", async () => {
-      // reserve = max(1000 * 0.03 * 10, 50) = 300
-      // available = 1000 - 200 - 300 = 500
-      // transferAmount = 500 * 80 / 100 = 400
+    it("transfer_pct=80 → transferAmount uses 80% of dailyProfit", async () => {
+      // dailyProfit = 500, amount = 500 * 80 / 100 = 400
+      // safety: 1000 - 400 = 600 >= 200 + 300 = 500 ✓
       const { logEvent, events } = createMockLogger();
       const adapter = createMockAdapter();
 
@@ -334,6 +332,8 @@ describe("transfer-e2e", () => {
         openMargin: new Decimal("0"),
         riskPct: new Decimal("0.01"),
         reserveMultiplier: 10,
+        dailyProfit: new Decimal("50"),
+        minTransferUsdt: new Decimal("1"),
       });
 
       const result = calculateTransferable(params);
@@ -343,17 +343,21 @@ describe("transfer-e2e", () => {
       expect(result.reserve.greaterThan(new Decimal("10"))).toBe(true);
     });
 
-    it("risk_pct=0.01, balance=100 → available=50 (100 - 0 - 50)", () => {
+    it("risk_pct=0.01, balance=100 → reserve=50 (floor), amount = dailyProfit * 50% = 25", () => {
+      // dailyProfit=50 (default), amount = 50 * 50/100 = 25; safety: 100-25=75 >= 0+50=50 ✓
       const params = makeTransferParams({
         walletBalance: new Decimal("100"),
         openMargin: new Decimal("0"),
         riskPct: new Decimal("0.01"),
         reserveMultiplier: 10,
+        dailyProfit: new Decimal("50"),
+        minTransferUsdt: new Decimal("1"),
       });
 
       const result = calculateTransferable(params);
 
-      expect(result.available.equals(new Decimal("50"))).toBe(true);
+      expect(result.reserve.equals(new Decimal("50"))).toBe(true);
+      expect(result.transferAmount.equals(new Decimal("25"))).toBe(true);
     });
 
     it("risk_pct=0.05, balance=100 → reserve=50 (dynamic=50, equals floor)", () => {
@@ -365,6 +369,8 @@ describe("transfer-e2e", () => {
         openMargin: new Decimal("0"),
         riskPct: new Decimal("0.05"),
         reserveMultiplier: 10,
+        dailyProfit: new Decimal("50"),
+        minTransferUsdt: new Decimal("1"),
       });
 
       const result = calculateTransferable(params);
@@ -381,6 +387,8 @@ describe("transfer-e2e", () => {
         openMargin: new Decimal("0"),
         riskPct: new Decimal("0.1"),
         reserveMultiplier: 10,
+        dailyProfit: new Decimal("50"),
+        minTransferUsdt: new Decimal("1"),
       });
 
       const result = calculateTransferable(params);

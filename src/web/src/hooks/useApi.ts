@@ -171,6 +171,10 @@ export interface TradeStatsResponse {
   winRate: number;
   avgRiskReward: string;
   maxDrawdown: string;
+  /** 수수료 차감 후 기대값 (소수 형태, 예: "0.0082") */
+  expectancy: string;
+  /** 최대 연속 손실 횟수 */
+  maxConsecutiveLosses: number;
 }
 
 function buildTicketsPath(params: TicketsParams): string {

@@ -117,5 +117,5 @@ Manual execution of the Double-BB trading strategy is subject to human emotion, 
 ## Open questions
 - XAUTUSDT futures availability on all 4 exchanges (fallback: PAXGUSDT or BTCUSDT only)
 - MEXC editOrder support for SL modification (fallback: cancel+create)
-- Investing.com API access method and reliability
+- ~~Investing.com API access method and reliability~~ → resolved in ADR-004 (scraping with fail-closed policy)
 - Exact partial close API differences across exchanges

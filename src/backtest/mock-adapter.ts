@@ -1,4 +1,4 @@
-import { Decimal, d } from "@/core/decimal";
+import { type Decimal, d } from "@/core/decimal";
 import type {
   CreateOrderParams,
   EditOrderParams,
@@ -174,9 +174,7 @@ export class MockExchangeAdapter implements ExchangeAdapter {
       const currentCandle = this.getCurrentCandle(p.symbol);
       const markPrice = currentCandle ? currentCandle.close : p.entryPrice;
       const priceDiff =
-        p.side === "LONG"
-          ? markPrice.minus(p.entryPrice)
-          : p.entryPrice.minus(markPrice);
+        p.side === "LONG" ? markPrice.minus(p.entryPrice) : p.entryPrice.minus(markPrice);
       const unrealizedPnl = priceDiff.times(p.size);
 
       return {

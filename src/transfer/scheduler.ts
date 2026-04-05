@@ -1,3 +1,7 @@
+import { and, eq, gte } from "drizzle-orm";
+import { Decimal } from "@/core/decimal";
+import type { DbInstance } from "@/db/pool";
+import { ticketTable } from "@/db/schema";
 import type { TransferResult } from "./executor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -14,6 +18,40 @@ export type TransferSchedulerDeps = {
    */
   getConfig: (code: string) => Promise<unknown>;
 };
+
+// ─── getDailyProfit ───────────────────────────────────────────────────────────
+
+/**
+ * Sums the realized PnL for all CLOSED tickets on the given exchange
+ * closed on or after UTC 00:00:00 of `date` (defaults to today).
+ *
+ * Formula: SUM(ticket.pnl) WHERE closed_at >= today UTC 00:00 AND exchange = ?
+ *
+ * @param db        Drizzle ORM instance
+ * @param exchange  Exchange identifier (e.g. "binance")
+ * @param date      Reference date for "today" (defaults to new Date()). Used for testability.
+ * @returns         Sum of pnl as Decimal. Returns Decimal("0") when no rows found.
+ */
+export async function getDailyProfit(
+  db: DbInstance,
+  exchange: string,
+  date: Date = new Date(),
+): Promise<Decimal> {
+  // UTC 00:00:00 of the given date
+  const todayUtc = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0),
+  );
+
+  const rows = await db
+    .select({ pnl: ticketTable.pnl })
+    .from(ticketTable)
+    .where(and(eq(ticketTable.exchange, exchange), gte(ticketTable.closed_at, todayUtc)));
+
+  return rows.reduce((sum, row) => {
+    if (row.pnl === null || row.pnl === undefined) return sum;
+    return sum.plus(new Decimal(row.pnl));
+  }, new Decimal("0"));
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

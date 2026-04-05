@@ -11,10 +11,10 @@
  */
 
 import type { BacktestConfig } from "@/backtest/engine";
-import type { WfoConfig } from "@/backtest/wfo";
-import { runWfo, generateWfoWindows } from "@/backtest/wfo";
-import { printReport } from "@/backtest/reporter";
 import type { ParamSet, ParamSpace } from "@/backtest/param-search";
+import { printReport } from "@/backtest/reporter";
+import type { WfoConfig } from "@/backtest/wfo";
+import { generateWfoWindows, runWfo } from "@/backtest/wfo";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -103,22 +103,22 @@ export function parseArgs(argv: string[]): CliArgs {
   }
 
   // --symbol (required)
-  const symbol = raw["symbol"];
+  const symbol = raw.symbol;
   if (!symbol) {
     throw new Error("symbol is required");
   }
 
   // --start (required)
-  if (!raw["start"]) {
+  if (!raw.start) {
     throw new Error("--start is required");
   }
-  const start = parseDateArg(raw["start"] as string, "--start");
+  const start = parseDateArg(raw.start as string, "--start");
 
   // --end (required)
-  if (!raw["end"]) {
+  if (!raw.end) {
     throw new Error("--end is required");
   }
-  const end = parseDateArg(raw["end"] as string, "--end");
+  const end = parseDateArg(raw.end as string, "--end");
 
   // Date ordering
   if (start.getTime() >= end.getTime()) {
@@ -126,10 +126,10 @@ export function parseArgs(argv: string[]): CliArgs {
   }
 
   // --exchange (optional, default: binance)
-  const exchange = raw["exchange"] ?? "binance";
+  const exchange = raw.exchange ?? "binance";
 
   // --mode (optional, default: backtest)
-  const rawMode = raw["mode"] ?? "backtest";
+  const rawMode = raw.mode ?? "backtest";
   if (rawMode !== "backtest" && rawMode !== "wfo") {
     throw new Error(`mode must be backtest or wfo, got "${rawMode}"`);
   }
@@ -137,8 +137,8 @@ export function parseArgs(argv: string[]): CliArgs {
 
   // --threads (optional, default: CPU/2)
   let threads = defaultThreads();
-  if (raw["threads"] !== undefined) {
-    const parsed = Number(raw["threads"]);
+  if (raw.threads !== undefined) {
+    const parsed = Number(raw.threads);
     if (!Number.isInteger(parsed) || parsed < 1) {
       throw new Error("threads must be >= 1");
     }
@@ -220,10 +220,7 @@ export async function runCli(args: CliArgs): Promise<void> {
       totalEndDate: args.end,
     };
 
-    const runBacktestWindow = async (
-      window: { start: Date; end: Date },
-      _params: ParamSet,
-    ) => {
+    const runBacktestWindow = async (window: { start: Date; end: Date }, _params: ParamSet) => {
       const windowConfig: BacktestConfig = {
         ...config,
         startDate: window.start,

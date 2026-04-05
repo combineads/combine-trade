@@ -65,7 +65,8 @@ describe("daily-direction — determineDailyBias", () => {
     expect(result).toBe("NEUTRAL");
   });
 
-  it("returns NEUTRAL when MA20 slope is zero (no change)", () => {
+  // T-18-003: slope=0 with close > open → LONG_ONLY (PRD §7.2: >= 0 allowed)
+  it("returns LONG_ONLY when MA20 slope is zero and close > open", () => {
     const todayClose = new Decimal("105");
     const dailyOpen = new Decimal("100");
     const ma20Today = new Decimal("50");
@@ -73,10 +74,11 @@ describe("daily-direction — determineDailyBias", () => {
 
     const result = determineDailyBias(todayClose, dailyOpen, ma20Today, ma20Yesterday);
 
-    expect(result).toBe("NEUTRAL");
+    expect(result).toBe("LONG_ONLY");
   });
 
-  it("returns NEUTRAL when MA20 slope is zero even if close < open", () => {
+  // T-18-003: slope=0 with close < open → SHORT_ONLY (PRD §7.2: <= 0 allowed)
+  it("returns SHORT_ONLY when MA20 slope is zero and close < open", () => {
     const todayClose = new Decimal("95");
     const dailyOpen = new Decimal("100");
     const ma20Today = new Decimal("50");
@@ -84,10 +86,11 @@ describe("daily-direction — determineDailyBias", () => {
 
     const result = determineDailyBias(todayClose, dailyOpen, ma20Today, ma20Yesterday);
 
-    expect(result).toBe("NEUTRAL");
+    expect(result).toBe("SHORT_ONLY");
   });
 
-  it("returns LONG_ONLY when close equals open and MA20 slope is positive", () => {
+  // T-18-003: close == open uses strict > per PRD §7.2 → NEUTRAL
+  it("returns NEUTRAL when close equals open and MA20 slope is positive (strict >)", () => {
     const todayClose = new Decimal("100");
     const dailyOpen = new Decimal("100");
     const ma20Today = new Decimal("52");
@@ -95,10 +98,11 @@ describe("daily-direction — determineDailyBias", () => {
 
     const result = determineDailyBias(todayClose, dailyOpen, ma20Today, ma20Yesterday);
 
-    expect(result).toBe("LONG_ONLY");
+    expect(result).toBe("NEUTRAL");
   });
 
-  it("returns SHORT_ONLY when close equals open and MA20 slope is negative", () => {
+  // T-18-003: close == open uses strict < per PRD §7.2 → NEUTRAL
+  it("returns NEUTRAL when close equals open and MA20 slope is negative (strict <)", () => {
     const todayClose = new Decimal("100");
     const dailyOpen = new Decimal("100");
     const ma20Today = new Decimal("48");
@@ -106,7 +110,7 @@ describe("daily-direction — determineDailyBias", () => {
 
     const result = determineDailyBias(todayClose, dailyOpen, ma20Today, ma20Yesterday);
 
-    expect(result).toBe("SHORT_ONLY");
+    expect(result).toBe("NEUTRAL");
   });
 
   it("returns NEUTRAL when close equals open and MA20 slope is zero", () => {

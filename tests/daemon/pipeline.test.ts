@@ -339,6 +339,20 @@ function buildDeps(overrides?: Partial<PipelineDeps>): PipelineDeps {
       maxHourly5m: 2,
       maxHourly1m: 1,
     })),
+    checkAccountDailyLimit: mock(async () => ({
+      allowed: true,
+      totalLossesToday: new Decimal("0"),
+      threshold: new Decimal("1000"),
+    })),
+    getBalance: mock(async () => new Decimal("10000")),
+
+    // T-18-006: loss counter reset — no-op stubs
+    resetExpiredLosses: mock(async () => ({
+      dailyReset: false,
+      sessionReset: false,
+      hourlyReset: false,
+    })),
+    setSessionStartTime: mock(() => {}),
 
     sendSlackAlert: mock(async () => {}),
     insertEvent: mock(async () => ({
@@ -1001,7 +1015,7 @@ describe("handleCandleClose", () => {
       expect(callCount(deps.processExit)).toBe(0);
     });
 
-    it("calls processTrailing when ticket has trailing_active=true", async () => {
+    it("calls processTrailing when ticket has trailing_active=true on 1H candle (PRD §7.13)", async () => {
       const ticket = makeTicket({ trailing_active: true });
       const deps = buildDeps({
         getActiveTicket: mock(async () => ticket),
@@ -1014,8 +1028,9 @@ describe("handleCandleClose", () => {
         })),
       });
 
-      const candle = makeCandle({ timeframe: "5M" });
-      await handleCandleClose(candle, "5M", [makeActiveSymbol()], deps);
+      // Trailing SL update runs only on 1H candle close (PRD §7.13 — T-18-008)
+      const candle = makeCandle({ timeframe: "1H" });
+      await handleCandleClose(candle, "1H", [makeActiveSymbol()], deps);
 
       expect(callCount(deps.processTrailing)).toBe(1);
     });

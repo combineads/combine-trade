@@ -325,18 +325,17 @@ describe.skipIf(!dbAvailable)("[E2E] LONG 전체 흐름: bias=LONG_ONLY → WATC
     expect(signal.safety_passed).toBe(false);
 
     // 8. Safety Gate — pass (normal candle: low wick ratio acceptable)
-    //    evidenceCandle had wick ratio > 0.6; use a cleaner candle for safety check.
-    //    low=40800, open=41500, close=41600, high=42500
     //    wick bypass: LONG + LONG_ONLY → trend-following, wick filter skipped
-    //    box range: close=41600, sma20=42100, range_20=4000, margin=600 → bounds=[41500,42700]
-    //    41600 ∈ [41500,42700] ✓
+    //    box range (NEW rule): blocks when close is INSIDE center zone (sma20 ± margin)
+    //    sma20=42100, range_20=4000, margin=600 → center zone: (41500, 42700)
+    //    close must be OUTSIDE center zone to pass: close <= 41500 OR close >= 42700
+    //    Use close=41400 which is below lower bound 41500 → outside center → PASSES
     const safeLongCandle = makeTestCandle({
       open_time: new Date(baseTime.getTime() + 5 * 60 * 1000),
       low: new Decimal("40800"),   // touches BB4 lower (41000) ✓
       high: new Decimal("42500"),
-      open: new Decimal("41500"),
-      close: new Decimal("41600"),
-      // box range passes: 41600 ∈ [sma20 ± margin] = [41500, 42700] ✓
+      open: new Decimal("41200"),
+      close: new Decimal("41400"), // below lower bound 41500 → outside center zone → PASSES
     });
 
     const safetyResult = checkSafety(safeLongCandle, indicators, { direction: "LONG", timeframe: "5M" }, { session_box_high: null, session_box_low: null, daily_bias: "LONG_ONLY" });
@@ -461,14 +460,16 @@ describe.skipIf(!dbAvailable)("[E2E] SHORT A-grade 흐름: bias=SHORT_ONLY → W
 
     // 7. Safety Gate — pass for SHORT
     //    wick bypass: SHORT + SHORT_ONLY → trend-following, wick filter skipped
-    //    box range: close must be in [sma20 ± margin] = [42100 ± 600] = [41500, 42700]
-    //    Use a separate safety candle with close=42200 ∈ [41500, 42700] ✓
+    //    box range (NEW rule): blocks when close is INSIDE center zone (sma20 ± margin)
+    //    sma20=42100, range_20=4000, margin=600 → center zone: (41500, 42700)
+    //    close must be OUTSIDE center zone: close <= 41500 OR close >= 42700
+    //    Use close=42800 which is above upper bound 42700 → outside center → PASSES
     const safeShortCandle = makeTestCandle({
       open_time: new Date(baseTime.getTime() + 5 * 60 * 1000),
       high: new Decimal("44500"),   // >= BB20 upper (44000) — same as evidence candle
       low: new Decimal("43200"),
-      open: new Decimal("42500"),
-      close: new Decimal("42200"),  // ∈ [41500, 42700] → box range passes ✓
+      open: new Decimal("43000"),
+      close: new Decimal("42800"),  // above upper bound 42700 → outside center zone → PASSES
     });
     const safetyResult = checkSafety(safeShortCandle, indicators, { direction: "SHORT", timeframe: "5M" }, { session_box_high: null, session_box_low: null, daily_bias: "SHORT_ONLY" });
     expect(safetyResult.passed).toBe(true);
@@ -616,20 +617,23 @@ describe.skipIf(!dbAvailable)("[E2E] Safety 실패: Evidence 통과 → 윅 비�
     // 4. Create Signal
     const signal = await createSignal(db, evidenceResult!, session, "5M");
 
-    // 5. Safety Gate with a candle that has HIGH lower-wick ratio (> threshold) → FAIL
-    //    LONG wick: lower wick = (min(open,close) - low) / range
-    //    Craft: low=40800, open=42800, close=42900, high=43000
-    //    wick = (min(42800,42900) - 40800) / (43000 - 40800) = 2000/2200 ≈ 0.909 > 0.1 (5M threshold) → FAIL
+    // 5. Safety Gate with a candle that has SMALL lower-wick ratio (< threshold) → FAIL
+    //    NEW PRD rule: lt(wick, threshold) → blocked (small wick = no price rejection)
+    //    LONG wick: lower wick = (min(open,close) - low) / (high - low)
+    //    Craft: low=40800, open=41010, close=42900, high=43000
+    //    range = 43000 - 40800 = 2200
+    //    body_bottom = min(41010, 42900) = 41010
+    //    wick = (41010 - 40800) / 2200 = 210 / 2200 ≈ 0.095 < 0.1 (5M threshold) → BLOCKED
     //    daily_bias=NEUTRAL so trend-following bypass does NOT apply → wick check runs
-    const highWickCandle = makeTestCandle({
+    const smallWickCandle = makeTestCandle({
       low: new Decimal("40800"),
       high: new Decimal("43000"),
-      open: new Decimal("42800"),
+      open: new Decimal("41010"),
       close: new Decimal("42900"),
     });
 
     const safetyResult = checkSafety(
-      highWickCandle,
+      smallWickCandle,
       indicators,
       { direction: "LONG", timeframe: "5M" },
       { session_box_high: null, session_box_low: null, daily_bias: "NEUTRAL" },
@@ -689,14 +693,16 @@ describe.skipIf(!dbAvailable)("[E2E] KNN SKIP: labeled 벡터 부족 → knn_dec
 
     // 4. Evidence: BB4 touch LONG — safe candle
     //    low=40800 ≤ BB4 lower (41000) → ONE_B LONG evidence ✓
-    //    close=41600: wick bypass (LONG+LONG_ONLY trend-following)
-    //    box range: close=41600 ∈ [sma20 ± margin] = [42100 ± 600] = [41500, 42700] ✓
+    //    wick bypass: LONG+LONG_ONLY trend-following → wick filter skipped
+    //    box range (NEW rule): blocks INSIDE center zone (sma20 ± margin)
+    //    sma20=42100, range_20=4000, margin=600 → center zone: (41500, 42700)
+    //    close=41400 is below lower bound 41500 → outside center zone → PASSES
     const evidenceCandle = makeTestCandle({
       open_time: new Date(baseTime.getTime() + 5 * 60 * 1000),
       low: new Decimal("40800"),
       high: new Decimal("42500"),
-      open: new Decimal("41500"),
-      close: new Decimal("41600"),
+      open: new Decimal("41200"),
+      close: new Decimal("41400"), // below lower bound 41500 → outside center zone → PASSES
     });
     const evidenceResult = checkEvidence(evidenceCandle, indicators, session);
     expect(evidenceResult).not.toBeNull();
@@ -704,7 +710,7 @@ describe.skipIf(!dbAvailable)("[E2E] KNN SKIP: labeled 벡터 부족 → knn_dec
     // 5. Create Signal
     const signal = await createSignal(db, evidenceResult!, session, "5M");
 
-    // 6. Safety: passes (wick bypassed via LONG+LONG_ONLY; box range close=41600 ∈ [41500,42700])
+    // 6. Safety: passes (wick bypassed via LONG+LONG_ONLY; box range close=41400 outside center zone)
     const safetyResult = checkSafety(
       evidenceCandle,
       indicators,

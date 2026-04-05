@@ -115,6 +115,8 @@ describe("createBacktestPipelineDeps", () => {
       expect(typeof deps.updateMfeMae).toBe("function");
       expect(typeof deps.checkLossLimit).toBe("function");
       expect(typeof deps.loadLossLimitConfig).toBe("function");
+      expect(typeof deps.resetExpiredLosses).toBe("function");
+      expect(typeof deps.setSessionStartTime).toBe("function");
       expect(typeof deps.sendSlackAlert).toBe("function");
       expect(typeof deps.insertEvent).toBe("function");
     });

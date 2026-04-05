@@ -401,6 +401,20 @@ function createMockPipelineDeps(overrides?: Partial<PipelineDeps>): PipelineDeps
       maxHourly5m: 2,
       maxHourly1m: 1,
     })),
+    checkAccountDailyLimit: mock(async () => ({
+      allowed: true,
+      totalLossesToday: new Decimal("0"),
+      threshold: new Decimal("1000"),
+    })),
+    getBalance: mock(async () => new Decimal("10000")),
+
+    // T-18-006: loss counter reset — no-op stubs
+    resetExpiredLosses: mock(async () => ({
+      dailyReset: false,
+      sessionReset: false,
+      hourlyReset: false,
+    })),
+    setSessionStartTime: mock(() => {}),
 
     sendSlackAlert: mock(async () => {}),
     insertEvent: mock(async () => ({

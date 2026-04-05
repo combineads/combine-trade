@@ -34,6 +34,7 @@ export {
   getActiveTicket,
   getTicketById,
   InvalidStateError,
+  type LabelingDeps,
   TicketNotFoundError,
   transitionTicket,
 } from "./ticket-manager.ts";

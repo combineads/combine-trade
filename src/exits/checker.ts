@@ -7,7 +7,7 @@
 
 import type Decimal from "decimal.js";
 import { d, gte, lte, max, mul, sub } from "@/core/decimal";
-import type { CloseReason, Direction, TicketState } from "@/core/types";
+import type { CloseReason, Direction, TicketState, Timeframe } from "@/core/types";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -70,12 +70,24 @@ export type CheckExitInput = {
  *
  * Priority: CLOSED → TIME_EXIT → TP1/TP2 → NONE
  *
+ * Timeframe routing (PRD §7.13):
+ *   - TIME_EXIT runs on ALL timeframes (safety — as frequent as possible)
+ *   - TP1/TP2 checks run ONLY on "5M" candle close (김직선 원칙)
+ *   - When timeframe is omitted the check runs as if all conditions apply
+ *     (used by backtest and legacy callers)
+ *
  * @param ticket  Minimal ticket data (pure — no DB row dependency)
  * @param currentPrice  Current market price as string
  * @param nowMs  Current timestamp in milliseconds (Date.now())
+ * @param timeframe  Candle timeframe of the current close (optional)
  * @returns ExitAction describing what to do
  */
-export function checkExit(ticket: CheckExitInput, currentPrice: string, nowMs: number): ExitAction {
+export function checkExit(
+  ticket: CheckExitInput,
+  currentPrice: string,
+  nowMs: number,
+  timeframe?: Timeframe,
+): ExitAction {
   const NONE_ACTION: ExitAction = {
     type: "NONE",
     closeSize: d("0"),
@@ -87,7 +99,7 @@ export function checkExit(ticket: CheckExitInput, currentPrice: string, nowMs: n
     return NONE_ACTION;
   }
 
-  // TIME_EXIT check — takes priority over TP checks
+  // TIME_EXIT check — runs on ALL timeframes (safety mechanism)
   const holdDurationMs = nowMs - ticket.opened_at.getTime();
   if (holdDurationMs > TIME_EXIT_THRESHOLD_MS) {
     return {
@@ -95,6 +107,12 @@ export function checkExit(ticket: CheckExitInput, currentPrice: string, nowMs: n
       closeSize: d(ticket.remaining_size),
       closeReason: "TIME_EXIT",
     };
+  }
+
+  // TP1/TP2 checks run only on 5M close (PRD §7.13 L326-327)
+  // When timeframe is not provided (backtest / legacy callers) → always check
+  if (timeframe !== undefined && timeframe !== "5M") {
+    return NONE_ACTION;
   }
 
   // TP1 check (INITIAL state only)

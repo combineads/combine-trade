@@ -29,7 +29,7 @@ import { calcAllIndicators, calcBB4 } from "@/indicators/index";
 import { loadKnnDecisionConfig, makeDecision } from "@/knn/decision";
 import type { KnnSearchOptions, loadKnnConfig } from "@/knn/engine";
 import { applyTimeDecay, type KnnNeighbor, loadTimeDecayConfig } from "@/knn/time-decay";
-import { checkLossLimit } from "@/limits/loss-limit";
+import { checkAccountDailyLimit, checkLossLimit, type ResetResult } from "@/limits/loss-limit";
 import type { SlackAlertDetails, SlackEventType } from "@/notifications/slack";
 import { executeEntry } from "@/orders/executor";
 import { canPyramid } from "@/positions/pyramid";
@@ -482,6 +482,23 @@ export function createBacktestPipelineDeps(
       maxHourly5m: 999,
       maxHourly1m: 999,
     }),
+    checkAccountDailyLimit,
+    getBalance: async (_exchange: string) => {
+      const { total } = await adapter.fetchBalance();
+      return total;
+    },
+
+    // Loss counter resets — no-op in backtest (no DB, no time-boundary resets needed)
+    resetExpiredLosses: async (
+      _symbol: string,
+      _exchange: string,
+      _now: Date,
+    ): Promise<ResetResult> => ({
+      dailyReset: false,
+      sessionReset: false,
+      hourlyReset: false,
+    }),
+    setSessionStartTime: (_time: Date) => {},
 
     // Notifications
     sendSlackAlert: async (

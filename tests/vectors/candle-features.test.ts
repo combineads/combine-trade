@@ -93,14 +93,15 @@ describe("candle-features", () => {
       const low = c.low.toNumber();
       const close = c.close.toNumber();
 
-      // body = |close - open| / close
-      const expectedBody = Math.abs(close - open) / close;
-      // upperWick = (high - max(open, close)) / close × 1.5 (weight applied)
-      const expectedUpperWick = ((high - Math.max(open, close)) / close) * 1.5;
-      // lowerWick = (min(open, close) - low) / close × 1.5 (weight applied)
-      const expectedLowerWick = ((Math.min(open, close) - low) / close) * 1.5;
-      // range = (high - low) / close
-      const expectedRange = (high - low) / close;
+      // NEW PRD §7.8 L275 denominators:
+      // body = |close - open| / open   [분모: O]
+      const expectedBody = Math.abs(close - open) / open;
+      // upperWick = (high - max(open, close)) / high × 1.5 (weight applied)  [분모: H]
+      const expectedUpperWick = ((high - Math.max(open, close)) / high) * 1.5;
+      // lowerWick = (min(open, close) - low) / high × 1.5 (weight applied)  [분모: H]
+      const expectedLowerWick = ((Math.min(open, close) - low) / high) * 1.5;
+      // range = (high - low) / low   [분모: L]
+      const expectedRange = (high - low) / low;
       // ret for bar[0] = 0 (이전 캔들 없음)
       const expectedRet = 0;
 
@@ -124,8 +125,11 @@ describe("candle-features", () => {
       const close = c1.close.toNumber();
       const prevClose = c0.close.toNumber();
 
-      const expectedBody = Math.abs(close - open) / close;
-      const expectedRange = (high - low) / close;
+      // NEW PRD §7.8 L275 denominators:
+      // body = |close - open| / open   [분모: O]
+      const expectedBody = Math.abs(close - open) / open;
+      // range = (high - low) / low   [분모: L]
+      const expectedRange = (high - low) / low;
       const expectedRet = (close - prevClose) / prevClose;
 
       expect(result[5]).toBeCloseTo(expectedBody, 8);
@@ -154,17 +158,18 @@ describe("candle-features", () => {
       const upperWick = result[6]!; // 가중치 적용 전 값
       const lowerWick = result[7]!;
 
-      // body = |100 - 100| / 100 = 0
+      // body = |100 - 100| / open(100) = 0
       expect(body).toBe(0);
 
-      // upperWick raw = (105 - max(100,100)) / 100 = 5/100 = 0.05
-      // 가중치 1.5 적용 → 0.075
-      const expectedUpperWick = (5 / 100) * 1.5;
+      // NEW PRD §7.8 L275 denominators:
+      // upperWick raw = (105 - max(100,100)) / high(105) = 5/105
+      // 가중치 1.5 적용 → 5/105 * 1.5
+      const expectedUpperWick = (5 / dojiHigh) * 1.5;
       expect(upperWick).toBeCloseTo(expectedUpperWick, 8);
 
-      // lowerWick raw = (min(100,100) - 95) / 100 = 5/100 = 0.05
-      // 가중치 1.5 적용 → 0.075
-      const expectedLowerWick = (5 / 100) * 1.5;
+      // lowerWick raw = (min(100,100) - 95) / high(105) = 5/105
+      // 가중치 1.5 적용 → 5/105 * 1.5
+      const expectedLowerWick = (5 / dojiHigh) * 1.5;
       expect(lowerWick).toBeCloseTo(expectedLowerWick, 8);
     });
 
@@ -191,8 +196,9 @@ describe("candle-features", () => {
       const c = makeCandle(100, 110, 98, 105, 0);
       const result = extractCandleFeatures([c]);
 
-      // upperWick raw = (110 - max(100,105)) / 105 = (110 - 105) / 105 = 5/105
-      const rawUpperWick = 5 / 105;
+      // NEW PRD §7.8 L275: upperWick 분모 = H
+      // upperWick raw = (110 - max(100,105)) / high(110) = (110 - 105) / 110 = 5/110
+      const rawUpperWick = 5 / 110;
       const expectedWithWeight = rawUpperWick * 1.5;
 
       // bar[0] → index 1 = upperWick
@@ -204,8 +210,9 @@ describe("candle-features", () => {
       const c = makeCandle(100, 108, 90, 105, 0);
       const result = extractCandleFeatures([c]);
 
-      // lowerWick raw = (min(100,105) - 90) / 105 = (100 - 90) / 105 = 10/105
-      const rawLowerWick = 10 / 105;
+      // NEW PRD §7.8 L275: lowerWick 분모 = H
+      // lowerWick raw = (min(100,105) - 90) / high(108) = (100 - 90) / 108 = 10/108
+      const rawLowerWick = 10 / 108;
       const expectedWithWeight = rawLowerWick * 1.5;
 
       // bar[0] → index 2 = lowerWick
@@ -217,8 +224,9 @@ describe("candle-features", () => {
       const customWeights = { upperWick: 2.0, lowerWick: 1.0 };
       const result = extractCandleFeatures([c], customWeights);
 
-      // upperWick raw = (110 - 105) / 105 = 5/105
-      const rawUpperWick = 5 / 105;
+      // NEW PRD §7.8 L275: upperWick 분모 = H
+      // upperWick raw = (110 - max(100,105)) / high(110) = 5/110
+      const rawUpperWick = 5 / 110;
       const expectedWithWeight = rawUpperWick * 2.0;
 
       expect(result[1]).toBeCloseTo(expectedWithWeight, 8);

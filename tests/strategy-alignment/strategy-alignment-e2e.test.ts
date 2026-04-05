@@ -156,27 +156,28 @@ describe("EP-10 S1: BB4 source=open", () => {
 // Scenario 2: Daily direction equality >= (T-10-002)
 // ---------------------------------------------------------------------------
 
+// T-18-003: PRD §7.2 strict > / < for price comparison, >= / <= for slope
 describe("EP-10 S2: daily direction uses >= / <= for close vs open", () => {
-  it("slope>0 + close==open → LONG_ONLY (>= condition)", () => {
+  it("slope>0 + close==open → NEUTRAL (strict > per PRD §7.2)", () => {
     // slope positive (ma20Today > ma20Yesterday)
     const ma20Today = d("101");
     const ma20Yesterday = d("100");
-    // close exactly equals open
+    // close exactly equals open → strict > fails → NEUTRAL
     const todayClose = d("200");
     const dailyOpen = d("200");
 
     const bias = determineDailyBias(todayClose, dailyOpen, ma20Today, ma20Yesterday);
-    expect(bias).toBe("LONG_ONLY");
+    expect(bias).toBe("NEUTRAL");
   });
 
-  it("slope<0 + close==open → SHORT_ONLY (<= condition)", () => {
+  it("slope<0 + close==open → NEUTRAL (strict < per PRD §7.2)", () => {
     const ma20Today = d("99");
     const ma20Yesterday = d("100");
     const todayClose = d("200");
     const dailyOpen = d("200");
 
     const bias = determineDailyBias(todayClose, dailyOpen, ma20Today, ma20Yesterday);
-    expect(bias).toBe("SHORT_ONLY");
+    expect(bias).toBe("NEUTRAL");
   });
 
   it("slope>0 + close>open → LONG_ONLY", () => {
@@ -184,9 +185,9 @@ describe("EP-10 S2: daily direction uses >= / <= for close vs open", () => {
     expect(bias).toBe("LONG_ONLY");
   });
 
-  it("slope=0 → NEUTRAL regardless of close vs open", () => {
+  it("slope=0 + close>open → LONG_ONLY (slope >= 0 per PRD §7.2)", () => {
     const bias = determineDailyBias(d("210"), d("200"), d("100"), d("100"));
-    expect(bias).toBe("NEUTRAL");
+    expect(bias).toBe("LONG_ONLY");
   });
 });
 
@@ -319,16 +320,18 @@ describe("EP-10 S3: evidence gate ONE_B + MA20 mismatch → null", () => {
 // ---------------------------------------------------------------------------
 
 describe("EP-10 S4: safety gate wick ratio thresholds (5M=0.1, 1M=1.0)", () => {
-  it("5M + wick=0.15 → fails wick_ratio_exceeded (threshold 0.1)", () => {
+  it("5M + wick=0.05 → fails wick_ratio_exceeded (threshold 0.1, small wick = no momentum)", () => {
+    // NEW PRD rule: lt(wick, threshold) → blocked (small wick = insufficient price rejection)
     // LONG candle: wick = (min(open,close) - low) / (high - low)
-    // Set: open=100, close=105, low=85, high=110
+    // Set: open=100, close=105, low=98, high=110
     // bodyBottom = min(100, 105) = 100
-    // wick = (100 - 85) / (110 - 85) = 15/25 = 0.60 (>> 0.1)
-    // Ensure other filters pass: no sma20/bb20/atr → box and abnormal pass; 5M → no 1M noise check
+    // wick = (100 - 98) / (110 - 98) = 2/12 ≈ 0.167 — still >= 0.1, would pass
+    // Need small wick: open=99, close=105, low=98, high=110 → wick=(99-98)/12=1/12≈0.083 < 0.1 → BLOCKED
+    // Ensure other filters pass: no sma20/bb20 → box passes; 5M → no 1M noise check
     const candle = makeCandle({
-      open: d("100"),
+      open: d("99"),
       high: d("110"),
-      low: d("85"),
+      low: d("98"),
       close: d("105"),
     });
 
@@ -341,8 +344,11 @@ describe("EP-10 S4: safety gate wick ratio thresholds (5M=0.1, 1M=1.0)", () => {
     expect(result.reasons).toContain("wick_ratio_exceeded");
   });
 
-  it("1M + wick=0.15 → passes (threshold 1.0, wick 0.15 <= 1.0)", () => {
-    // Same candle geometry as above but timeframe=1M, wick=0.60 <= 1.0 → passes wick filter
+  it("1M + wick=0.60 → fails (threshold 1.0, wick 0.60 < 1.0 = blocked under new rule)", () => {
+    // NEW PRD rule: lt(wick, threshold) → blocked
+    // LONG candle: open=100, close=105, low=85, high=110
+    // wick = (100 - 85) / (110 - 85) = 15/25 = 0.60
+    // 1M threshold = 1.0: 0.60 < 1.0 → BLOCKED
     const candle = makeCandle({
       open: d("100"),
       high: d("110"),
@@ -355,12 +361,14 @@ describe("EP-10 S4: safety gate wick ratio thresholds (5M=0.1, 1M=1.0)", () => {
     const symbolState = { session_box_high: null, session_box_low: null, daily_bias: null };
 
     const result = checkSafety(candle, indicators, signal, symbolState);
-    // Wick 0.60 <= 1.0 → wick passes; other filters pass (no indicators) → overall pass
-    expect(result.passed).toBe(true);
-    expect(result.reasons).not.toContain("wick_ratio_exceeded");
+    // Wick 0.60 < 1.0 threshold → wick BLOCKED under new rule
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("wick_ratio_exceeded");
   });
 
-  it("5M + wick exactly at threshold 0.1 → passes (not strictly greater)", () => {
+  it("5M + wick exactly at threshold 0.1 → passes (not strictly less than)", () => {
+    // NEW PRD rule: lt(wick, threshold) → blocked
+    // wick = 0.1 exactly: lt(0.1, 0.1) is false → PASSES (not strictly less than)
     // wick = 0.1 exactly: bodyBottom - low = 0.1 * (high - low)
     // high=110, low=90 → range=20; wick = 0.1*20 = 2; bodyBottom = 92
     // open=92, close=100, low=90, high=110: bodyBottom=min(92,100)=92; wick=(92-90)/20=0.1

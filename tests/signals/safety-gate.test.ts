@@ -95,26 +95,15 @@ function makeSymbolState(
 // ---------------------------------------------------------------------------
 
 describe("safety-gate — wick ratio filter — 5M — LONG", () => {
-  it("passes when lower wick ratio is 0.05 (below threshold 0.1)", () => {
+  it("blocks when lower wick ratio is 0.05 (below threshold 0.1) — small wick = no momentum", () => {
+    // NEW PRD rule: lt(wick, threshold) → blocked (small wick = insufficient momentum)
     // range = 1000 (49000 to 50000)
     // lower wick = 0.05 → body bottom = 49000 + 0.05*1000 = 49050
     // open=49050, close=49200, low=49000, high=50000
+    // wick=0.05 < threshold=0.1 → BLOCKED
     const candle = makeCandle({
       open: new Decimal("49050"),
       close: new Decimal("49200"),
-      low: new Decimal("49000"),
-      high: new Decimal("50000"),
-    });
-    const result = checkSafety(candle, makeIndicators(), makeSignal({ timeframe: "5M" }), makeSymbolState());
-    expect(result.reasons).not.toContain("wick_ratio_exceeded");
-  });
-
-  it("fails when lower wick ratio is 0.15 (above threshold 0.1)", () => {
-    // range = 1000, lower wick = 0.15 → body bottom = 49000 + 150 = 49150
-    // open=49150, close=49300, low=49000, high=50000
-    const candle = makeCandle({
-      open: new Decimal("49150"),
-      close: new Decimal("49300"),
       low: new Decimal("49000"),
       high: new Decimal("50000"),
     });
@@ -123,9 +112,25 @@ describe("safety-gate — wick ratio filter — 5M — LONG", () => {
     expect(result.reasons).toContain("wick_ratio_exceeded");
   });
 
+  it("passes when lower wick ratio is 0.15 (above threshold 0.1) — large wick = sufficient momentum", () => {
+    // NEW PRD rule: wick >= threshold → passes (large wick shows price rejection)
+    // range = 1000, lower wick = 0.15 → body bottom = 49000 + 150 = 49150
+    // open=49150, close=49300, low=49000, high=50000
+    // wick=0.15 >= threshold=0.1 → PASSES
+    const candle = makeCandle({
+      open: new Decimal("49150"),
+      close: new Decimal("49300"),
+      low: new Decimal("49000"),
+      high: new Decimal("50000"),
+    });
+    const result = checkSafety(candle, makeIndicators(), makeSignal({ timeframe: "5M" }), makeSymbolState());
+    expect(result.reasons).not.toContain("wick_ratio_exceeded");
+  });
+
   it("passes when lower wick ratio equals threshold exactly (0.1)", () => {
     // range = 1000, body bottom = 49000 + 100 = 49100
-    // lower wick = 100/1000 = 0.1 → exactly at threshold → should pass (≤ 0.1)
+    // lower wick = 100/1000 = 0.1 → exactly at threshold
+    // NEW rule: lt(wick, threshold) — not strictly less than → PASSES at boundary
     const candle = makeCandle({
       open: new Decimal("49100"),
       close: new Decimal("49200"),
@@ -138,10 +143,12 @@ describe("safety-gate — wick ratio filter — 5M — LONG", () => {
 });
 
 describe("safety-gate — wick ratio filter — 5M — SHORT", () => {
-  it("fails when upper wick ratio is 0.15 (above threshold 0.1)", () => {
+  it("passes when upper wick ratio is 0.15 (above threshold 0.1) — large wick shows momentum", () => {
+    // NEW PRD rule: wick >= threshold → passes (large wick = sufficient momentum)
     // range = 1000 (49000 to 50000)
     // upper wick = 0.15 → body top = 50000 - 150 = 49850
     // open=49700, close=49850, low=49000, high=50000
+    // wick=0.15 >= threshold=0.1 → PASSES
     const candle = makeCandle({
       open: new Decimal("49700"),
       close: new Decimal("49850"),
@@ -154,13 +161,14 @@ describe("safety-gate — wick ratio filter — 5M — SHORT", () => {
       makeSignal({ direction: "SHORT", timeframe: "5M" }),
       makeSymbolState(),
     );
-    expect(result.passed).toBe(false);
-    expect(result.reasons).toContain("wick_ratio_exceeded");
+    expect(result.reasons).not.toContain("wick_ratio_exceeded");
   });
 
-  it("passes when upper wick ratio is 0.05 (below threshold 0.1)", () => {
+  it("blocks when upper wick ratio is 0.05 (below threshold 0.1) — small wick = no momentum", () => {
+    // NEW PRD rule: lt(wick, threshold) → blocked (small wick = no rejection)
     // upper wick = 0.05 → body top = 50000 - 50 = 49950
     // open=49800, close=49950, low=49000, high=50000
+    // wick=0.05 < threshold=0.1 → BLOCKED
     const candle = makeCandle({
       open: new Decimal("49800"),
       close: new Decimal("49950"),
@@ -173,7 +181,8 @@ describe("safety-gate — wick ratio filter — 5M — SHORT", () => {
       makeSignal({ direction: "SHORT", timeframe: "5M" }),
       makeSymbolState(),
     );
-    expect(result.reasons).not.toContain("wick_ratio_exceeded");
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("wick_ratio_exceeded");
   });
 });
 
@@ -181,10 +190,11 @@ describe("safety-gate — wick ratio filter — 5M — SHORT", () => {
 // safety-gate — checkSafety — wick ratio filter (1M threshold = 1.0)
 // ---------------------------------------------------------------------------
 
-describe("safety-gate — wick ratio filter — 1M — always passes", () => {
-  it("passes when lower wick ratio is 0.7 on 1M (threshold is 1.0)", () => {
+describe("safety-gate — wick ratio filter — 1M — threshold 1.0", () => {
+  it("blocks when lower wick ratio is 0.7 on 1M (threshold is 1.0) — wick=0.7 < 1.0", () => {
+    // NEW PRD rule: lt(wick, threshold) → blocked
     // range = 1000, lower wick = 0.7 → body bottom = 49000 + 700 = 49700
-    // old 5M threshold of 0.6 would fail this — but 1M threshold is 1.0, so passes
+    // wick=0.7 < threshold=1.0 → BLOCKED
     const candle = makeCandle({
       open: new Decimal("49700"),
       close: new Decimal("49800"),
@@ -192,12 +202,15 @@ describe("safety-gate — wick ratio filter — 1M — always passes", () => {
       high: new Decimal("50000"),
     });
     const result = checkSafety(candle, makeIndicators(), makeSignal({ timeframe: "1M" }), makeSymbolState());
-    expect(result.reasons).not.toContain("wick_ratio_exceeded");
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("wick_ratio_exceeded");
   });
 
-  it("passes when upper wick ratio is 0.9 on 1M SHORT (threshold is 1.0)", () => {
+  it("blocks when upper wick ratio is 0.9 on 1M SHORT (threshold is 1.0) — wick=0.9 < 1.0", () => {
+    // NEW PRD rule: lt(wick, threshold) → blocked
     // range = 1000, upper wick = 0.9 → body top = 50000 - 900 = 49100
     // open=49000, close=49100, low=49000, high=50000
+    // wick=0.9 < threshold=1.0 → BLOCKED
     const candle = makeCandle({
       open: new Decimal("49000"),
       close: new Decimal("49100"),
@@ -210,7 +223,8 @@ describe("safety-gate — wick ratio filter — 1M — always passes", () => {
       makeSignal({ direction: "SHORT", timeframe: "1M" }),
       makeSymbolState(),
     );
-    expect(result.reasons).not.toContain("wick_ratio_exceeded");
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("wick_ratio_exceeded");
   });
 });
 
@@ -234,11 +248,16 @@ describe("safety-gate — wick ratio filter — doji", () => {
 // ---------------------------------------------------------------------------
 // safety-gate — checkSafety — box range filter (MA20-based)
 //
+// NEW PRD §7.6 rule: blocks when close is INSIDE center zone ("inside_box_center")
+//   |close - sma20| < range_20 * 0.15  →  block ("inside_box_center")
+//
 // Default makeIndicators():
 //   sma20 = 50000, bb20.upper = 52000, bb20.lower = 48000
 //   range_20 = 4000, margin = 4000 * 0.15 = 600
 //   lowerBound = 50000 - 600 = 49400
 //   upperBound = 50000 + 600 = 50600
+//   BLOCKED when: lowerBound < close < upperBound (strictly inside)
+//   PASSES when: close <= lowerBound OR close >= upperBound (outside or on boundary)
 // ---------------------------------------------------------------------------
 
 describe("safety-gate — box range filter", () => {
@@ -250,7 +269,7 @@ describe("safety-gate — box range filter", () => {
       makeSignal(),
       makeSymbolState(),
     );
-    expect(result.reasons).not.toContain("outside_box_range");
+    expect(result.reasons).not.toContain("inside_box_center");
   });
 
   it("passes when bb20 is null (no indicator data)", () => {
@@ -261,49 +280,48 @@ describe("safety-gate — box range filter", () => {
       makeSignal(),
       makeSymbolState(),
     );
-    expect(result.reasons).not.toContain("outside_box_range");
+    expect(result.reasons).not.toContain("inside_box_center");
   });
 
-  it("passes when entry price is at MA20 midpoint (center of range)", () => {
-    // close = sma20 = 50000 → inside [49400, 50600]
+  it("blocks when entry price is at MA20 midpoint (inside center zone)", () => {
+    // close = sma20 = 50000 → strictly inside (49400, 50600) → BLOCKED
     const candle = makeCandle({ close: new Decimal("50000") });
     const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
-    expect(result.reasons).not.toContain("outside_box_range");
+    expect(result.passed).toBe(false);
+    expect(result.reasons).toContain("inside_box_center");
   });
 
   it("passes when entry price is at the exact lower boundary", () => {
-    // lowerBound = 50000 - 600 = 49400 → exactly on boundary → should pass
+    // lowerBound = 50000 - 600 = 49400 → exactly on boundary (not strictly inside) → PASSES
     const candle = makeCandle({ close: new Decimal("49400") });
     const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
-    expect(result.reasons).not.toContain("outside_box_range");
+    expect(result.reasons).not.toContain("inside_box_center");
   });
 
   it("passes when entry price is at the exact upper boundary", () => {
-    // upperBound = 50000 + 600 = 50600 → exactly on boundary → should pass
+    // upperBound = 50000 + 600 = 50600 → exactly on boundary (not strictly inside) → PASSES
     const candle = makeCandle({ close: new Decimal("50600") });
     const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
-    expect(result.reasons).not.toContain("outside_box_range");
+    expect(result.reasons).not.toContain("inside_box_center");
   });
 
-  it("fails when entry price is below lower boundary", () => {
-    // lowerBound = 49400, close = 49399 → outside
+  it("passes when entry price is below lower boundary", () => {
+    // lowerBound = 49400, close = 49399 → outside center zone → PASSES
     const candle = makeCandle({ close: new Decimal("49399") });
     const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
-    expect(result.passed).toBe(false);
-    expect(result.reasons).toContain("outside_box_range");
+    expect(result.reasons).not.toContain("inside_box_center");
   });
 
-  it("fails when entry price is above upper boundary", () => {
-    // upperBound = 50600, close = 50601 → outside
+  it("passes when entry price is above upper boundary", () => {
+    // upperBound = 50600, close = 50601 → outside center zone → PASSES
     const candle = makeCandle({ close: new Decimal("50601") });
     const result = checkSafety(candle, makeIndicators(), makeSignal(), makeSymbolState());
-    expect(result.passed).toBe(false);
-    expect(result.reasons).toContain("outside_box_range");
+    expect(result.reasons).not.toContain("inside_box_center");
   });
 
   it("uses MA20 midpoint, not session_box — session_box fields are irrelevant", () => {
-    // close=49399 is outside MA20 boundary [49400, 50600]
-    // session_box_high/low set to values that would extend far — should still fail
+    // close=49399 is outside MA20 center zone [49400, 50600]
+    // session_box_high/low set to wide values — still PASSES because close is outside
     const candle = makeCandle({ close: new Decimal("49399") });
     const result = checkSafety(
       candle,
@@ -314,14 +332,13 @@ describe("safety-gate — box range filter", () => {
         session_box_low: new Decimal("45000"),
       }),
     );
-    expect(result.passed).toBe(false);
-    expect(result.reasons).toContain("outside_box_range");
+    expect(result.reasons).not.toContain("inside_box_center");
   });
 
   it("uses different sma20 and bb20 values correctly", () => {
     // sma20=51000, bb20.upper=53000, bb20.lower=49000 → range_20=4000, margin=600
-    // bounds: [50400, 51600]
-    // close=50400 → exactly on lower boundary → pass
+    // center zone: (50400, 51600)
+    // close=50400 → exactly on lower boundary (not strictly inside) → PASSES
     const candle = makeCandle({ close: new Decimal("50400") });
     const result = checkSafety(
       candle,
@@ -338,7 +355,7 @@ describe("safety-gate — box range filter", () => {
       makeSignal(),
       makeSymbolState(),
     );
-    expect(result.reasons).not.toContain("outside_box_range");
+    expect(result.reasons).not.toContain("inside_box_center");
   });
 });
 
@@ -683,24 +700,23 @@ describe("safety-gate — 1M noise filter — uses 5M MA20 (PRD §7.7)", () => {
 
 describe("safety-gate — combined scenarios", () => {
   it("returns passed=true and empty reasons when all conditions pass (5M)", () => {
-    // Candle setup for 5M with tight wick threshold (0.1):
-    //   range = 100 (50000 to 50100)
-    //   lower wick = (50000 - 50000)/100 = 0 → passes
+    // Candle setup for 5M with LONG_ONLY bias (trend-following → wick filter bypassed):
+    //   wick filter: LONG + LONG_ONLY bias → bypass (no wick_ratio_exceeded)
     //   Box (MA20-based): sma20=50000, range_20=4000, margin=600
-    //     bounds=[49400, 50600] → close=50050 → inside → passes
+    //     center zone: (49400, 50600) → close=49300 → outside → PASSES
     //   Abnormal (avg_range_5): recentCandles not passed → default [] → bypass
     //   Timeframe = 5M → skip noise filter
     const candle = makeCandle({
-      open: new Decimal("50000"),
-      close: new Decimal("50050"),
-      low: new Decimal("50000"),
-      high: new Decimal("50100"),
+      open: new Decimal("49200"),
+      close: new Decimal("49300"), // outside center zone (49300 <= 49400) → passes box
+      low: new Decimal("49000"),
+      high: new Decimal("49400"),
     });
     const result = checkSafety(
       candle,
       makeIndicators(),
       makeSignal({ direction: "LONG", timeframe: "5M" }),
-      makeSymbolState(),
+      makeSymbolState({ daily_bias: "LONG_ONLY" }),
     );
     expect(result.passed).toBe(true);
     expect(result.reasons).toHaveLength(0);
@@ -711,14 +727,22 @@ describe("safety-gate — combined scenarios", () => {
     //   recentCandles: 5 candles with range=200 → avg_range_5=200, threshold=400
     //   candle range = 2000 (48000 to 50000) → 2000 > 400 → abnormal
     // Wick (5M LONG): lower wick = (body_bottom - 48000) / 2000
-    //   open=49800, close=49000 → body_bottom=49000
-    //   wick = (49000-48000)/2000 = 1000/2000 = 0.5 → > 0.1 → fail
-    // Box (MA20): sma20=50000, range_20=4000, margin=600, bounds=[49400, 50600]
-    //   close=49000 < 49400 → fails
-    // daily_bias=SHORT_ONLY, direction=LONG → counter-trend → abnormal filter applied
+    //   open=49800, close=49800 → body_bottom=49800
+    //   wick = (49800-48000)/2000 = 1800/2000 = 0.9 >= threshold 0.1 → PASSES wick filter
+    //   (to get wick_ratio_exceeded we need wick < threshold 0.1)
+    //   Let's use a small wick: open=48050, close=48100, low=48000, high=50000
+    //   body_bottom=min(48050,48100)=48050; wick=(48050-48000)/2000=50/2000=0.025 < 0.1 → BLOCKED
+    // Box (MA20): sma20=50000, range_20=4000, margin=600, center=(49400, 50600)
+    //   close=48100 is outside center zone → PASSES box filter
+    //   We need it to also be inside: use close=49600 inside (49400,50600)
+    //   Let's just test wick and abnormal together to cover multiple failures.
+    //   Use: open=48050, close=49500, low=48000, high=50000
+    //   wick=(min(48050,49500)-48000)/2000=(48050-48000)/2000=0.025 < 0.1 → wick BLOCKED
+    //   box: close=49500 strictly inside (49400,50600) → BLOCKED
+    //   abnormal: range=2000 > threshold=400 → BLOCKED
     const candle = makeCandle({
-      open: new Decimal("49800"),
-      close: new Decimal("49000"),
+      open: new Decimal("48050"),
+      close: new Decimal("49500"),
       low: new Decimal("48000"),
       high: new Decimal("50000"),
     });
@@ -731,11 +755,11 @@ describe("safety-gate — combined scenarios", () => {
       recentCandles,
     );
     expect(result.passed).toBe(false);
-    // wick_ratio: wick = (49000-48000)/2000 = 0.5 > 0.1 → fail
+    // wick_ratio: wick = (48050-48000)/2000 = 0.025 < 0.1 → BLOCKED
     expect(result.reasons).toContain("wick_ratio_exceeded");
-    // outside_box: close=49000 < 49400 → fail
-    expect(result.reasons).toContain("outside_box_range");
-    // abnormal: range=2000, avg_range_5=200, threshold=400 → 2000 > 400 → fail
+    // inside_box_center: close=49500 strictly inside (49400, 50600) → BLOCKED
+    expect(result.reasons).toContain("inside_box_center");
+    // abnormal: range=2000, avg_range_5=200, threshold=400 → 2000 > 400 → BLOCKED
     expect(result.reasons).toContain("abnormal_candle");
   });
 });
@@ -743,35 +767,42 @@ describe("safety-gate — combined scenarios", () => {
 // ---------------------------------------------------------------------------
 // safety-gate — checkSafety — wick ratio filter — counter-trend bypass
 //
-// Trend-following (순추세): direction matches bias → wick filter bypassed
+// NEW PRD rule: lt(wick, threshold) → blocked (small wick = no momentum)
+//
+// Trend-following (순추세): direction matches bias → wick filter bypassed entirely
 // Counter-trend (역추세): direction ≠ bias, or NEUTRAL, or null → filter applied
 //
-// Test candle for all counter-trend bypass tests:
-//   open=49150, close=49300, low=49000, high=50000
-//   range=1000, lower wick=(49150-49000)/1000=0.15 → exceeds 5M threshold 0.1
-//   upper wick=(50000-49300)/1000=0.7 → exceeds 5M threshold 0.1
+// Test candles:
+//   smallLowerWickCandle: lower wick = 0.05 < threshold 0.1 → BLOCKED when filter applied
+//   smallUpperWickCandle: upper wick = 0.05 < threshold 0.1 → BLOCKED when filter applied
+//
+// NOTE: highLowerWickCandle (wick=0.15) PASSES the new filter (wick >= threshold)
+//   and is used only to verify bypass — wick check does NOT apply to trend-following.
 // ---------------------------------------------------------------------------
 
 describe("safety-gate — wick ratio — counter-trend bypass (순추세/역추세)", () => {
-  // Candle with high lower wick (0.15) that would normally fail 5M threshold
-  const highLowerWickCandle = makeCandle({
-    open: new Decimal("49150"),
+  // Candle with SMALL lower wick (0.05) that is blocked by 5M threshold under NEW rule
+  // range=1000, body_bottom=49050; wick=(49050-49000)/1000=0.05 < threshold=0.1 → BLOCKED
+  const smallLowerWickCandle = makeCandle({
+    open: new Decimal("49050"),
     close: new Decimal("49300"),
     low: new Decimal("49000"),
     high: new Decimal("50000"),
   });
 
-  // Candle with high upper wick (0.15) that would normally fail 5M threshold
-  const highUpperWickCandle = makeCandle({
+  // Candle with SMALL upper wick (0.05) that is blocked by 5M threshold under NEW rule
+  // range=1000, body_top=49950; wick=(50000-49950)/1000=0.05 < threshold=0.1 → BLOCKED
+  const smallUpperWickCandle = makeCandle({
     open: new Decimal("49700"),
-    close: new Decimal("49550"),
+    close: new Decimal("49950"),
     low: new Decimal("49000"),
     high: new Decimal("50000"),
   });
 
-  it("LONG + LONG_ONLY bias (순추세) → bypasses wick filter even with wick=0.15", () => {
+  it("LONG + LONG_ONLY bias (순추세) → bypasses wick filter even with small wick=0.05", () => {
+    // Trend-following bypass: wick filter not applied regardless of wick size
     const result = checkSafety(
-      highLowerWickCandle,
+      smallLowerWickCandle,
       makeIndicators(),
       makeSignal({ direction: "LONG", timeframe: "5M" }),
       makeSymbolState({ daily_bias: "LONG_ONLY" }),
@@ -779,9 +810,10 @@ describe("safety-gate — wick ratio — counter-trend bypass (순추세/역추�
     expect(result.reasons).not.toContain("wick_ratio_exceeded");
   });
 
-  it("SHORT + SHORT_ONLY bias (순추세) → bypasses wick filter even with upper wick=0.15", () => {
+  it("SHORT + SHORT_ONLY bias (순추세) → bypasses wick filter even with small upper wick=0.05", () => {
+    // Trend-following bypass: wick filter not applied regardless of wick size
     const result = checkSafety(
-      highUpperWickCandle,
+      smallUpperWickCandle,
       makeIndicators(),
       makeSignal({ direction: "SHORT", timeframe: "5M" }),
       makeSymbolState({ daily_bias: "SHORT_ONLY" }),
@@ -790,8 +822,9 @@ describe("safety-gate — wick ratio — counter-trend bypass (순추세/역추�
   });
 
   it("LONG + SHORT_ONLY bias (역추세) → applies wick filter → wick_ratio_exceeded", () => {
+    // Counter-trend: filter applied; small wick=0.05 < threshold=0.1 → BLOCKED
     const result = checkSafety(
-      highLowerWickCandle,
+      smallLowerWickCandle,
       makeIndicators(),
       makeSignal({ direction: "LONG", timeframe: "5M" }),
       makeSymbolState({ daily_bias: "SHORT_ONLY" }),
@@ -800,8 +833,9 @@ describe("safety-gate — wick ratio — counter-trend bypass (순추세/역추�
   });
 
   it("SHORT + LONG_ONLY bias (역추세) → applies wick filter → wick_ratio_exceeded", () => {
+    // Counter-trend: filter applied; small upper wick=0.05 < threshold=0.1 → BLOCKED
     const result = checkSafety(
-      highUpperWickCandle,
+      smallUpperWickCandle,
       makeIndicators(),
       makeSignal({ direction: "SHORT", timeframe: "5M" }),
       makeSymbolState({ daily_bias: "LONG_ONLY" }),
@@ -810,8 +844,9 @@ describe("safety-gate — wick ratio — counter-trend bypass (순추세/역추�
   });
 
   it("LONG + NEUTRAL bias → conservative: applies wick filter → wick_ratio_exceeded", () => {
+    // NEUTRAL treated conservatively: filter applied; small wick=0.05 → BLOCKED
     const result = checkSafety(
-      highLowerWickCandle,
+      smallLowerWickCandle,
       makeIndicators(),
       makeSignal({ direction: "LONG", timeframe: "5M" }),
       makeSymbolState({ daily_bias: "NEUTRAL" }),
@@ -820,8 +855,9 @@ describe("safety-gate — wick ratio — counter-trend bypass (순추세/역추�
   });
 
   it("LONG + null bias → applies wick filter → wick_ratio_exceeded", () => {
+    // null bias treated conservatively: filter applied; small wick=0.05 → BLOCKED
     const result = checkSafety(
-      highLowerWickCandle,
+      smallLowerWickCandle,
       makeIndicators(),
       makeSignal({ direction: "LONG", timeframe: "5M" }),
       makeSymbolState({ daily_bias: null }),
@@ -831,20 +867,21 @@ describe("safety-gate — wick ratio — counter-trend bypass (순추세/역추�
 
   it("LONG + LONG_ONLY bias (순추세) with other filters also passing → passed=true", () => {
     // Wick filter is bypassed (순추세). Ensure remaining filters pass:
-    //   Box (MA20): sma20=50000, range_20=4000, margin=600 → bounds=[49400,50600]
-    //     close=49500 → inside → passes
+    //   Box (MA20-based): sma20=50000, range_20=4000, margin=600
+    //     center zone: (49400, 50600)
+    //     close=49300 ≤ 49400 → on/outside boundary → PASSES box filter
     //   Abnormal (avg_range_5): no recentCandles passed → defaults to [] → bypass
-    //   lower wick: (49550-49400)/200 = 0.75 → would normally fail 5M 0.1 threshold
+    //   large lower wick=0.15 → would pass filter anyway (>= threshold)
     //     but LONG_ONLY bias → bypass → irrelevant
     //   Noise 1M: timeframe=5M → skipped
-    const insideBoxCandle = makeCandle({
-      open: new Decimal("49550"),
-      close: new Decimal("49500"), // inside [49400, 50600]
-      low: new Decimal("49400"),
-      high: new Decimal("49600"),
+    const outsideBoxCandle = makeCandle({
+      open: new Decimal("49150"),
+      close: new Decimal("49300"), // exactly on/below lower boundary 49400 → PASSES box
+      low: new Decimal("49000"),
+      high: new Decimal("49400"),
     });
     const result = checkSafety(
-      insideBoxCandle,
+      outsideBoxCandle,
       makeIndicators(),
       makeSignal({ direction: "LONG", timeframe: "5M" }),
       makeSymbolState({ daily_bias: "LONG_ONLY" }),

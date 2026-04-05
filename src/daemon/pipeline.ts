@@ -50,7 +50,13 @@ import type { AllIndicators, BollingerResult } from "@/indicators/types";
 import type { KnnDecisionConfig, KnnDecisionResult } from "@/knn/decision";
 import type { KnnConfig, KnnSearchOptions } from "@/knn/engine";
 import type { KnnNeighbor, TimeDecayConfig, WeightedNeighbor } from "@/knn/time-decay";
-import type { LossLimitConfig, LossLimitResult, SymbolLossState } from "@/limits/loss-limit";
+import type {
+  AccountDailyLimitResult,
+  LossLimitConfig,
+  LossLimitResult,
+  ResetResult,
+  SymbolLossState,
+} from "@/limits/loss-limit";
 import type { SlackAlertDetails, SlackEventType } from "@/notifications/slack";
 import type { ExecuteEntryParams, ExecuteEntryResult } from "@/orders/executor";
 import type { SlippageConfig } from "@/orders/slippage";
@@ -260,8 +266,20 @@ export type PipelineDeps = {
   loadSlippageConfig: (db: DbInstance) => Promise<SlippageConfig>;
 
   // ---- Exits ----
-  /** Check whether a TP / TIME_EXIT / NONE exit is due */
-  checkExit: (ticket: CheckExitInput, currentPrice: string, nowMs: number) => ExitAction;
+  /**
+   * Check whether a TP / TIME_EXIT / NONE exit is due.
+   *
+   * timeframe controls which checks run (PRD §7.13):
+   *   - TIME_EXIT: all timeframes
+   *   - TP1/TP2: only "5M"
+   * Omit timeframe (backtest / legacy) to run all checks.
+   */
+  checkExit: (
+    ticket: CheckExitInput,
+    currentPrice: string,
+    nowMs: number,
+    timeframe?: Timeframe,
+  ) => ExitAction;
   /** Execute a TP or TIME_EXIT close */
   processExit: (params: ProcessExitParams) => Promise<ExitResult>;
   /** Update the trailing SL on exchange + DB */
@@ -280,6 +298,38 @@ export type PipelineDeps = {
   ) => LossLimitResult;
   /** Load loss limit config from CommonCode */
   loadLossLimitConfig: (db: DbInstance) => Promise<LossLimitConfig>;
+  /**
+   * Account-level daily loss check: SUM(losses_today) across all symbols.
+   * Called once per processEntry() before per-symbol checks.
+   */
+  checkAccountDailyLimit: (
+    db: DbInstance,
+    balance: Decimal | string,
+    config: LossLimitConfig,
+  ) => Promise<AccountDailyLimitResult>;
+  /**
+   * Fetch the current account balance for the given exchange.
+   * May return a cached value — no need to hit exchange API every candle.
+   */
+  getBalance: (exchange: string) => Promise<Decimal>;
+  /**
+   * Reset expired loss counters for a given symbol×exchange pair.
+   *
+   * Called at the start of every candle-close handler. The implementation
+   * checks UTC day/hour boundaries and fires the appropriate DB resets.
+   * The caller (daemon) maintains LastResets state across calls.
+   *
+   * Returns which resets were performed (for logging).
+   */
+  resetExpiredLosses: (symbol: string, exchange: string, now: Date) => Promise<ResetResult>;
+  /**
+   * Notify the daemon that a new trade session has started (market open).
+   *
+   * Called when isTradeBlocked transitions from blocked→unblocked.
+   * The daemon updates LastResets.sessionStartTime so that
+   * resetExpiredLosses will reset session losses on the next call.
+   */
+  setSessionStartTime: (time: Date) => void;
 
   // ---- Notifications ----
   /** Fire-and-forget Slack alert */
@@ -319,6 +369,30 @@ function was1MFiredRecently(symbol: string, exchange: string): boolean {
   const ts = recent1MFired.get(symbolKey(symbol, exchange));
   if (ts === undefined) return false;
   return Date.now() - ts < RECENT_1M_TTL_MS;
+}
+
+// ---------------------------------------------------------------------------
+// Trade block transition tracker — session start detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Tracks whether each symbol×exchange was in a blocked state on the last
+ * processEntry() call.  When the state flips from blocked→unblocked,
+ * setSessionStartTime() is called to notify the daemon that a new trade
+ * session has started so it can reset losses_session.
+ *
+ * Key: `${symbol}@${exchange}`, Value: true = was blocked on last call.
+ */
+const previouslyBlocked = new Map<string, boolean>();
+
+/**
+ * Clears all module-level test state (previouslyBlocked + recent1MFired).
+ *
+ * Exported for test isolation only — do NOT call from production code.
+ */
+export function _resetModuleStateForTesting(): void {
+  previouslyBlocked.clear();
+  recent1MFired.clear();
 }
 
 // ---------------------------------------------------------------------------
@@ -402,6 +476,22 @@ async function processSymbol(
 ): Promise<void> {
   const { symbol, exchange } = sym;
 
+  // ---- Reset expired loss counters (runs every candle, checks time boundaries) ----
+  const now = new Date();
+  const resetResult = await deps.resetExpiredLosses(symbol, exchange, now);
+  if (resetResult.dailyReset || resetResult.sessionReset || resetResult.hourlyReset) {
+    log.info("pipeline_loss_counters_reset", {
+      symbol,
+      exchange,
+      details: {
+        timeframe,
+        dailyReset: resetResult.dailyReset,
+        sessionReset: resetResult.sessionReset,
+        hourlyReset: resetResult.hourlyReset,
+      },
+    });
+  }
+
   // Load recent candles for indicator computation (200 bars gives enough history)
   const candles = await deps.getCandles(deps.db, symbol, exchange, timeframe, 200);
   const indicators = deps.calcAllIndicators(candles);
@@ -433,8 +523,9 @@ async function processSymbol(
   }
 
   // ---- All timeframes: exit processing for open positions ----
+  // TIME_EXIT runs on all TF; TP1/TP2 only on 5M; trailing only on 1H (PRD §7.13)
   if (activeTicket !== null) {
-    await processExits(candle, activeTicket, deps);
+    await processExits(candle, activeTicket, timeframe, deps);
   }
 }
 
@@ -637,8 +728,14 @@ async function processEntry(
   const { symbol, exchange } = sym;
 
   // ---- 1. Trade block check ----
-  const blockResult = await deps.isTradeBlocked(deps.db, new Date());
+  const entryNow = new Date();
+  const blockResult = await deps.isTradeBlocked(deps.db, entryNow);
+  const key = symbolKey(symbol, exchange);
+  const wasBlocked = previouslyBlocked.get(key) ?? false;
+
   if (blockResult.blocked) {
+    // Record blocked state for session transition detection on next call
+    previouslyBlocked.set(key, true);
     log.debug("pipeline_entry_trade_blocked", {
       symbol,
       exchange,
@@ -647,17 +744,46 @@ async function processEntry(
     return;
   }
 
+  // Transition: blocked → unblocked (market opened → new session started)
+  if (wasBlocked) {
+    deps.setSessionStartTime(entryNow);
+    log.info("pipeline_session_start_detected", {
+      symbol,
+      exchange,
+      details: { timeframe },
+    });
+  }
+  previouslyBlocked.set(key, false);
+
   // ---- 2. Loss limit check ----
   const symbolState = await deps.getSymbolState(deps.db, symbol, exchange);
+  const balance = await deps.getBalance(exchange);
+  const lossConfig = await deps.loadLossLimitConfig(deps.db);
+
+  // 2a. Account-level daily limit: SUM(losses_today) >= balance × maxDailyLossPct
+  const accountLimitResult = await deps.checkAccountDailyLimit(deps.db, balance, lossConfig);
+  if (!accountLimitResult.allowed) {
+    log.info("pipeline_entry_account_daily_limit", {
+      symbol,
+      exchange,
+      details: {
+        timeframe,
+        totalLossesToday: accountLimitResult.totalLossesToday.toString(),
+        threshold: accountLimitResult.threshold.toString(),
+      },
+    });
+    return;
+  }
+
+  // 2b. Per-symbol loss limit check
   if (symbolState !== null) {
-    const lossConfig = await deps.loadLossLimitConfig(deps.db);
     const lossState: SymbolLossState = {
       lossesToday: symbolState.losses_today,
       lossesSession: symbolState.losses_session,
       lossesThisHour5m: symbolState.losses_this_1h_5m,
       lossesThisHour1m: symbolState.losses_this_1h_1m,
     };
-    const limitResult = deps.checkLossLimit(lossState, symbolState.losses_today, lossConfig);
+    const limitResult = deps.checkLossLimit(lossState, balance, lossConfig);
     if (!limitResult.allowed) {
       log.info("pipeline_entry_loss_limit", {
         symbol,
@@ -882,11 +1008,23 @@ async function processEntry(
 // processExits — exit checks for open positions
 // ---------------------------------------------------------------------------
 
-async function processExits(candle: Candle, ticket: Ticket, deps: PipelineDeps): Promise<void> {
+/**
+ * Timeframe routing (PRD §7.13, 김직선 원칙):
+ *   - TIME_EXIT (60h hold): ALL timeframes — safety mechanism, must run as often as possible
+ *   - TP1/TP2 check:        5M only  — "TP는 5M이 메인, 1M은 노이즈, 1H는 느림"
+ *   - Trailing SL update:   1H only  — "트레일링은 큰 그림에서 봐야 한다"
+ *   - MFE/MAE update:       ALL timeframes — stats collection, no trade impact
+ */
+async function processExits(
+  candle: Candle,
+  ticket: Ticket,
+  timeframe: Timeframe,
+  deps: PipelineDeps,
+): Promise<void> {
   const exchange = ticket.exchange;
   const currentPrice = candle.close.toString();
 
-  // ---- Check TP / TIME_EXIT ----
+  // ---- Check TIME_EXIT (all TF) + TP1/TP2 (5M only) ----
   const checkInput: CheckExitInput = {
     state: ticket.state,
     direction: ticket.direction,
@@ -901,7 +1039,8 @@ async function processExits(candle: Candle, ticket: Ticket, deps: PipelineDeps):
     max_adverse: ticket.max_adverse?.toString() ?? null,
   };
 
-  const exitAction = deps.checkExit(checkInput, currentPrice, Date.now());
+  // Pass timeframe so checker can skip TP1/TP2 on non-5M closes
+  const exitAction = deps.checkExit(checkInput, currentPrice, Date.now(), timeframe);
 
   if (exitAction.type !== "NONE") {
     const adapter = deps.adapters.get(exchange);
@@ -937,8 +1076,8 @@ async function processExits(candle: Candle, ticket: Ticket, deps: PipelineDeps):
     }
   }
 
-  // ---- Update trailing SL ----
-  if (ticket.trailing_active) {
+  // ---- Update trailing SL (1H only — PRD §7.13 L328) ----
+  if (timeframe === "1H" && ticket.trailing_active) {
     const adapter = deps.adapters.get(exchange);
     if (adapter !== undefined) {
       const exitTicket: ExitTicket = {
@@ -964,7 +1103,7 @@ async function processExits(candle: Candle, ticket: Ticket, deps: PipelineDeps):
     }
   }
 
-  // ---- Update MFE / MAE ----
+  // ---- Update MFE / MAE (all timeframes — stats only) ----
   if (ticket.max_favorable !== null && ticket.max_adverse !== null) {
     deps.updateMfeMae({
       mfe: ticket.max_favorable,

@@ -3,7 +3,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { d, gte, lte } from "@/core/decimal";
 import type { Candle, DailyBias, DetectionType, Direction, WatchSession } from "@/core/types";
 import type { DbInstance } from "@/db/pool";
-import { watchSessionTable } from "@/db/schema";
+import { symbolStateTable, watchSessionTable } from "@/db/schema";
 import type { AllIndicators } from "@/indicators/types";
 
 // ---------------------------------------------------------------------------
@@ -403,18 +403,48 @@ export async function openWatchSession(
     throw new Error("openWatchSession: INSERT did not return a row");
   }
 
+  // Transition symbol_state from IDLE → WATCHING.
+  // The WHERE clause guards against overwriting HAS_POSITION (active ticket protection).
+  await db
+    .update(symbolStateTable)
+    .set({ fsm_state: "WATCHING", updated_at: now })
+    .where(
+      and(
+        eq(symbolStateTable.symbol, params.symbol),
+        eq(symbolStateTable.exchange, params.exchange),
+        eq(symbolStateTable.fsm_state, "IDLE"),
+      ),
+    );
+
   return rowToWatchSession(row);
 }
 
 /**
  * Marks a WatchSession as invalidated by setting invalidated_at and
- * invalidation_reason.
+ * invalidation_reason, then transitions symbol_state from WATCHING → IDLE.
+ *
+ * The symbol_state UPDATE is guarded: it only fires when fsm_state is
+ * currently WATCHING, so HAS_POSITION (active ticket) is never overwritten.
  */
 export async function invalidateWatchSession(
   db: DbInstance,
   sessionId: string,
   reason: string,
 ): Promise<void> {
+  // Fetch symbol + exchange from the session row so we can update symbol_state.
+  // This avoids changing the function signature and adding complexity to callers.
+  const sessionRows = await db
+    .select({
+      symbol: watchSessionTable.symbol,
+      exchange: watchSessionTable.exchange,
+    })
+    .from(watchSessionTable)
+    .where(eq(watchSessionTable.id, sessionId))
+    .limit(1);
+
+  const session = sessionRows[0];
+
+  // Mark session as invalidated
   await db
     .update(watchSessionTable)
     .set({
@@ -422,6 +452,21 @@ export async function invalidateWatchSession(
       invalidation_reason: reason,
     })
     .where(eq(watchSessionTable.id, sessionId));
+
+  // Transition symbol_state WATCHING → IDLE.
+  // The WHERE clause guards against overwriting HAS_POSITION (active ticket protection).
+  if (session !== undefined) {
+    await db
+      .update(symbolStateTable)
+      .set({ fsm_state: "IDLE", updated_at: new Date() })
+      .where(
+        and(
+          eq(symbolStateTable.symbol, session.symbol),
+          eq(symbolStateTable.exchange, session.exchange),
+          eq(symbolStateTable.fsm_state, "WATCHING"),
+        ),
+      );
+  }
 }
 
 /**

@@ -56,26 +56,28 @@ function extractBarFeatures(
   const low = candle.low;
   const close = candle.close;
 
-  // close가 0인 경우 안전하게 처리
-  if (close.isZero()) {
-    return [0, 0, 0, 0, 0];
+  // PRD §7.8 L275: 각 피처는 서로 다른 분모를 사용한다.
+  // body = |C - O| / O
+  const body = open.isZero() ? 0 : safe(close.minus(open).abs().dividedBy(open).toNumber());
+
+  // upperWick = (H - max(O, C)) / H × weight  [분모: H]
+  // lowerWick = (min(O, C) - L) / H × weight  [분모: H]
+  const maxOpenClose = Decimal.max(open, close);
+  const minOpenClose = Decimal.min(open, close);
+  let upperWick: number;
+  let lowerWick: number;
+  if (high.isZero()) {
+    upperWick = 0;
+    lowerWick = 0;
+  } else {
+    const upperWickRaw = safe(high.minus(maxOpenClose).dividedBy(high).toNumber());
+    upperWick = safe(upperWickRaw * upperWickWeight);
+    const lowerWickRaw = safe(minOpenClose.minus(low).dividedBy(high).toNumber());
+    lowerWick = safe(lowerWickRaw * lowerWickWeight);
   }
 
-  // body = |close - open| / close
-  const body = safe(open.minus(close).abs().dividedBy(close).toNumber());
-
-  // upperWick = (high - max(open, close)) / close × weight
-  const maxOpenClose = Decimal.max(open, close);
-  const upperWickRaw = safe(high.minus(maxOpenClose).dividedBy(close).toNumber());
-  const upperWick = safe(upperWickRaw * upperWickWeight);
-
-  // lowerWick = (min(open, close) - low) / close × weight
-  const minOpenClose = Decimal.min(open, close);
-  const lowerWickRaw = safe(minOpenClose.minus(low).dividedBy(close).toNumber());
-  const lowerWick = safe(lowerWickRaw * lowerWickWeight);
-
-  // range = (high - low) / close
-  const range = safe(high.minus(low).dividedBy(close).toNumber());
+  // range = (H - L) / L  [분모: L]
+  const range = low.isZero() ? 0 : safe(high.minus(low).dividedBy(low).toNumber());
 
   // ret = (close - prevClose) / prevClose
   let ret: number;

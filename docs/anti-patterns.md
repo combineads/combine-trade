@@ -33,6 +33,18 @@ Patterns tried and failed, or guardrails discovered during implementation. Check
 - Problem: ON CONFLICT DO UPDATE WHERE, FK 제약, SQL 기반 갭 감지 등 PostgreSQL 고유 동작은 mock으로 검증 불가. mock 테스트가 통과해도 실제 DB에서 실패하는 경우 발생
 - Instead: Docker PostgreSQL + test-db 헬퍼로 실제 DB 통합 테스트. `describe.skipIf(!isTestDbAvailable())` 패턴으로 DB 미연결 시 skip
 
+## Signal Pipeline Patterns
+
+### Filter polarity trap: "PASS=차단" 의미 혼동 주의
+- Discovered: 2026-04-05, EP-18 (T-18-001, T-18-002)
+- Problem: PRD에서 "→ PASS"는 "진입 거부"를 의미하지만, 코드에서 "pass"는 "통과(허용)"로 읽힘. Safety Gate의 wick_ratio와 box range 필터가 gt/lt 반전 + 조건 극성 반전 상태로 EP-05부터 EP-15까지 생존. 테스트가 기존 코드 동작에 맞춰 작성되어 발견하지 못함
+- Instead: PRD 게이트 규칙 구현 시, PRD 문장을 테스트 시나리오로 먼저 번역 (RED phase). 기존 코드를 읽기 전에 PRD 기준 테스트를 작성할 것. JSDoc에 "returns non-null (failure) when..." 명시
+
+### 구현된 함수의 호출처 0건 = wiring 버그
+- Discovered: 2026-04-05, EP-18 (T-18-005, T-18-006, T-18-007)
+- Problem: `resetAllExpired()`, `finalizeLabel()`, `checkAccountDailyLimit()` 모두 구현+단위테스트 완료 상태였지만 daemon/pipeline에서 호출하는 곳이 0건. 기능이 존재하지만 연결되지 않아 사실상 dead code
+- Instead: 함수 구현 후 즉시 `grep -r "functionName" src/ --include="*.ts" | grep -v test | grep -v ".d.ts"` 실행. 외부 호출처 0건이면 wiring 버그로 간주
+
 ### 타임프레임 duration 같은 도메인 상수를 여러 파일에 인라인하지 말 것
 - Discovered: 2026-04-04, EP-04
 - Problem: 동일한 상수 매핑이 여러 파일에 중복 정의되면 불일치 위험 (예: collector.ts TIMEFRAME_DURATION_MS vs gap-detection.ts getTimeframeDurationMs)

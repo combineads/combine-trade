@@ -7,18 +7,27 @@
  * Layer: L5 (positions)
  */
 
+import type Decimal from "decimal.js";
 import { and, eq, ne } from "drizzle-orm";
 import { d, div, mul } from "@/core/decimal";
 import type {
   CloseReason,
   Direction,
+  SignalType,
   TicketState,
   TradeResult,
+  VectorGrade,
   VectorTimeframe,
 } from "@/core/types";
 import type { DbInstance } from "@/db/pool";
 import type { TicketRow } from "@/db/schema";
-import { symbolStateTable, ticketTable } from "@/db/schema";
+import {
+  signalDetailTable,
+  signalTable,
+  symbolStateTable,
+  ticketTable,
+  vectorTable,
+} from "@/db/schema";
 import { validateTransition } from "./fsm";
 
 // ---------------------------------------------------------------------------
@@ -77,10 +86,28 @@ export type CreateTicketParams = {
   tp2Price?: string;
 };
 
+/**
+ * Labeling deps injected into closeTicket to avoid L5→L6 import violation.
+ * Callers (L6, L8, L9) provide classifyResult + classifyGrade from labeling/engine.
+ * If omitted, vector labeling is skipped even when vectorId is provided.
+ */
+export type LabelingDeps = {
+  classifyResult: (pnl: Decimal, closeReason: CloseReason | string | null) => TradeResult;
+  classifyGrade: (
+    signalType: SignalType,
+    safetyPassed: boolean,
+    knnWinrate: Decimal,
+  ) => VectorGrade;
+};
+
 export type CloseTicketParams = {
   closeReason: CloseReason;
   result: TradeResult;
   pnl: string;
+  /** Vector ID to label atomically in the same transaction. null → skip labeling. */
+  vectorId?: string | null;
+  /** Labeling functions (injected by caller to respect L5/L6 boundary). Required when vectorId is set. */
+  labelingDeps?: LabelingDeps;
 };
 
 // ---------------------------------------------------------------------------
@@ -242,7 +269,10 @@ export async function transitionTicket(
  * - pnl_pct = pnl / (entry_price * size)
  * - hold_duration_sec = floor((closed_at - opened_at) / 1000)
  *
- * Lock order: SymbolState -> Ticket (per ARCHITECTURE.md)
+ * If params.vectorId is provided AND params.labelingDeps is provided, also labels the
+ * associated Vector row in the same transaction (PRD §7.19 "단일 트랜잭션").
+ *
+ * Lock order: SymbolState -> Ticket -> Vector (per ARCHITECTURE.md)
  *
  * @throws {TicketNotFoundError} if ticket does not exist
  * @throws {InvalidTransitionError} if the ticket cannot transition to CLOSED
@@ -339,6 +369,61 @@ export async function closeTicket(
           eq(symbolStateTable.exchange, lookup.exchange),
         ),
       );
+
+    // 8. Vector labeling — same transaction (PRD §7.19 "단일 트랜잭션")
+    // Lock order: SymbolState → Ticket → Vector
+    const vectorId = params.vectorId ?? null;
+    const labelingDeps = params.labelingDeps;
+    if (vectorId !== null && labelingDeps !== undefined) {
+      // 8a. Read Signal for signal_type and safety_passed
+      const signals = await tx
+        .select({
+          signal_type: signalTable.signal_type,
+          safety_passed: signalTable.safety_passed,
+        })
+        .from(signalTable)
+        .where(eq(signalTable.id, ticket.signal_id));
+
+      const signal = signals[0];
+      if (!signal) {
+        throw new Error(
+          `closeTicket: Signal not found for ticket ${ticketId} (signal_id=${ticket.signal_id})`,
+        );
+      }
+
+      // 8b. Read knn_winrate from signal_details (default to "0" if absent)
+      const knnRows = await tx
+        .select({ value: signalDetailTable.value })
+        .from(signalDetailTable)
+        .where(
+          and(
+            eq(signalDetailTable.signal_id, ticket.signal_id),
+            eq(signalDetailTable.key, "knn_winrate"),
+          ),
+        );
+      const knnWinrate = d(knnRows[0]?.value ?? "0");
+
+      // 8c. Classify label and grade using injected pure functions
+      const label = labelingDeps.classifyResult(pnl, params.closeReason);
+      const grade = labelingDeps.classifyGrade(
+        signal.signal_type as SignalType,
+        signal.safety_passed,
+        knnWinrate,
+      );
+
+      // 8d. Lock Vector FOR UPDATE (lock order: SymbolState → Ticket → Vector)
+      await tx
+        .select({ id: vectorTable.id })
+        .from(vectorTable)
+        .where(eq(vectorTable.id, vectorId))
+        .for("update");
+
+      // 8e. Update Vector label, grade, labeled_at
+      await tx
+        .update(vectorTable)
+        .set({ label, grade, labeled_at: closedAt })
+        .where(eq(vectorTable.id, vectorId));
+    }
 
     return result;
   });

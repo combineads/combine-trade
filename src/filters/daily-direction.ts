@@ -11,11 +11,11 @@ import { symbolStateTable } from "@/db/schema";
 /**
  * Determines the daily trading bias based on the MA20 slope and close vs open.
  *
- * Rules (from PRODUCT.md / T-05-004):
+ * Rules (PRD §7.2 L217-218, T-18-003):
  * - MA20 slope = (ma20Today - ma20Yesterday)
- * - slope > 0  AND close >= open → LONG_ONLY
- * - slope < 0  AND close <= open → SHORT_ONLY
- * - Conditions disagree or slope = 0 → NEUTRAL
+ * - slope >= 0 AND close > open  → LONG_ONLY  (slope=0 횡보 허용, strict >)
+ * - slope <= 0 AND close < open  → SHORT_ONLY (slope=0 횡보 허용, strict <)
+ * - Conditions disagree or slope=0+close=open → NEUTRAL
  *
  * @param todayClose    - Today's closing price (Decimal)
  * @param dailyOpen     - Today's opening price (Decimal)
@@ -31,11 +31,11 @@ export function determineDailyBias(
 ): DailyBias {
   const slope = ma20Today.minus(ma20Yesterday);
 
-  const slopePositive = slope.isPositive() && !slope.isZero();
-  const slopeNegative = slope.isNegative();
+  const slopePositive = slope.isPositive(); // slope >= 0: Decimal.js isPositive() returns true for zero (PRD §7.2: >=)
+  const slopeNegative = slope.isNegative() || slope.isZero(); // slope <= 0 (PRD §7.2: <=)
 
-  const closeAboveOpen = todayClose.greaterThanOrEqualTo(dailyOpen);
-  const closeBelowOpen = todayClose.lessThanOrEqualTo(dailyOpen);
+  const closeAboveOpen = todayClose.greaterThan(dailyOpen); // strict > (PRD §7.2)
+  const closeBelowOpen = todayClose.lessThan(dailyOpen); // strict < (PRD §7.2)
 
   if (slopePositive && closeAboveOpen) {
     return "LONG_ONLY";

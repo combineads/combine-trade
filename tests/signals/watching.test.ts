@@ -761,4 +761,130 @@ describe.skipIf(!dbAvailable)("watching — DB integration", () => {
     expect(session.tp1_price?.toString()).toBe("49876.123456789");
     expect(session.tp2_price?.toString()).toBe("52123.987654321");
   });
+
+  // ---- T-18-009: FSM state transition tests ----
+
+  async function insertSymbolState(
+    symbol = "BTC/USDT",
+    exchange = "binance",
+    fsmState: "IDLE" | "WATCHING" | "HAS_POSITION" = "IDLE",
+  ): Promise<void> {
+    const pool = getPool();
+    await pool`
+      INSERT INTO symbol_state (symbol, exchange, fsm_state)
+      VALUES (${symbol}, ${exchange}, ${fsmState})
+      ON CONFLICT DO NOTHING
+    `;
+  }
+
+  async function getFsmState(symbol: string, exchange: string): Promise<string | null> {
+    const pool = getPool();
+    const rows = await pool`
+      SELECT fsm_state FROM symbol_state
+      WHERE symbol = ${symbol} AND exchange = ${exchange}
+    `;
+    return (rows[0]?.fsm_state as string) ?? null;
+  }
+
+  it("T-18-009: openWatchSession — IDLE → WATCHING when symbol_state is IDLE", async () => {
+    await insertParentSymbol();
+    await insertSymbolState("BTC/USDT", "binance", "IDLE");
+    const db = getDb();
+
+    await openWatchSession(db, makeOpenParams());
+
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("WATCHING");
+  });
+
+  it("T-18-009: openWatchSession — does not change HAS_POSITION (active ticket guard)", async () => {
+    await insertParentSymbol();
+    await insertSymbolState("BTC/USDT", "binance", "HAS_POSITION");
+    const db = getDb();
+
+    await openWatchSession(db, makeOpenParams());
+
+    // fsm_state must remain HAS_POSITION
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("HAS_POSITION");
+  });
+
+  it("T-18-009: openWatchSession replacing active session — fsm_state stays WATCHING", async () => {
+    await insertParentSymbol();
+    await insertSymbolState("BTC/USDT", "binance", "IDLE");
+    const db = getDb();
+
+    // First open: IDLE → WATCHING
+    await openWatchSession(db, makeOpenParams({ detectionType: "BB4_TOUCH" }));
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("WATCHING");
+
+    // Second open (replaces first): fsm_state should remain WATCHING
+    // The WHERE clause only transitions IDLE → WATCHING, so WATCHING is a no-op
+    await openWatchSession(db, makeOpenParams({ detectionType: "SQUEEZE_BREAKOUT" }));
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("WATCHING");
+  });
+
+  it("T-18-009: invalidateWatchSession — WATCHING → IDLE", async () => {
+    await insertParentSymbol();
+    await insertSymbolState("BTC/USDT", "binance", "IDLE");
+    const db = getDb();
+
+    const session = await openWatchSession(db, makeOpenParams());
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("WATCHING");
+
+    await invalidateWatchSession(db, session.id, "bias_changed");
+
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("IDLE");
+  });
+
+  it("T-18-009: invalidateWatchSession — does not change HAS_POSITION (active ticket guard)", async () => {
+    await insertParentSymbol();
+    await insertSymbolState("BTC/USDT", "binance", "IDLE");
+    const db = getDb();
+
+    // Open to get a session ID, then manually force HAS_POSITION (simulating ticket creation)
+    const session = await openWatchSession(db, makeOpenParams());
+    const pool = getPool();
+    await pool`
+      UPDATE symbol_state SET fsm_state = 'HAS_POSITION'
+      WHERE symbol = 'BTC/USDT' AND exchange = 'binance'
+    `;
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("HAS_POSITION");
+
+    await invalidateWatchSession(db, session.id, "price_breakout");
+
+    // Must not have been downgraded to IDLE
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("HAS_POSITION");
+  });
+
+  it("T-18-009: invalidateWatchSession on already-invalidated session — no fsm_state change", async () => {
+    await insertParentSymbol();
+    await insertSymbolState("BTC/USDT", "binance", "IDLE");
+    const db = getDb();
+
+    const session = await openWatchSession(db, makeOpenParams());
+
+    // First invalidation: WATCHING → IDLE
+    await invalidateWatchSession(db, session.id, "first_reason");
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("IDLE");
+
+    // Second invalidation on already-IDLE: no change
+    await invalidateWatchSession(db, session.id, "second_reason");
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("IDLE");
+  });
+
+  it("T-18-009: full lifecycle — IDLE → WATCHING (openWatchSession) → IDLE (invalidateWatchSession)", async () => {
+    await insertParentSymbol();
+    await insertSymbolState("BTC/USDT", "binance", "IDLE");
+    const db = getDb();
+
+    // Start: IDLE
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("IDLE");
+
+    // Open: IDLE → WATCHING
+    const session = await openWatchSession(db, makeOpenParams());
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("WATCHING");
+
+    // Invalidate: WATCHING → IDLE
+    await invalidateWatchSession(db, session.id, "bias_changed");
+    expect(await getFsmState("BTC/USDT", "binance")).toBe("IDLE");
+  });
 });

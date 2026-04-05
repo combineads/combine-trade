@@ -94,7 +94,7 @@ function checkWickRatio(
   }
 
   const threshold = WICK_RATIO_THRESHOLD[timeframe];
-  if (gt(wick, threshold)) {
+  if (lt(wick, threshold)) {
     return "wick_ratio_exceeded";
   }
 
@@ -102,14 +102,18 @@ function checkWickRatio(
 }
 
 /**
- * Box range center filter.
+ * Box range center filter — PRD §7.6 L263 (금지 2).
  *
- * Entry price (candle.close) must fall within the MA20-anchored boundary:
- *   [sma20 - range_20 * 0.15, sma20 + range_20 * 0.15]
- *   where range_20 = bb20.upper - bb20.lower
+ * Blocks entries when the entry price is NEAR the MA20 midpoint:
+ *   |close - sma20| < range_20 * 0.15  →  block ("inside_box_center")
+ *
+ * where range_20 = bb20.upper - bb20.lower
+ *
+ * Equivalently: close is strictly inside (sma20 - margin, sma20 + margin).
+ * Boundary values (|diff| == margin) are NOT blocked (strict less-than).
  *
  * Passes when sma20 or bb20 is null (no indicator data yet).
- * Session box fields are ignored in favor of the indicator-based boundary.
+ * BB4 touch entries at the center of BB20 range are false signals.
  */
 function checkBoxRange(candle: Candle, indicators: AllIndicators): string | null {
   const { sma20, bb20 } = indicators;
@@ -125,8 +129,9 @@ function checkBoxRange(candle: Candle, indicators: AllIndicators): string | null
 
   const entryPrice = candle.close;
 
-  if (lt(entryPrice, lowerBound) || gt(entryPrice, upperBound)) {
-    return "outside_box_range";
+  // Block when close is STRICTLY INSIDE the center zone (PRD: strict < on both sides)
+  if (gt(entryPrice, lowerBound) && lt(entryPrice, upperBound)) {
+    return "inside_box_center";
   }
 
   return null;

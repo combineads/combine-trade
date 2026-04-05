@@ -109,7 +109,7 @@ L3  candles, vectors       — core, db, config, indicators
 L4  filters, knn           — core, db, config, indicators, vectors
 L5  signals, positions, limits — core, db, config, indicators, filters
 L6  orders, exits, labeling    — core, db, positions, exchanges (via ports)
-L7  reconciliation, notifications, transfer, kpi — core, db, config, exchanges (via ports)
+L7  reconciliation, notifications, transfer, kpi [EP-16 미구현] — core, db, config, exchanges (via ports)
 L8  api, backtest              — may read from L0-L7 (specific imports listed below)
 L9  daemon                     — orchestrates all layers
 ```

@@ -5,7 +5,8 @@ import type { EventLogRow } from "@/db/schema";
 import { eventLogTable } from "@/db/schema";
 
 // ---------------------------------------------------------------------------
-// EVENT_TYPES — canonical list from DATA_MODEL.md (10 event types)
+// EVENT_TYPES — canonical list from DATA_MODEL.md
+// Append-only — never remove existing entries.
 // ---------------------------------------------------------------------------
 
 export const EVENT_TYPES = Object.freeze([
@@ -19,6 +20,16 @@ export const EVENT_TYPES = Object.freeze([
   "STATE_CHANGE",
   "SL_REGISTERED",
   "SL_MOVED",
+  // pipeline diagnostics
+  "PIPELINE_LATENCY",
+  "DAILY_BIAS_MISMATCH",
+  // crash recovery session events
+  "WATCH_SESSION_RESTORED",
+  "WATCH_SESSION_INVALIDATED_CRASH",
+  // transfer profit events (PRD §7.26)
+  "TRANSFER_SUCCESS",
+  "TRANSFER_FAILED",
+  "TRANSFER_SKIP",
 ] as const);
 
 export type EventType = (typeof EVENT_TYPES)[number];

@@ -15,7 +15,7 @@ Manual execution of the Double-BB trading strategy is subject to human emotion, 
 - Trade block system (market open, 3-star economic events, funding rate, manual)
 - WATCHING state detection on 1H close (squeeze breakout, S/R confluence, BB4 touch)
 - Evidence Gate: BB4 touch detection with Double-B vs One-B classification
-- Safety Gate: wick ratio (5M: 0.1, 1M: 1.0), box range center, abnormal candle filters
+- Safety Gate: wick ratio (5M: 0.1, 1M: 1.0), box range center proximity block (|close - MA20| < BB20_range × 0.15 → entry rejected; price too close to center = false BB4 signal), abnormal candle filters
 - 1M noise filter: 5M MA20 direction must match daily bias (§7.7)
 - 5M/1M simultaneous signal: 1M priority (tighter SL → better R:R). 1H BB4 touch → A-grade (§7.16)
 - 202-dimensional vectorization: 38봉×5 candle features (190) + 12 strategy features, Median/IQR normalization (lookback=60, clamp(-3,3)→[0,1])

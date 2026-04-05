@@ -36,6 +36,54 @@ export type ParamResult = {
 };
 
 // ---------------------------------------------------------------------------
+// Tunable parameter whitelist (PRD §7.25)
+// ---------------------------------------------------------------------------
+
+/**
+ * The complete set of tunable parameter group/code combinations.
+ *
+ * Rules (PRD §7.25 L475–476):
+ *  - All KNN group codes are tunable.
+ *  - All FEATURE_WEIGHT group codes are tunable.
+ *  - Only SYMBOL_CONFIG.risk_pct is tunable (not the rest of SYMBOL_CONFIG).
+ *  - ANCHOR group is always blocked (structurally fixed).
+ *  - All other group/code combinations are blocked.
+ *
+ * The sentinel "*" means "all codes in this group are allowed".
+ */
+export const TUNABLE_PARAM_WHITELIST: ReadonlyArray<{ group: string; code: string }> = [
+  { group: "KNN", code: "*" },
+  { group: "FEATURE_WEIGHT", code: "*" },
+  { group: "SYMBOL_CONFIG", code: "risk_pct" },
+] as const;
+
+/**
+ * Checks whether a single ParamSpace entry is permitted by the whitelist.
+ */
+function isTunable(space: ParamSpace): boolean {
+  return TUNABLE_PARAM_WHITELIST.some(
+    (entry) => entry.group === space.group && (entry.code === "*" || entry.code === space.code),
+  );
+}
+
+/**
+ * Throws if any space in the array is not on the tunable whitelist.
+ * Also catches the ANCHOR group before it reaches rejectAnchorGroup.
+ *
+ * @throws {Error} "not in tunable whitelist" when a blocked param is found.
+ */
+export function assertTunableParams(spaces: ParamSpace[]): void {
+  for (const space of spaces) {
+    if (!isTunable(space)) {
+      throw new Error(
+        `ParamSpace "${space.group}.${space.code}" is not in tunable whitelist. ` +
+          "Only KNN.*, FEATURE_WEIGHT.*, and SYMBOL_CONFIG.risk_pct may be tuned.",
+      );
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
 
@@ -201,6 +249,13 @@ export async function runParameterSearch(
   topN = 5,
   randomSamples = 20,
 ): Promise<ParamResult[]> {
+  // Validate all parameter spaces against the tunable whitelist before any
+  // backtest runs. Throws immediately if a non-whitelisted space is found.
+  assertTunableParams(gridSpaces);
+  if (randomSpaces !== undefined) {
+    assertTunableParams(randomSpaces);
+  }
+
   const allResults: ParamResult[] = [];
 
   // ── Stage 1: Grid search ──────────────────────────────────────────────────

@@ -20,7 +20,7 @@ import type {
   VectorTimeframe,
 } from "@/core/types";
 import type { DbInstance } from "@/db/pool";
-import type { TicketRow } from "@/db/schema";
+import type { NewSymbolStateRow, SymbolStateRow, TicketRow } from "@/db/schema";
 import {
   signalDetailTable,
   signalTable,
@@ -468,4 +468,97 @@ export async function getTicketById(db: DbInstance, ticketId: string): Promise<T
   const rows = await db.select().from(ticketTable).where(eq(ticketTable.id, ticketId)).limit(1);
 
   return rows[0] ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// upsertSymbolState
+// ---------------------------------------------------------------------------
+
+/**
+ * Partial update shape for upsertSymbolState.
+ * Only the fields explicitly listed here can be patched.
+ * All fields are optional — omitting a field leaves it unchanged.
+ */
+export type SymbolStatePatch = Partial<
+  Pick<
+    NewSymbolStateRow,
+    | "fsm_state"
+    | "execution_mode"
+    | "daily_bias"
+    | "daily_open"
+    | "session_box_high"
+    | "session_box_low"
+    | "losses_today"
+    | "losses_session"
+    | "losses_this_1h_5m"
+    | "losses_this_1h_1m"
+  >
+>;
+
+/**
+ * Upserts a SymbolState row using INSERT ... ON CONFLICT (symbol, exchange) DO UPDATE.
+ *
+ * - If no row exists for (symbol, exchange), inserts with the provided patch values
+ *   and column defaults (fsm_state='IDLE', execution_mode='analysis').
+ * - If a row already exists, updates only the fields present in `patch`.
+ * - Always sets `updated_at` to now on both insert and update paths.
+ *
+ * @param db       - Drizzle ORM instance.
+ * @param symbol   - Trading pair symbol (e.g. "BTC/USDT").
+ * @param exchange - Exchange identifier (e.g. "binance").
+ * @param patch    - Fields to set on insert conflict update.
+ * @returns The upserted SymbolStateRow.
+ */
+export async function upsertSymbolState(
+  db: DbInstance,
+  symbol: string,
+  exchange: string,
+  patch: SymbolStatePatch,
+): Promise<SymbolStateRow> {
+  const now = new Date();
+
+  const insertValues: NewSymbolStateRow = {
+    symbol,
+    exchange,
+    fsm_state: patch.fsm_state ?? "IDLE",
+    execution_mode: patch.execution_mode ?? "analysis",
+    daily_bias: patch.daily_bias ?? null,
+    daily_open: patch.daily_open ?? null,
+    session_box_high: patch.session_box_high ?? null,
+    session_box_low: patch.session_box_low ?? null,
+    losses_today: patch.losses_today ?? "0",
+    losses_session: patch.losses_session ?? 0,
+    losses_this_1h_5m: patch.losses_this_1h_5m ?? 0,
+    losses_this_1h_1m: patch.losses_this_1h_1m ?? 0,
+    updated_at: now,
+  };
+
+  // Build the SET clause for the conflict update path — only patch fields
+  const updateSet: Record<string, unknown> = { updated_at: now };
+  if (patch.fsm_state !== undefined) updateSet.fsm_state = patch.fsm_state;
+  if (patch.execution_mode !== undefined) updateSet.execution_mode = patch.execution_mode;
+  if (patch.daily_bias !== undefined) updateSet.daily_bias = patch.daily_bias;
+  if (patch.daily_open !== undefined) updateSet.daily_open = patch.daily_open;
+  if (patch.session_box_high !== undefined) updateSet.session_box_high = patch.session_box_high;
+  if (patch.session_box_low !== undefined) updateSet.session_box_low = patch.session_box_low;
+  if (patch.losses_today !== undefined) updateSet.losses_today = patch.losses_today;
+  if (patch.losses_session !== undefined) updateSet.losses_session = patch.losses_session;
+  if (patch.losses_this_1h_5m !== undefined) updateSet.losses_this_1h_5m = patch.losses_this_1h_5m;
+  if (patch.losses_this_1h_1m !== undefined) updateSet.losses_this_1h_1m = patch.losses_this_1h_1m;
+
+  const rows = await db
+    .insert(symbolStateTable)
+    .values(insertValues)
+    .onConflictDoUpdate({
+      target: [symbolStateTable.symbol, symbolStateTable.exchange],
+      set: updateSet,
+    })
+    .returning();
+
+  const row = rows[0];
+  if (!row) {
+    throw new Error(`upsertSymbolState: no row returned for ${symbol}@${exchange}`);
+  }
+
+  return row;
 }

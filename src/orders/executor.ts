@@ -89,6 +89,25 @@ export type ExecuteEntryParams = {
    * The caller is responsible for fetching current bid/ask from the adapter.
    */
   spreadCheck?: SpreadCheckConfig;
+  /**
+   * Optional event log writer. When provided, executeEntry will record
+   * SLIPPAGE_ABORT (spread check failure) and SLIPPAGE_CLOSE (slippage exceeded)
+   * events. When absent, executor behaves as before (no event written).
+   * Fire-and-forget — errors are swallowed to preserve backward compatibility.
+   */
+  insertEvent?: (
+    eventType: string,
+    data: Record<string, unknown>,
+    meta?: { symbol?: string; exchange?: string },
+  ) => Promise<void>;
+  /**
+   * Exchange capability flags read from CommonCode EXCHANGE config.
+   * When absent, safe fallback applies: supports_one_step_order=false (2-step).
+   * Injected by the caller rather than read directly to keep executor testable.
+   */
+  exchangeConfig?: {
+    supports_one_step_order: boolean;
+  };
 };
 
 /** Lightweight order row (pre-DB insert shape) returned from the executor */
@@ -365,6 +384,8 @@ export async function executeEntry(params: ExecuteEntryParams): Promise<ExecuteE
     leverage,
     slippageConfig,
     spreadCheck,
+    insertEvent,
+    exchangeConfig,
   } = params;
 
   // 1. Mode guard
@@ -396,6 +417,26 @@ export async function executeEntry(params: ExecuteEntryParams): Promise<ExecuteE
         maxSpreadPct: spreadCheck.maxSpreadPct.toString(),
       });
 
+      // Fire-and-forget event log — errors swallowed for backward compatibility
+      if (insertEvent !== undefined) {
+        insertEvent(
+          "SLIPPAGE_ABORT",
+          {
+            symbol,
+            exchange,
+            spreadPct: spreadResult.spreadPct.toString(),
+            maxSpreadPct: spreadCheck.maxSpreadPct.toString(),
+          },
+          { symbol, exchange },
+        ).catch((err: unknown) => {
+          log.warn("insertEvent SLIPPAGE_ABORT failed", {
+            symbol,
+            exchange,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+      }
+
       return {
         success: false,
         entryOrder: null,
@@ -409,18 +450,54 @@ export async function executeEntry(params: ExecuteEntryParams): Promise<ExecuteE
   // 3. Set leverage
   await adapter.setLeverage(leverage, symbol);
 
-  // 3. Attempt bracket order
-  const bracketResult = await attemptBracketEntry(adapter, symbol, direction, size, slPrice);
+  // 4. Entry order — bracket (one-step) or plain (2-step) based on exchange flag.
+  // Safe fallback: when exchangeConfig is absent or supports_one_step_order is false,
+  // skip bracket and proceed directly to 2-step (no unnecessary API round-trip).
+  const supportsOneStep = exchangeConfig?.supports_one_step_order ?? false;
 
   let entryResult: OrderResult;
   let bracketWorked = false;
 
-  if (bracketResult.success && bracketResult.entryResult) {
-    entryResult = bracketResult.entryResult;
-    bracketWorked = true;
+  if (supportsOneStep) {
+    // Attempt bracket order (entry + SL in one call)
+    const bracketResult = await attemptBracketEntry(adapter, symbol, direction, size, slPrice);
+
+    if (bracketResult.success && bracketResult.entryResult) {
+      entryResult = bracketResult.entryResult;
+      bracketWorked = true;
+    } else {
+      // Bracket failed — fall back to 2-step plain entry
+      log.info("bracket order not supported, falling back to 2-step", { symbol, exchange });
+      try {
+        entryResult = await attemptPlainEntry(adapter, symbol, direction, size);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        log.error("entry order failed", { symbol, exchange, error: errorMessage });
+
+        const failedEntry = recordOrder({
+          exchange,
+          orderType: "ENTRY",
+          status: "FAILED",
+          side: entrySide(direction),
+          size,
+          intentId,
+          idempotencyKey: crypto.randomUUID(),
+          expectedPrice: entryPrice,
+          errorMessage,
+        });
+
+        return {
+          success: false,
+          entryOrder: failedEntry,
+          slOrder: null,
+          aborted: true,
+          abortReason: `Entry order failed: ${errorMessage}`,
+        };
+      }
+    }
   } else {
-    // 4. Fallback: plain entry without bracket
-    log.info("bracket order not supported, falling back to 2-step", { symbol, exchange });
+    // supports_one_step_order=false (or absent) → skip bracket, go straight to 2-step
+    log.info("one-step order not supported, using 2-step entry", { symbol, exchange });
     try {
       entryResult = await attemptPlainEntry(adapter, symbol, direction, size);
     } catch (err) {
@@ -503,6 +580,28 @@ export async function executeEntry(params: ExecuteEntryParams): Promise<ExecuteE
         direction,
         intentId,
       });
+
+      // Fire-and-forget event log — errors swallowed for backward compatibility
+      if (insertEvent !== undefined) {
+        insertEvent(
+          "SLIPPAGE_CLOSE",
+          {
+            symbol,
+            exchange,
+            slippagePct: slippageResult.slippagePct.toString(),
+            maxSpreadPct: slippageConfig.maxSpreadPct.toString(),
+            filledPrice: slippageResult.filledPrice.toString(),
+            expectedPrice: slippageResult.expectedPrice.toString(),
+          },
+          { symbol, exchange },
+        ).catch((err: unknown) => {
+          log.warn("insertEvent SLIPPAGE_CLOSE failed", {
+            symbol,
+            exchange,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+      }
 
       return {
         success: false,

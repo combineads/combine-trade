@@ -129,6 +129,14 @@ export type CrashRecoveryDeps = {
 
   /** Send a Slack alert (fire-and-forget — never throws) */
   sendSlackAlert: (details: Record<string, string | number | boolean | undefined>) => Promise<void>;
+
+  /**
+   * Set fsm_state for a (symbol, exchange) pair in symbol_state.
+   * Called with "HAS_POSITION" for every matched position during recovery.
+   * Must be idempotent — safe to call even if state is already HAS_POSITION.
+   * PRD §7.18 L371: "있음 + DB 티켓 있음 → OPEN 복원"
+   */
+  setFsmState: (symbol: string, exchange: Exchange, state: string) => Promise<void>;
 };
 
 // ---------------------------------------------------------------------------
@@ -238,6 +246,27 @@ export async function recoverFromCrash(deps: CrashRecoveryDeps): Promise<CrashRe
         symbol: position.symbol,
         exchange: position.exchange,
         error: checkErrMsg,
+      });
+      errors.push(msg);
+    }
+
+    // Explicitly restore fsm_state = HAS_POSITION for matched positions.
+    // PRD §7.18 L371: "있음 + DB 티켓 있음 → OPEN 복원"
+    // Called regardless of SL check outcome — idempotent by contract.
+    try {
+      await deps.setFsmState(position.symbol, position.exchange, "HAS_POSITION");
+      log.info("fsm_state_restored", {
+        symbol: position.symbol,
+        exchange: position.exchange,
+        ticketId: ticket.id,
+      });
+    } catch (fsmErr) {
+      const fsmErrMsg = fsmErr instanceof Error ? fsmErr.message : String(fsmErr);
+      const msg = `${position.symbol}:${position.exchange}: setFsmState HAS_POSITION failed: ${fsmErrMsg}`;
+      log.error("set_fsm_state_failed", {
+        symbol: position.symbol,
+        exchange: position.exchange,
+        error: fsmErrMsg,
       });
       errors.push(msg);
     }

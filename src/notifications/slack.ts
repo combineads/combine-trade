@@ -26,6 +26,7 @@ export const SlackEventType = {
   TRANSFER_FAILED: "TRANSFER_FAILED",
   TRANSFER_SKIP: "TRANSFER_SKIP",
   TRANSFER_SURPLUS_ALERT: "TRANSFER_SURPLUS_ALERT",
+  ECONOMIC_CALENDAR_FAILED: "ECONOMIC_CALENDAR_FAILED",
 } as const;
 
 export type SlackEventType = (typeof SlackEventType)[keyof typeof SlackEventType];
@@ -67,6 +68,7 @@ const EVENT_COLORS: Record<SlackEventType, string> = {
   [SlackEventType.TRANSFER_FAILED]: COLOR_RED,
   [SlackEventType.TRANSFER_SKIP]: COLOR_ORANGE,
   [SlackEventType.TRANSFER_SURPLUS_ALERT]: COLOR_ORANGE,
+  [SlackEventType.ECONOMIC_CALENDAR_FAILED]: COLOR_RED,
 };
 
 // ---------------------------------------------------------------------------
@@ -86,6 +88,7 @@ const EVENT_EMOJIS: Record<SlackEventType, string> = {
   [SlackEventType.TRANSFER_FAILED]: ":rotating_light:",
   [SlackEventType.TRANSFER_SKIP]: ":fast_forward:",
   [SlackEventType.TRANSFER_SURPLUS_ALERT]: ":mega:",
+  [SlackEventType.ECONOMIC_CALENDAR_FAILED]: ":calendar:",
 };
 
 // ---------------------------------------------------------------------------
@@ -141,11 +144,18 @@ export async function getWebhookUrl(db?: AnyDb): Promise<string | null> {
 
 /**
  * Builds a Slack Block Kit payload for the given event type and details.
+ *
+ * Special key: `slackPrefix` — when present in details, its value is prepended
+ * to the top-level `text` field of the payload (e.g. "<!channel>" for @channel
+ * mention on urgent alerts). The key is NOT rendered as a detail field.
  */
 export function formatMessage(eventType: SlackEventType, details: SlackAlertDetails): SlackPayload {
   const emoji = EVENT_EMOJIS[eventType];
   const color = EVENT_COLORS[eventType];
   const timestamp = new Date().toISOString();
+
+  // Extract optional slackPrefix — not rendered as a field
+  const slackPrefix = details.slackPrefix !== undefined ? String(details.slackPrefix) : undefined;
 
   // Header block
   const headerBlock: SlackBlock = {
@@ -157,10 +167,11 @@ export function formatMessage(eventType: SlackEventType, details: SlackAlertDeta
     },
   };
 
-  // Fields block — build from details
+  // Fields block — build from details (skip slackPrefix)
   const fieldElements: Array<{ type: string; text: string }> = [];
 
   for (const [key, value] of Object.entries(details)) {
+    if (key === "slackPrefix") continue;
     if (value !== undefined) {
       fieldElements.push({
         type: "mrkdwn",
@@ -189,7 +200,7 @@ export function formatMessage(eventType: SlackEventType, details: SlackAlertDeta
     ],
   });
 
-  return {
+  const payload: SlackPayload = {
     blocks,
     attachments: [
       {
@@ -198,6 +209,13 @@ export function formatMessage(eventType: SlackEventType, details: SlackAlertDeta
       },
     ],
   };
+
+  // Add top-level text with prefix for @channel mention support
+  if (slackPrefix !== undefined) {
+    (payload as Record<string, unknown>).text = `${slackPrefix} ${eventType}`;
+  }
+
+  return payload;
 }
 
 // ---------------------------------------------------------------------------

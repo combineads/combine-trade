@@ -13,8 +13,13 @@
 import type { BacktestConfig } from "@/backtest/engine";
 import type { ParamSet, ParamSpace } from "@/backtest/param-search";
 import { printReport } from "@/backtest/reporter";
-import type { WfoConfig } from "@/backtest/wfo";
+import type { WfoConfig, WfoDeps } from "@/backtest/wfo";
 import { generateWfoWindows, runWfo } from "@/backtest/wfo";
+import { createLogger } from "@/core/logger";
+import type { DbInstance } from "@/db/pool";
+import type { NewBacktestRow } from "@/db/schema";
+
+const log = createLogger("cli");
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -149,6 +154,26 @@ export function parseArgs(argv: string[]): CliArgs {
 }
 
 // ---------------------------------------------------------------------------
+// saveBacktestResult — fire-and-forget DB persistence
+// ---------------------------------------------------------------------------
+
+/**
+ * Inserts a single row into the `backtests` table.
+ * Returns the newly assigned row UUID so WFO parent/child rows can be linked.
+ *
+ * Exported so tests can call it directly; the CLI uses it via runCli.
+ */
+export async function saveBacktestResult(db: DbInstance, row: NewBacktestRow): Promise<string> {
+  const { backtestTable } = await import("@/db/schema");
+  const result = await db.insert(backtestTable).values(row).returning({ id: backtestTable.id });
+  const inserted = result[0];
+  if (inserted === undefined) {
+    throw new Error("saveBacktestResult: INSERT returned no rows");
+  }
+  return inserted.id;
+}
+
+// ---------------------------------------------------------------------------
 // runCli — thin orchestrator (not unit-tested; requires DB + exchange setup)
 // ---------------------------------------------------------------------------
 
@@ -203,6 +228,18 @@ export async function runCli(args: CliArgs): Promise<void> {
       },
     });
 
+  // Acquire DB instance once; used for saveResult in both modes.
+  // initDb is lazy: if the DB is already initialised this is a no-op.
+  let db: DbInstance | null = null;
+  try {
+    const { initDb, getDb } = await import("@/db/pool");
+    await initDb();
+    db = getDb();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.warn("could not initialise DB — results will not be persisted", { message });
+  }
+
   if (args.mode === "backtest") {
     const loadCandles = async () => [];
     const adapter = makeAdapter(args.start);
@@ -211,6 +248,22 @@ export async function runCli(args: CliArgs): Promise<void> {
     const result = await runner.run(async (_candle, _adapter, _addTrade) => {}, adapter);
     const metrics = calcFullMetrics(result.trades);
     printReport(config, metrics, result.trades);
+
+    // Persist result — fire-and-forget: DB errors must not abort the CLI.
+    if (db !== null) {
+      saveBacktestResult(db, {
+        run_type: "BACKTEST",
+        symbol: config.symbol,
+        exchange: config.exchange,
+        start_date: config.startDate,
+        end_date: config.endDate,
+        config_snapshot: config as unknown as Record<string, unknown>,
+        results: metrics as unknown as Record<string, unknown>,
+      }).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        log.warn("saveBacktestResult failed — result not persisted", { message });
+      });
+    }
   } else {
     const wfoConfig: WfoConfig = {
       isMonths: 6,
@@ -240,11 +293,51 @@ export async function runCli(args: CliArgs): Promise<void> {
       return results.map((r) => ({ params: r.params, metrics: r.metrics }));
     };
 
-    const wfoResult = await runWfo(wfoConfig, [], {
+    // Build the WFO deps object. Only add saveResult when the DB is available,
+    // because exactOptionalPropertyTypes prohibits assigning undefined to an
+    // optional property — the key must be absent when there is no DB.
+    const capturedDb = db;
+    const wfoDeps: WfoDeps = {
       generateWindows: generateWfoWindows,
       searchParams: searchParamsFn,
       runBacktest: runBacktestWindow,
-    });
+    };
+
+    if (capturedDb !== null) {
+      // saveResult maps WfoDeps callback shape → NewBacktestRow for the backtests table.
+      wfoDeps.saveResult = async ({
+        runType,
+        parentId,
+        windowIndex,
+        config: cfg,
+        results: res,
+      }) => {
+        const cfgMap = cfg as Record<string, unknown>;
+        return saveBacktestResult(capturedDb, {
+          run_type: "WFO",
+          symbol: args.symbol,
+          exchange: args.exchange,
+          // For parent rows use the overall WFO date range; for child windows the
+          // isStart/oosEnd dates are available in cfg (set by wfo.ts).
+          start_date:
+            cfgMap["isStart"] !== undefined ? new Date(cfgMap["isStart"] as string) : args.start,
+          end_date:
+            cfgMap["oosEnd"] !== undefined ? new Date(cfgMap["oosEnd"] as string) : args.end,
+          config_snapshot: cfgMap,
+          results: res as Record<string, unknown>,
+          parent_id: parentId ?? null,
+          window_index: windowIndex ?? null,
+        }).catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : String(err);
+          log.warn("WFO saveResult failed — window not persisted", { runType, message });
+          // Return empty string: keeps WFO running; caller ignores the returned ID
+          // on catch paths.
+          return "";
+        });
+      };
+    }
+
+    const wfoResult = await runWfo(wfoConfig, [], wfoDeps);
 
     process.stdout.write(
       `WFO complete — ${wfoResult.windows.length} valid windows, ` +

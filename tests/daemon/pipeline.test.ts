@@ -138,14 +138,17 @@ function makeIndicators(overrides?: Partial<AllIndicators>): AllIndicators {
     sma20: new Decimal("40000"),
     prevSma20: new Decimal("39900"),
     sma20_5m: null,
+    sma20History: [],
     sma60: new Decimal("39000"),
     sma120: new Decimal("38000"),
     ema20: new Decimal("40000"),
     ema60: new Decimal("39000"),
     ema120: new Decimal("38000"),
     rsi14: new Decimal("50"),
+    rsiHistory: [],
     atr14: new Decimal("100"),
     squeeze: "normal",
+    bandwidthHistory: [],
     ...overrides,
   };
 }
@@ -1714,8 +1717,8 @@ describe("handleCandleClose", () => {
       expect(mismatchCall).toBeUndefined();
     });
 
-    it("bias check does not fire when KNN decision is FAIL (check is post-KNN)", async () => {
-      const symbol = "BIAS_CHECK_AFTER_KNN_FAIL";
+    it("bias mismatch fires BEFORE KNN (direction check is pre-KNN since T-19-007)", async () => {
+      const symbol = "BIAS_CHECK_BEFORE_KNN";
       const deps = buildDeps({
         isTradeBlocked: mock(async () => ({ blocked: false })),
         getSymbolState: mock(async () =>
@@ -1730,12 +1733,12 @@ describe("handleCandleClose", () => {
       const candle = makeCandle({ symbol, timeframe: "5M" });
       await handleCandleClose(candle, "5M", [makeActiveSymbol({ symbol })], deps);
 
-      // Pipeline exits at KNN check — no DAILY_BIAS_MISMATCH event should be inserted
+      // T-19-007: direction check moved BEFORE KNN → mismatch fires regardless of KNN result
       const insertEventMock = deps.insertEvent as ReturnType<typeof mock>;
       const mismatchCall = insertEventMock.mock.calls.find(
         (args) => (args[1] as { event_type: string }).event_type === "DAILY_BIAS_MISMATCH",
       );
-      expect(mismatchCall).toBeUndefined();
+      expect(mismatchCall).toBeDefined();
     });
   });
 

@@ -54,14 +54,17 @@ function makeIndicators(overrides: Partial<AllIndicators> = {}): AllIndicators {
     sma20: d("100"),
     prevSma20: d("99"),
     sma20_5m: null,
+    sma20History: [],
     sma60: d("90"),
     sma120: d("80"),
     ema20: d("100"),
     ema60: d("90"),
     ema120: d("80"),
     rsi14: d("50"),
+    rsiHistory: [],
     atr14: d("10"),
     squeeze: "normal",
+    bandwidthHistory: [],
     ...overrides,
   };
 }
@@ -116,14 +119,17 @@ describe("strategy-features", () => {
         sma20: null,
         prevSma20: null,
         sma20_5m: null,
+        sma20History: [],
         sma60: null,
         sma120: null,
         ema20: null,
         ema60: null,
         ema120: null,
         rsi14: null,
+        rsiHistory: [],
         atr14: null,
         squeeze: "normal",
+        bandwidthHistory: [],
       };
       const result = extractStrategyFeatures(candle, candles, nullIndicators);
       expect(result).toHaveLength(12);

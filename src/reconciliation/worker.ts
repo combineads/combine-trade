@@ -213,6 +213,8 @@ export async function runOnce(
             exchange: position.exchange,
             size: position.size.toString(),
             side: position.side,
+            // <!channel> triggers Slack @channel mention for panic close urgency
+            slackPrefix: "<!channel>",
           })
           .catch((alertErr: unknown) => {
             log.warn("sendSlackAlert failed after panic close", {

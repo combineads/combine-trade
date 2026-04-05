@@ -5,6 +5,9 @@
 import type { FullMetrics } from "@/backtest/metrics";
 import type { ParamSet, ParamSpace } from "@/backtest/param-search";
 import { type Decimal, d } from "@/core/decimal";
+import { createLogger } from "@/core/logger";
+
+const log = createLogger("wfo");
 
 /**
  * Configuration for Walk-Forward Optimization window generation.
@@ -128,6 +131,16 @@ export type WfoResult = {
    * null when no valid windows exist.
    */
   bestParams: ParamSet | null;
+  /**
+   * Whether the WFO run passed the quality gate.
+   * true iff: valid windows exist AND avg OOS expectancy > 0 AND overallEfficiency > 0.5
+   */
+  passed: boolean;
+  /**
+   * Human-readable reason for the gate outcome.
+   * "PASS" | "FAIL:no_valid_windows" | "FAIL:oos_expectancy_lte_0" | "FAIL:efficiency_lte_0.5"
+   */
+  gateReason: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -162,6 +175,11 @@ export type WfoDeps = {
     config: unknown;
     results: unknown;
   }) => Promise<string>;
+  /**
+   * Optional: called with bestParams when the WFO gate passes.
+   * Omit for dry-run mode — PASS result will be returned but no DB write occurs.
+   */
+  updateConfig?: (params: ParamSet) => Promise<void>;
 };
 
 // ---------------------------------------------------------------------------
@@ -290,5 +308,44 @@ export async function runWfo(
     }
   }
 
-  return { windows: windowResults, overallEfficiency, bestParams };
+  // ── Gate evaluation ────────────────────────────────────────────────────────
+  // PRD §7.25 L478-479: OOS expectancy > 0 AND efficiency > 0.5 → PASS
+
+  let passed: boolean;
+  let gateReason: string;
+
+  const HALF = d("0.5");
+
+  if (windowResults.length === 0) {
+    passed = false;
+    gateReason = "FAIL:no_valid_windows";
+  } else {
+    // Average OOS expectancy across valid windows
+    let oosExpectancySum = ZERO;
+    for (const wr of windowResults) {
+      oosExpectancySum = oosExpectancySum.plus(wr.oosMetrics.expectancy);
+    }
+    const avgOosExpectancy = oosExpectancySum.dividedBy(d(String(windowResults.length)));
+
+    if (!avgOosExpectancy.greaterThan(ZERO)) {
+      passed = false;
+      gateReason = "FAIL:oos_expectancy_lte_0";
+    } else if (!overallEfficiency.greaterThan(HALF)) {
+      passed = false;
+      gateReason = "FAIL:efficiency_lte_0.5";
+    } else {
+      passed = true;
+      gateReason = "PASS";
+    }
+  }
+
+  if (passed) {
+    if (deps.updateConfig !== undefined && bestParams !== null) {
+      await deps.updateConfig(bestParams);
+    }
+  } else {
+    log.warn("WFO gate FAIL", { details: { gateReason } });
+  }
+
+  return { windows: windowResults, overallEfficiency, bestParams, passed, gateReason };
 }

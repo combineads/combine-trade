@@ -17,7 +17,12 @@ import type Decimal from "decimal.js";
 import { d } from "@/core/decimal";
 import type { CloseReason, SignalType, TradeResult, VectorGrade } from "@/core/types";
 import type { DbInstance } from "@/db/pool";
-import { closeTicket, type LabelingDeps } from "./ticket-manager";
+import {
+  closeTicket,
+  type LabelingDeps,
+  type SymbolStatePatch,
+  upsertSymbolState,
+} from "./ticket-manager";
 
 // ---------------------------------------------------------------------------
 // Pure labeling functions (mirrors labeling/engine.ts — injected via deps)
@@ -658,5 +663,125 @@ describe("closeTicket() — labelingDeps absent (Panic Close scenario)", () => {
 
     expect(record.committed).toBe(true);
     expect(record.updateQueries.filter((q) => q.table === "vectors")).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T-19-007: upsertSymbolState tests
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal mock DB for upsertSymbolState — records insert+onConflictDoUpdate calls.
+ */
+function makeUpsertMockDb(opts: {
+  /** Simulated existing row. If present, onConflictDoUpdate path fires. */
+  existingRow?: Record<string, unknown>;
+}): {
+  db: DbInstance;
+  insertedValues: Record<string, unknown>[];
+  onConflictSets: Record<string, unknown>[];
+  returnedRows: Record<string, unknown>[];
+} {
+  const insertedValues: Record<string, unknown>[] = [];
+  const onConflictSets: Record<string, unknown>[] = [];
+
+  const returnedRow = {
+    id: "ss-1",
+    symbol: "BTC/USDT",
+    exchange: "binance",
+    fsm_state: "IDLE",
+    execution_mode: "analysis",
+    daily_bias: null,
+    daily_open: null,
+    session_box_high: null,
+    session_box_low: null,
+    losses_today: "0",
+    losses_session: 0,
+    losses_this_1h_5m: 0,
+    losses_this_1h_1m: 0,
+    updated_at: new Date(),
+    ...(opts.existingRow ?? {}),
+  };
+  const returnedRows: Record<string, unknown>[] = [returnedRow];
+
+  // biome-ignore lint/suspicious/noExplicitAny: mock needs loose typing
+  const db: any = {
+    insert: (_table: unknown) => ({
+      values: (vals: Record<string, unknown>) => {
+        insertedValues.push(vals);
+        return {
+          onConflictDoUpdate: (conflictOpts: { target: unknown; set: Record<string, unknown> }) => {
+            onConflictSets.push(conflictOpts.set);
+            return {
+              returning: () => Promise.resolve(returnedRows),
+            };
+          },
+        };
+      },
+    }),
+    // Satisfy DbInstance shape — upsertSymbolState doesn't use transaction
+    transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(db),
+  };
+
+  return { db: db as DbInstance, insertedValues, onConflictSets, returnedRows };
+}
+
+describe("T-19-007: upsertSymbolState — INSERT...ON CONFLICT DO UPDATE", () => {
+  it("new symbol → INSERT values include symbol, exchange, and patch fields", async () => {
+    const { db, insertedValues } = makeUpsertMockDb({});
+
+    const patch: SymbolStatePatch = { fsm_state: "IDLE", execution_mode: "live" };
+    await upsertSymbolState(db, "BTC/USDT", "binance", patch);
+
+    expect(insertedValues.length).toBe(1);
+    const inserted = insertedValues[0];
+    expect(inserted?.symbol).toBe("BTC/USDT");
+    expect(inserted?.exchange).toBe("binance");
+    expect(inserted?.fsm_state).toBe("IDLE");
+    expect(inserted?.execution_mode).toBe("live");
+  });
+
+  it("existing symbol → onConflictDoUpdate set includes patched fields", async () => {
+    const { db, onConflictSets } = makeUpsertMockDb({
+      existingRow: { fsm_state: "WATCHING" },
+    });
+
+    const patch: SymbolStatePatch = { fsm_state: "HAS_POSITION" };
+    await upsertSymbolState(db, "BTC/USDT", "binance", patch);
+
+    expect(onConflictSets.length).toBe(1);
+    const updateSet = onConflictSets[0];
+    expect(updateSet?.fsm_state).toBe("HAS_POSITION");
+    // updated_at must always be set
+    expect(updateSet?.updated_at).toBeInstanceOf(Date);
+  });
+
+  it("patch with losses_today → update set includes losses_today", async () => {
+    const { db, onConflictSets } = makeUpsertMockDb({});
+
+    const patch: SymbolStatePatch = { losses_today: "500" };
+    await upsertSymbolState(db, "ETH/USDT", "okx", patch);
+
+    const updateSet = onConflictSets[0];
+    expect(updateSet?.losses_today).toBe("500");
+  });
+
+  it("returns the upserted row", async () => {
+    const { db } = makeUpsertMockDb({ existingRow: { fsm_state: "IDLE" } });
+
+    const row = await upsertSymbolState(db, "BTC/USDT", "binance", {});
+    expect(row.symbol).toBe("BTC/USDT");
+    expect(row.exchange).toBe("binance");
+  });
+
+  it("omitting a patch field → update set does NOT include that field", async () => {
+    const { db, onConflictSets } = makeUpsertMockDb({});
+
+    // Patch only fsm_state — daily_bias not included
+    const patch: SymbolStatePatch = { fsm_state: "IDLE" };
+    await upsertSymbolState(db, "BTC/USDT", "binance", patch);
+
+    const updateSet = onConflictSets[0];
+    expect("daily_bias" in (updateSet ?? {})).toBe(false);
   });
 });

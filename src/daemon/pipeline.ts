@@ -64,7 +64,7 @@ import type { PyramidCheckResult } from "@/positions/pyramid";
 import type { CreateTicketParams } from "@/positions/ticket-manager";
 import type { EvidenceResult } from "@/signals/evidence-gate";
 import type { SafetyResult } from "@/signals/safety-gate";
-import type { OpenWatchSessionParams, WatchingResult } from "@/signals/watching";
+import type { OpenWatchSessionParams, SRSymbolState, WatchingResult } from "@/signals/watching";
 import type { InsertVectorParams } from "@/vectors/repository";
 
 // ---------------------------------------------------------------------------
@@ -154,6 +154,7 @@ export type PipelineDeps = {
     candle: Candle,
     indicators: AllIndicators,
     dailyBias: DailyBias,
+    symbolState?: SRSymbolState,
   ) => WatchingResult | null;
   /** Fetch the active watch session for a symbol */
   getActiveWatchSession: (
@@ -674,7 +675,12 @@ async function process1H(
   } else {
     // No active session — try to detect a new one
     if (currentBias !== undefined) {
-      const watchingResult = deps.detectWatching(candle, indicators, currentBias);
+      // Build SRSymbolState from the loaded symbolState row so detectSRConfluence()
+      // can include daily_open as an S/R level (prev_day_high/low are not yet stored
+      // in symbol_state; those slots remain undefined and are excluded from S/R counting).
+      const srSymbolState: SRSymbolState | undefined =
+        symbolState != null ? { daily_open: symbolState.daily_open } : undefined;
+      const watchingResult = deps.detectWatching(candle, indicators, currentBias, srSymbolState);
       if (watchingResult !== null) {
         const session = await deps.openWatchSession(deps.db, {
           symbol,
@@ -868,7 +874,29 @@ async function processEntry(
     embedding,
   });
 
-  // ---- 8. KNN search ----
+  // ---- 8. daily_bias cross-validation (before KNN search to avoid unnecessary computation) ----
+  const dailyBias = symbolState?.daily_bias ?? null;
+  if (dailyBias !== null && dailyBias !== "NEUTRAL") {
+    const biasDirection = dailyBias === "LONG_ONLY" ? "LONG" : "SHORT";
+    if (evidence.direction !== biasDirection) {
+      log.info("pipeline_daily_bias_mismatch", {
+        symbol,
+        exchange,
+        details: { timeframe, evidenceDirection: evidence.direction, dailyBias },
+      });
+      await deps.insertEvent(deps.db, {
+        event_type: "DAILY_BIAS_MISMATCH",
+        symbol,
+        exchange,
+        ref_id: null,
+        ref_type: null,
+        data: { timeframe, evidenceDirection: evidence.direction, dailyBias },
+      });
+      return;
+    }
+  }
+
+  // ---- 9. KNN search ----
   const rawNeighbors = await deps.searchKnn(deps.db, embedding, {
     symbol,
     exchange,
@@ -877,7 +905,7 @@ async function processEntry(
     distanceMetric: knnConfig.distanceMetric,
   });
 
-  // ---- 9. Time-decay + decision ----
+  // ---- 10. Time-decay + decision ----
   const timeDecayConfig = await deps.loadTimeDecayConfig();
   const weightedNeighbors = deps.applyTimeDecay(rawNeighbors, new Date(), timeDecayConfig);
   const knnDecisionConfig = await deps.loadKnnDecisionConfig(deps.db);
@@ -903,29 +931,7 @@ async function processEntry(
     return;
   }
 
-  // ---- 9b. daily_bias cross-validation ----
-  const dailyBias = symbolState?.daily_bias ?? null;
-  if (dailyBias !== null && dailyBias !== "NEUTRAL") {
-    const biasDirection = dailyBias === "LONG_ONLY" ? "LONG" : "SHORT";
-    if (evidence.direction !== biasDirection) {
-      log.info("pipeline_daily_bias_mismatch", {
-        symbol,
-        exchange,
-        details: { timeframe, evidenceDirection: evidence.direction, dailyBias },
-      });
-      await deps.insertEvent(deps.db, {
-        event_type: "DAILY_BIAS_MISMATCH",
-        symbol,
-        exchange,
-        ref_id: null,
-        ref_type: null,
-        data: { timeframe, evidenceDirection: evidence.direction, dailyBias },
-      });
-      return;
-    }
-  }
-
-  // ---- 10. Skip execution in analysis mode ----
+  // ---- 11. Skip execution in analysis mode ----
   if (sym.executionMode === "analysis") {
     log.info("pipeline_entry_analysis_mode_skip", {
       symbol,
@@ -935,14 +941,14 @@ async function processEntry(
     return;
   }
 
-  // ---- 11. Get exchange adapter ----
+  // ---- 12. Get exchange adapter ----
   const adapter = deps.adapters.get(exchange);
   if (adapter === undefined) {
     log.error("pipeline_entry_no_adapter", { symbol, exchange });
     return;
   }
 
-  // ---- 12. Compute entry size + load slippage config ----
+  // ---- 13. Compute entry size + load slippage config ----
   const { size, leverage } = await deps.computeEntrySize(adapter, symbol, exchange, evidence);
   const slippageConfig = await deps.loadSlippageConfig(deps.db);
 
@@ -968,7 +974,7 @@ async function processEntry(
     return;
   }
 
-  // ---- 13. Create ticket ----
+  // ---- 14. Create ticket ----
   const filledPrice =
     entryResult.entryOrder?.filled_price != null
       ? entryResult.entryOrder.filled_price

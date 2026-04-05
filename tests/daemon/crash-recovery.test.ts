@@ -138,6 +138,7 @@ function createMockDeps(overrides: Partial<CrashRecoveryDeps> = {}): CrashRecove
     invalidateWatchSession: mock(() => Promise.resolve()),
     insertEvent: mock(() => Promise.resolve()),
     sendSlackAlert: mock(() => Promise.resolve()),
+    setFsmState: mock(() => Promise.resolve()),
     ...overrides,
   };
 }

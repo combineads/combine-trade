@@ -63,14 +63,17 @@ function makeIndicators(overrides: Partial<AllIndicators> = {}): AllIndicators {
     sma20: new Decimal("50000"),
     prevSma20: new Decimal("49900"),
     sma20_5m: null,
+    sma20History: [],
     sma60: new Decimal("49500"),
     sma120: new Decimal("49000"),
     ema20: new Decimal("50100"),
     ema60: new Decimal("49600"),
     ema120: new Decimal("49100"),
     rsi14: new Decimal("55"),
+    rsiHistory: [],
     atr14: new Decimal("500"),
     squeeze: "normal",
+    bandwidthHistory: [],
     ...overrides,
   };
 }
@@ -300,28 +303,17 @@ describe("watching — detectWatching — BB4_TOUCH", () => {
 // detectWatching — SR Confluence tests
 // ---------------------------------------------------------------------------
 
-describe("watching — detectWatching — SR_CONFLUENCE", () => {
-  it("detects SR_CONFLUENCE LONG when close is between BB20 lower and BB4 lower", () => {
-    // BB20 lower=48000, BB4 lower=49000 → close=48500, distance from bb20Lower=500
-    // ATR14=2000 → threshold=600 > 500 ✓ (close is within ATR14×0.3 of support)
+describe("watching — detectWatching — SR_CONFLUENCE (T-19-004: independent S/R levels ≥2)", () => {
+  it("detects SR_CONFLUENCE LONG when ≥2 S/R levels near close (MA20+MA60)", () => {
+    // close=48500, sma20=48400 (dist=100), sma60=48600 (dist=100)
+    // ATR14=2000 → threshold=600 → both within threshold → 2 levels → LONG
     const candle = makeCandle("48500");
     const indicators = makeIndicators({
       squeeze: "normal",
       atr14: new Decimal("2000"),
-      bb20: {
-        upper: new Decimal("52000"),
-        middle: new Decimal("50000"),
-        lower: new Decimal("48000"),
-        bandwidth: new Decimal("0.08"),
-        percentB: new Decimal("0.125"),
-      },
-      bb4: {
-        upper: new Decimal("51000"),
-        middle: new Decimal("50000"),
-        lower: new Decimal("49000"),
-        bandwidth: new Decimal("0.04"),
-        percentB: new Decimal("0.25"),
-      },
+      sma20: new Decimal("48400"),
+      sma60: new Decimal("48600"),
+      sma120: new Decimal("45000"), // far away, not counted
     });
     const bias: DailyBias = "LONG_ONLY";
 
@@ -330,14 +322,21 @@ describe("watching — detectWatching — SR_CONFLUENCE", () => {
     expect(result).not.toBeNull();
     expect(result!.detectionType).toBe("SR_CONFLUENCE");
     expect(result!.direction).toBe("LONG");
-    expect(result!.tp2Price.toString()).toBe("52000"); // bb20 upper
   });
 
-  it("detects SR_CONFLUENCE SHORT when close is between BB4 upper and BB20 upper", () => {
-    // BB4 upper=51000, BB20 upper=52000 → close=51500, distance from bb20Upper=500
-    // ATR14=2000 → threshold=600 > 500 ✓ (close is within ATR14×0.3 of resistance)
-    const candle = makeCandle("51500");
-    const indicators = makeIndicators({ squeeze: "normal", atr14: new Decimal("2000") });
+  it("detects SR_CONFLUENCE SHORT when ≥2 S/R levels near close (MA20+MA120)", () => {
+    // close=50200 (inside BB4 range, NOT touching BB4 upper=51000)
+    // sma20=50400 (dist=200), sma120=50300 (dist=100)
+    // ATR14=2000 → threshold=600 → both within → 2 levels
+    // avg=(50400+50300)/2=50350 > 50200=close → SHORT (resistance above)
+    const candle = makeCandle("50200");
+    const indicators = makeIndicators({
+      squeeze: "normal",
+      atr14: new Decimal("2000"),
+      sma20: new Decimal("50400"),
+      sma60: new Decimal("45000"), // far away
+      sma120: new Decimal("50300"),
+    });
     const bias: DailyBias = "SHORT_ONLY";
 
     const result = detectWatching(candle, indicators, bias);
@@ -345,7 +344,6 @@ describe("watching — detectWatching — SR_CONFLUENCE", () => {
     expect(result).not.toBeNull();
     expect(result!.detectionType).toBe("SR_CONFLUENCE");
     expect(result!.direction).toBe("SHORT");
-    expect(result!.tp2Price.toString()).toBe("48000"); // bb20 lower
   });
 
   it("returns null when close is outside both confluence zones", () => {
@@ -393,31 +391,21 @@ describe("watching — detectWatching — SR_CONFLUENCE", () => {
     expect(result?.detectionType).not.toBe("SR_CONFLUENCE");
   });
 
-  it("passes SR_CONFLUENCE when atr14 is null (ATR filter skipped)", () => {
-    // When atr14 is null the ATR filter is skipped and the position-based check is sufficient
-    // close=48500, between bb20Lower=48000 and bb4Lower=49000 ✓
+  it("returns null when atr14 is null (cannot compute proximity threshold)", () => {
+    // S/R confluence requires ATR14 for |close - level| < ATR14 × 0.3
+    // When atr14 is null, no proximity check is possible → no SR_CONFLUENCE
     const candle = makeCandle("48500");
     const indicators = makeIndicators({
       squeeze: "normal",
       atr14: null,
-      bb20: {
-        upper: new Decimal("52000"),
-        middle: new Decimal("50000"),
-        lower: new Decimal("48000"),
-        bandwidth: new Decimal("0.08"),
-        percentB: new Decimal("0.125"),
-      },
-      bb4: {
-        upper: new Decimal("51000"),
-        middle: new Decimal("50000"),
-        lower: new Decimal("49000"),
-        bandwidth: new Decimal("0.04"),
-        percentB: new Decimal("0.25"),
-      },
+      sma20: new Decimal("48400"),
+      sma60: new Decimal("48600"),
     });
     const result = detectWatching(candle, indicators, "LONG_ONLY");
-    expect(result).not.toBeNull();
-    expect(result!.detectionType).toBe("SR_CONFLUENCE");
+    // Should not detect SR_CONFLUENCE without ATR (may fall through to BB4_TOUCH)
+    if (result !== null) {
+      expect(result.detectionType).not.toBe("SR_CONFLUENCE");
+    }
   });
 });
 

@@ -113,14 +113,17 @@ function makeIndicators(): AllIndicators {
     sma20: new Decimal("40000"),
     prevSma20: new Decimal("39900"),
     sma20_5m: null,
+    sma20History: [],
     sma60: new Decimal("39000"),
     sma120: new Decimal("38000"),
     ema20: new Decimal("40000"),
     ema60: new Decimal("39000"),
     ema120: new Decimal("38000"),
     rsi14: new Decimal("50"),
+    rsiHistory: [],
     atr14: new Decimal("100"),
     squeeze: "normal",
+    bandwidthHistory: [],
   };
 }
 
@@ -252,6 +255,7 @@ function createMockCrashRecoveryDeps(overrides?: Partial<CrashRecoveryDeps>): Cr
     invalidateWatchSession: mock(async () => {}),
     insertEvent: mock(async () => {}),
     sendSlackAlert: mock(async () => {}),
+    setFsmState: mock(async () => {}),
     ...overrides,
   };
 }

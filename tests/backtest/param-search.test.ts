@@ -4,9 +4,11 @@ import type { BacktestTrade } from "../../src/backtest/engine";
 import { calcFullMetrics } from "../../src/backtest/metrics";
 import type { FullMetrics } from "../../src/backtest/metrics";
 import {
+  assertTunableParams,
   generateGridCombinations,
   generateRandomCombinations,
   runParameterSearch,
+  TUNABLE_PARAM_WHITELIST,
 } from "../../src/backtest/param-search";
 import type { ParamSpace, ParamSet, ParamResult } from "../../src/backtest/param-search";
 
@@ -293,6 +295,114 @@ describe("runParameterSearch", () => {
     // Grid phase: 5 calls (top_k 1..5)
     const gridCalls = callLog.filter((p) => p["fw_a"] === undefined);
     expect(gridCalls).toHaveLength(5);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// assertTunableParams — PRD §7.25 whitelist enforcement
+// ---------------------------------------------------------------------------
+
+describe("assertTunableParams", () => {
+  it("allows all KNN.* codes", () => {
+    const spaces: ParamSpace[] = [
+      { group: "KNN", code: "top_k", min: 3, max: 20, step: 1 },
+      { group: "KNN", code: "threshold", min: 0.5, max: 0.9, step: 0.1 },
+    ];
+    expect(() => assertTunableParams(spaces)).not.toThrow();
+  });
+
+  it("allows all FEATURE_WEIGHT.* codes", () => {
+    const spaces: ParamSpace[] = [
+      { group: "FEATURE_WEIGHT", code: "w_squeeze", min: 0.1, max: 1.0, step: 0.1 },
+      { group: "FEATURE_WEIGHT", code: "w_volume", min: 0.1, max: 1.0, step: 0.1 },
+    ];
+    expect(() => assertTunableParams(spaces)).not.toThrow();
+  });
+
+  it("allows SYMBOL_CONFIG.risk_pct", () => {
+    const spaces: ParamSpace[] = [
+      { group: "SYMBOL_CONFIG", code: "risk_pct", min: 0.01, max: 0.05, step: 0.005 },
+    ];
+    expect(() => assertTunableParams(spaces)).not.toThrow();
+  });
+
+  it("throws 'not in tunable whitelist' for SYMBOL_CONFIG.max_leverage", () => {
+    const spaces: ParamSpace[] = [
+      { group: "SYMBOL_CONFIG", code: "max_leverage", min: 5, max: 20, step: 1 },
+    ];
+    expect(() => assertTunableParams(spaces)).toThrow(/not in tunable whitelist/i);
+  });
+
+  it("throws 'not in tunable whitelist' for EXCHANGE group", () => {
+    const spaces: ParamSpace[] = [
+      { group: "EXCHANGE", code: "api_key", min: 0, max: 1, step: 1 },
+    ];
+    expect(() => assertTunableParams(spaces)).toThrow(/not in tunable whitelist/i);
+  });
+
+  it("throws for ANCHOR group (caught before rejectAnchorGroup)", () => {
+    const spaces: ParamSpace[] = [
+      { group: "ANCHOR", code: "bb_period", min: 20, max: 20, step: 1 },
+    ];
+    expect(() => assertTunableParams(spaces)).toThrow();
+  });
+
+  it("throws when a non-whitelisted space is mixed with allowed ones", () => {
+    const spaces: ParamSpace[] = [
+      { group: "KNN", code: "top_k", min: 3, max: 20, step: 1 },
+      { group: "SYMBOL_CONFIG", code: "max_leverage", min: 5, max: 20, step: 1 },
+    ];
+    expect(() => assertTunableParams(spaces)).toThrow(/not in tunable whitelist/i);
+  });
+
+  it("passes for an empty array", () => {
+    expect(() => assertTunableParams([])).not.toThrow();
+  });
+
+  it("TUNABLE_PARAM_WHITELIST is a non-empty readonly array", () => {
+    expect(Array.isArray(TUNABLE_PARAM_WHITELIST)).toBe(true);
+    expect(TUNABLE_PARAM_WHITELIST.length).toBeGreaterThan(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// runParameterSearch — whitelist validation fires before any backtest
+// ---------------------------------------------------------------------------
+
+describe("runParameterSearch whitelist enforcement", () => {
+  it("throws before running any backtest when gridSpaces contain a non-whitelisted param", async () => {
+    const nonWhitelisted: ParamSpace[] = [
+      { group: "POSITION", code: "max_size", min: 1, max: 10, step: 1 },
+    ];
+    let callCount = 0;
+    const mockBacktest = async (_params: ParamSet): Promise<FullMetrics> => {
+      callCount++;
+      return calcFullMetrics([]);
+    };
+
+    await expect(runParameterSearch(mockBacktest, nonWhitelisted)).rejects.toThrow(
+      /not in tunable whitelist/i,
+    );
+    expect(callCount).toBe(0);
+  });
+
+  it("throws before running any backtest when randomSpaces contain a non-whitelisted param", async () => {
+    const gridSpaces: ParamSpace[] = [
+      { group: "KNN", code: "top_k", min: 1, max: 2, step: 1 },
+    ];
+    const nonWhitelistedRandom: ParamSpace[] = [
+      { group: "TIMEFRAME", code: "tf", min: 1, max: 5, step: 1 },
+    ];
+    let callCount = 0;
+    const mockBacktest = async (_params: ParamSet): Promise<FullMetrics> => {
+      callCount++;
+      return calcFullMetrics([]);
+    };
+
+    await expect(
+      runParameterSearch(mockBacktest, gridSpaces, nonWhitelistedRandom),
+    ).rejects.toThrow(/not in tunable whitelist/i);
+    expect(callCount).toBe(0);
   });
 });
 

@@ -93,14 +93,17 @@ function makeTestIndicators(overrides: Partial<AllIndicators> = {}): AllIndicato
     sma20: new Decimal("42100"),
     prevSma20: new Decimal("42000"),
     sma20_5m: null,
+    sma20History: [],
     sma60: new Decimal("41500"),
     sma120: new Decimal("41000"),
     ema20: new Decimal("42100"),
     ema60: new Decimal("41600"),
     ema120: new Decimal("41100"),
     rsi14: new Decimal("55"),
+    rsiHistory: [],
     atr14: new Decimal("600"),
     squeeze: "normal",
+    bandwidthHistory: [],
     ...overrides,
   };
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { parseArgs } from "../../src/backtest/cli";
+import { parseArgs, saveBacktestResult } from "../../src/backtest/cli";
+import type { DbInstance } from "../../src/db/pool";
 
 // ---------------------------------------------------------------------------
 // parseArgs — pure function tests (no DB, no side effects)
@@ -174,5 +175,127 @@ describe("parseArgs", () => {
         "2024-06-01",
       ]),
     ).toThrow("threads must be >= 1");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// saveBacktestResult — DB INSERT helper
+// ---------------------------------------------------------------------------
+
+describe("saveBacktestResult", () => {
+  it("calls db.insert with backtestTable and returning id", async () => {
+    const fakeId = "550e8400-e29b-41d4-a716-446655440000";
+
+    // Minimal mock that satisfies the insert().values().returning() call chain.
+    const mockDb = {
+      insert: () => ({
+        values: () => ({
+          returning: async () => [{ id: fakeId }],
+        }),
+      }),
+    } as unknown as DbInstance;
+
+    const row = {
+      run_type: "BACKTEST" as const,
+      symbol: "BTCUSDT",
+      exchange: "binance",
+      start_date: new Date("2024-01-01T00:00:00Z"),
+      end_date: new Date("2024-06-01T00:00:00Z"),
+      config_snapshot: { symbol: "BTCUSDT" },
+      results: { totalTrades: 0 },
+    };
+
+    const result = await saveBacktestResult(mockDb, row);
+    expect(result).toBe(fakeId);
+  });
+
+  it("throws when INSERT returns no rows", async () => {
+    const mockDb = {
+      insert: () => ({
+        values: () => ({
+          returning: async () => [],
+        }),
+      }),
+    } as unknown as DbInstance;
+
+    const row = {
+      run_type: "BACKTEST" as const,
+      symbol: "BTCUSDT",
+      exchange: "binance",
+      start_date: new Date("2024-01-01T00:00:00Z"),
+      end_date: new Date("2024-06-01T00:00:00Z"),
+      config_snapshot: {},
+      results: {},
+    };
+
+    await expect(saveBacktestResult(mockDb, row)).rejects.toThrow("INSERT returned no rows");
+  });
+
+  it("propagates DB errors to the caller", async () => {
+    const mockDb = {
+      insert: () => ({
+        values: () => ({
+          returning: async () => {
+            throw new Error("connection refused");
+          },
+        }),
+      }),
+    } as unknown as DbInstance;
+
+    const row = {
+      run_type: "WFO" as const,
+      symbol: "ETHUSDT",
+      exchange: "okx",
+      start_date: new Date("2024-01-01T00:00:00Z"),
+      end_date: new Date("2024-06-01T00:00:00Z"),
+      config_snapshot: {},
+      results: {},
+    };
+
+    await expect(saveBacktestResult(mockDb, row)).rejects.toThrow("connection refused");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// runWfo saveResult injection — verify callback is defined when db is available
+// ---------------------------------------------------------------------------
+
+describe("WFO saveResult wiring", () => {
+  it("runWfo is called with saveResult defined when db is available", async () => {
+    // We test indirectly: build a mock saveResult and ensure it gets called
+    // by a minimal runWfo invocation.
+    const { runWfo, generateWfoWindows } = await import("../../src/backtest/wfo");
+    const { calcFullMetrics } = await import("../../src/backtest/metrics");
+
+    const saveResultCalls: unknown[] = [];
+    const mockSaveResult = async (arg: unknown): Promise<string> => {
+      saveResultCalls.push(arg);
+      return "parent-id-123";
+    };
+
+    // A WFO run that has no valid windows (IS expectancy = 0) will still call
+    // saveResult once for the parent row.
+    await runWfo(
+      {
+        isMonths: 6,
+        oosMonths: 2,
+        rollMonths: 1,
+        totalStartDate: new Date("2024-01-01T00:00:00Z"),
+        totalEndDate: new Date("2024-09-01T00:00:00Z"),
+      },
+      [],
+      {
+        generateWindows: generateWfoWindows,
+        searchParams: async () => [{ params: {}, metrics: calcFullMetrics([]) }],
+        runBacktest: async () => calcFullMetrics([]),
+        saveResult: mockSaveResult,
+      },
+    );
+
+    // saveResult must have been called at least once for the parent WFO row.
+    expect(saveResultCalls.length).toBeGreaterThanOrEqual(1);
+
+    const parentCall = saveResultCalls[0] as Record<string, unknown>;
+    expect(parentCall["runType"]).toBe("WFO");
   });
 });

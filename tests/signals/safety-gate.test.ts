@@ -53,14 +53,17 @@ function makeIndicators(overrides: Partial<AllIndicators> = {}): AllIndicators {
     sma20: new Decimal("50000"),
     prevSma20: new Decimal("49900"),
     sma20_5m: null,
+    sma20History: [],
     sma60: new Decimal("49500"),
     sma120: new Decimal("49000"),
     ema20: new Decimal("50100"),
     ema60: new Decimal("49600"),
     ema120: new Decimal("49100"),
     rsi14: new Decimal("50"),
+    rsiHistory: [],
     atr14: new Decimal("400"),
     squeeze: "normal",
+    bandwidthHistory: [],
     ...overrides,
   };
 }

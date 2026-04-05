@@ -104,15 +104,28 @@ export function extractStrategyFeatures(
     }
   }
 
-  // ---- [3] ma20_slope: (sma20[0] - sma20[3]) / sma20[3] (3-bar slope) ----
-  // AllIndicators에 prevSma20(직전 봉)만 제공되므로 1봉 기울기로 근사한다.
-  // 3봉 전 값을 얻기 위한 별도 히스토리가 없는 경우, prevSma20을 사용한다.
+  // ---- [3] ma20_slope: (sma20[현재] - sma20[3봉전]) / sma20[3봉전] (PRD §7.8 L276) ----
+  // sma20History.length >= 4: index 0 = 3봉전, last = 현재 → 진짜 3봉 기울기 사용
+  // sma20History.length < 4: prevSma20 폴백 (1봉 기울기)
   {
     const sma20 = indicators.sma20;
-    const prevSma20 = indicators.prevSma20;
-    if (sma20 !== null && prevSma20 !== null && !prevSma20.isZero()) {
-      const slope = sma20.minus(prevSma20).dividedBy(prevSma20);
-      output[3] = safe(slope.toNumber());
+    const history = indicators.sma20History;
+    if (history.length >= 4) {
+      // history[0] = oldest (3 bars ago), history[last] = current
+      const oldest = history[0] as Decimal;
+      const newest = history[history.length - 1] as Decimal;
+      if (!oldest.isZero()) {
+        const slope = newest.minus(oldest).dividedBy(oldest);
+        output[3] = safe(slope.toNumber());
+      }
+      // oldest is zero → output[3] stays 0.0 (denominator guard)
+    } else {
+      // Fallback to 1-bar slope using prevSma20
+      const prevSma20 = indicators.prevSma20;
+      if (sma20 !== null && prevSma20 !== null && !prevSma20.isZero()) {
+        const slope = sma20.minus(prevSma20).dividedBy(prevSma20);
+        output[3] = safe(slope.toNumber());
+      }
     }
   }
 
@@ -163,25 +176,30 @@ export function extractStrategyFeatures(
     }
   }
 
-  // ---- [7] rsi_extreme_count: count(RSI>70 or RSI<30) in recent 14 bars / 14 [D-002] ----
-  // AllIndicators에는 현재 봉의 rsi14만 있으므로 현재값 기준으로 0 또는 1/14 반환.
-  // 완전한 구현은 rsi14 히스토리가 필요하다 (현재 아키텍처에서 미지원).
+  // ---- [7] rsi_extreme_count: count(RSI>70 or RSI<30) in recent 14 bars / 14 (PRD §7.8 D-002) ----
+  // rsiHistory 전체를 순회하여 극값(>70 or <30) 비율 산출. 비어있으면 0.0.
   {
-    const rsi14 = indicators.rsi14;
-    if (rsi14 !== null) {
-      const rsiVal = rsi14.toNumber();
-      const isExtreme = rsiVal > 70 || rsiVal < 30 ? 1 : 0;
-      output[7] = safe(isExtreme / 14);
+    const rsiHistory = indicators.rsiHistory;
+    if (rsiHistory.length > 0) {
+      let count = 0;
+      for (const v of rsiHistory) {
+        if (v > 70 || v < 30) count++;
+      }
+      output[7] = safe(count / rsiHistory.length);
     }
+    // rsiHistory empty → output[7] stays 0.0
   }
 
-  // ---- [8] breakout_intensity: |close - bb20_band| / (bb20_upper - bb20_lower) [D-003] ----
-  // close가 band 밖이면 양수, 안이면 0
+  // ---- [8] breakout_intensity: |close - bb20_band| / (bb20_upper - bb20_lower) (PRD §7.8 D-003) ----
+  // close가 band 밖이면 양수, 안이면 0.0, band width=0이면 0.5 (PRD §7.8 D-003: "NaN → 0.5")
   {
     const bb20 = indicators.bb20;
     if (bb20 !== null) {
       const bandWidth = bb20.upper.minus(bb20.lower);
-      if (!bandWidth.isZero()) {
+      if (bandWidth.isZero()) {
+        // BB squeeze (upper = lower) → 0.5 sentinel (PRD §7.8 D-003)
+        output[8] = 0.5;
+      } else {
         let intensity = 0.0;
         if (close.greaterThan(bb20.upper)) {
           // 상단 돌파: |close - upper| / band_width

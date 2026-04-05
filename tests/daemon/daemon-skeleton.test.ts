@@ -71,6 +71,7 @@ function createMockCrashRecoveryDeps(): CrashRecoveryDeps {
     invalidateWatchSession: mock(async () => {}),
     insertEvent: mock(async () => {}),
     sendSlackAlert: mock(async () => {}),
+    setFsmState: mock(async () => {}),
   };
 }
 

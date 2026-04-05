@@ -19,6 +19,24 @@ export type WatchingResult = {
 };
 
 // ---------------------------------------------------------------------------
+// SRSymbolState — optional daily S/R level data passed to detectWatching
+// ---------------------------------------------------------------------------
+
+/**
+ * Optional symbol state data used by detectSRConfluence() to include
+ * daily-timeframe S/R levels (daily_open, prev_day_high, prev_day_low).
+ * All fields are optional — missing fields are simply excluded from S/R counting.
+ */
+export type SRSymbolState = {
+  /** Today's daily open price (UTC 00:00). */
+  daily_open?: Decimal | null;
+  /** Previous day's high. */
+  prev_day_high?: Decimal | null;
+  /** Previous day's low. */
+  prev_day_low?: Decimal | null;
+};
+
+// ---------------------------------------------------------------------------
 // Direction helpers
 // ---------------------------------------------------------------------------
 
@@ -109,91 +127,80 @@ function detectSqueezeBreakout(
 }
 
 /**
- * S/R Confluence: simplified check — close is between BB4 and BB20 bands
- * with confluence (close is near both BB4 and BB20 on the same side).
+ * S/R Confluence: PRD §7.4 L240 — count ≥ 2 independent S/R levels within ATR14 × 0.3.
  *
- * LONG: close is between BB20 lower and BB4 lower (near support).
- * SHORT: close is between BB4 upper and BB20 upper (near resistance).
+ * S/R level sources (up to 6):
+ *   - indicators.sma20, indicators.sma60, indicators.sma120 (MA levels)
+ *   - symbolState.daily_open, symbolState.prev_day_high, symbolState.prev_day_low (daily S/R)
  *
- * ATR proximity filter: the close must be within ATR14 × 0.3 of the S/R level
- * (BB20 lower for LONG, BB20 upper for SHORT) to confirm price is close enough
- * to the level to constitute confluence.
+ * A level counts when: |close − level| < ATR14 × 0.3
+ * If atr14 is null, we cannot determine the threshold → return null (fail-safe).
+ * If fewer than 2 levels pass → return null.
+ * If ≥ 2 levels pass → determine direction from the average of nearby levels:
+ *   avg > close → SHORT (price near resistance), avg < close → LONG (price near support)
+ *
+ * TP prices follow the BB4_TOUCH pattern:
+ *   tp1Price = sma20
+ *   tp2Price = LONG → bb20.upper, SHORT → bb20.lower
  */
 function detectSRConfluence(
   candle: Candle,
   indicators: AllIndicators,
   bias: DailyBias,
+  symbolState?: SRSymbolState,
 ): WatchingResult | null {
-  if (!indicators.bb20 || !indicators.bb4 || !indicators.sma20) return null;
+  // atr14 required — cannot determine ATR proximity threshold without it
+  if (indicators.atr14 == null) return null;
+  if (!indicators.bb20 || !indicators.sma20) return null;
 
   const close = candle.close;
+  const atrThreshold = indicators.atr14.times("0.3");
   const { upper: bb20Upper, lower: bb20Lower, middle: bb20Middle } = indicators.bb20;
-  const { upper: bb4Upper, lower: bb4Lower } = indicators.bb4;
   const sma20 = indicators.sma20;
 
-  // ATR proximity threshold (optional — only applied when atr14 is available)
-  const atrThreshold = indicators.atr14 != null ? indicators.atr14.times("0.3") : null;
+  // Collect candidate S/R levels (null/undefined entries excluded)
+  const candidateLevels: Decimal[] = [];
+  if (indicators.sma20 != null) candidateLevels.push(indicators.sma20);
+  if (indicators.sma60 != null) candidateLevels.push(indicators.sma60);
+  if (indicators.sma120 != null) candidateLevels.push(indicators.sma120);
+  if (symbolState?.daily_open != null) candidateLevels.push(symbolState.daily_open);
+  if (symbolState?.prev_day_high != null) candidateLevels.push(symbolState.prev_day_high);
+  if (symbolState?.prev_day_low != null) candidateLevels.push(symbolState.prev_day_low);
 
-  // LONG confluence: close is between BB20 lower and BB4 lower
-  // (BB4 lower is inside BB20 lower on the upside, so BB4 lower > BB20 lower)
-  if (
-    bb4Lower.greaterThan(bb20Lower) &&
-    gte(close, bb20Lower) &&
-    lte(close, bb4Lower) &&
-    isDirectionAllowed("LONG", bias)
-  ) {
-    // ATR filter: close must be within ATR14 × 0.3 of bb20Lower (support level)
-    if (atrThreshold != null) {
-      const distanceFromLevel = close.minus(bb20Lower).abs();
-      if (distanceFromLevel.greaterThan(atrThreshold)) return null;
-    }
-    return {
-      detectionType: "SR_CONFLUENCE",
-      direction: "LONG",
-      tp1Price: sma20,
-      tp2Price: bb20Upper,
-      contextData: {
-        bb20Upper: bb20Upper.toString(),
-        bb20Middle: bb20Middle.toString(),
-        bb20Lower: bb20Lower.toString(),
-        bb4Upper: bb4Upper.toString(),
-        bb4Lower: bb4Lower.toString(),
-        close: close.toString(),
-        sma20: sma20.toString(),
-      },
-    };
-  }
+  // Filter to levels within ATR proximity
+  const nearLevels = candidateLevels.filter((level) =>
+    close.minus(level).abs().lessThan(atrThreshold),
+  );
 
-  // SHORT confluence: close is between BB4 upper and BB20 upper
-  if (
-    bb4Upper.lessThan(bb20Upper) &&
-    gte(close, bb4Upper) &&
-    lte(close, bb20Upper) &&
-    isDirectionAllowed("SHORT", bias)
-  ) {
-    // ATR filter: close must be within ATR14 × 0.3 of bb20Upper (resistance level)
-    if (atrThreshold != null) {
-      const distanceFromLevel = bb20Upper.minus(close).abs();
-      if (distanceFromLevel.greaterThan(atrThreshold)) return null;
-    }
-    return {
-      detectionType: "SR_CONFLUENCE",
-      direction: "SHORT",
-      tp1Price: sma20,
-      tp2Price: bb20Lower,
-      contextData: {
-        bb20Upper: bb20Upper.toString(),
-        bb20Middle: bb20Middle.toString(),
-        bb20Lower: bb20Lower.toString(),
-        bb4Upper: bb4Upper.toString(),
-        bb4Lower: bb4Lower.toString(),
-        close: close.toString(),
-        sma20: sma20.toString(),
-      },
-    };
-  }
+  if (nearLevels.length < 2) return null;
 
-  return null;
+  // Determine direction from the average of nearby levels
+  const sumLevels = nearLevels.reduce((acc, lv) => acc.plus(lv), d("0"));
+  const avgLevel = sumLevels.dividedBy(nearLevels.length);
+
+  const direction: Direction = avgLevel.greaterThan(close) ? "SHORT" : "LONG";
+
+  if (!isDirectionAllowed(direction, bias)) return null;
+
+  const tp2Price = direction === "LONG" ? bb20Upper : bb20Lower;
+
+  return {
+    detectionType: "SR_CONFLUENCE",
+    direction,
+    tp1Price: sma20,
+    tp2Price,
+    contextData: {
+      nearLevelCount: nearLevels.length,
+      nearLevels: nearLevels.map((l) => l.toString()),
+      avgLevel: avgLevel.toString(),
+      atrThreshold: atrThreshold.toString(),
+      close: close.toString(),
+      sma20: sma20.toString(),
+      bb20Upper: bb20Upper.toString(),
+      bb20Middle: bb20Middle.toString(),
+      bb20Lower: bb20Lower.toString(),
+    },
+  };
 }
 
 /**
@@ -261,15 +268,21 @@ function detectBB4Touch(
  * match, or null if no condition is met.
  *
  * Evaluation order: Squeeze Breakout → S/R Confluence → BB4 Touch
+ *
+ * @param symbolState Optional daily S/R level data (daily_open, prev_day_high,
+ *   prev_day_low). When omitted, detectSRConfluence() uses only MA levels
+ *   (sma20, sma60, sma120). Existing callers without this parameter continue
+ *   to work unchanged.
  */
 export function detectWatching(
   candle: Candle,
   indicators: AllIndicators,
   dailyBias: DailyBias,
+  symbolState?: SRSymbolState,
 ): WatchingResult | null {
   return (
     detectSqueezeBreakout(candle, indicators, dailyBias) ??
-    detectSRConfluence(candle, indicators, dailyBias) ??
+    detectSRConfluence(candle, indicators, dailyBias, symbolState) ??
     detectBB4Touch(candle, indicators, dailyBias) ??
     null
   );

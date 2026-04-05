@@ -149,7 +149,11 @@ describe("executor", () => {
         }),
       });
 
-      const params = makeEntryParams({ adapter });
+      // Explicitly enable bracket (one-step) ordering for this test
+      const params = makeEntryParams({
+        adapter,
+        exchangeConfig: { supports_one_step_order: true },
+      });
       const result = await executeEntry(params);
 
       expect(result.success).toBe(true);
@@ -165,7 +169,11 @@ describe("executor", () => {
 
     it("creates entry + SL orders when bracket succeeds", async () => {
       const adapter = createMockAdapter();
-      const params = makeEntryParams({ adapter });
+      // Explicitly enable bracket (one-step) ordering for this test
+      const params = makeEntryParams({
+        adapter,
+        exchangeConfig: { supports_one_step_order: true },
+      });
       const result = await executeEntry(params);
 
       expect(result.success).toBe(true);

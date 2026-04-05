@@ -61,14 +61,17 @@ function makeIndicators(overrides: Partial<AllIndicators> = {}): AllIndicators {
     sma20: null,
     prevSma20: null,
     sma20_5m: null,
+    sma20History: [],
     sma60: null,
     sma120: null,
     ema20: null,
     ema60: null,
     ema120: null,
     rsi14: null,
+    rsiHistory: [],
     atr14: null,
     squeeze: "normal",
+    bandwidthHistory: [],
     ...overrides,
   };
 }

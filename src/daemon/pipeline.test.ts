@@ -69,14 +69,17 @@ const STUB_INDICATORS: AllIndicators = {
   sma20: null,
   prevSma20: null,
   sma20_5m: null,
+  sma20History: [],
   sma60: null,
   sma120: null,
   ema20: null,
   ema60: null,
   ema120: null,
   rsi14: null,
+  rsiHistory: [],
   atr14: null,
   squeeze: "normal",
+  bandwidthHistory: [],
 };
 
 function makeLossConfig(): LossLimitConfig {
@@ -919,5 +922,167 @@ describe("T-18-006: setSessionStartTime — 세션 시작 감지", () => {
     expect(result.dailyReset).toBe(false);
     expect(result.sessionReset).toBe(false);
     expect(result.hourlyReset).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T-19-007: daily_bias direction check order (before KNN)
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds a PipelineDeps that progresses far enough into processEntry to
+ * reach the daily_bias check and (optionally) the KNN search.
+ *
+ * Key: getActiveWatchSession returns a session, checkEvidence returns evidence,
+ * checkSafety passes, insertVector succeeds — then we hit daily_bias check.
+ */
+function makeDailyBiasDeps(opts: {
+  dailyBias: "LONG_ONLY" | "SHORT_ONLY" | "NEUTRAL" | null;
+  evidenceDirection: "LONG" | "SHORT";
+  captureSearchKnn: { called: boolean };
+}): PipelineDeps {
+  const { dailyBias, evidenceDirection, captureSearchKnn } = opts;
+
+  const watchSession: import("@/core/types").WatchSession = {
+    id: "ws-1",
+    symbol: "BTC/USDT",
+    exchange: "binance" as Exchange,
+    detection_type: "BB4_TOUCH",
+    direction: evidenceDirection,
+    tp1_price: null,
+    tp2_price: null,
+    detected_at: new Date(),
+    invalidated_at: null,
+    invalidation_reason: null,
+    context_data: null,
+    created_at: new Date(),
+  };
+
+  const symbolStateFull: import("@/core/types").SymbolState = {
+    ...makeSymbolState("0"),
+    daily_bias: dailyBias,
+  };
+
+  const evidence: import("@/signals/evidence-gate").EvidenceResult = {
+    signalType: "DOUBLE_B",
+    direction: evidenceDirection,
+    entryPrice: d("100"),
+    slPrice: d("90"),
+    aGrade: false,
+    details: {},
+  };
+
+  return {
+    ...makeDeps({ balance: "10000", lossesToday: "0" }),
+    getSymbolState: async () => symbolStateFull,
+    getActiveWatchSession: async () => watchSession,
+    checkEvidence: () => evidence,
+    checkSafety: () => ({ passed: true, reasons: [] }),
+    vectorize: () => new Float32Array(202),
+    insertVector: async () => ({
+      id: "vec-1",
+      candle_id: "c1",
+      symbol: "BTC/USDT",
+      exchange: "binance",
+      timeframe: "5M",
+      // embedding is stored as string in DB (pgvector serializes to string)
+      embedding: "[0]",
+      label: null,
+      grade: null,
+      labeled_at: null,
+      created_at: new Date(),
+    }),
+    searchKnn: async () => {
+      captureSearchKnn.called = true;
+      return [];
+    },
+    // makeDecision returns SKIP → pipeline stops after KNN (if reached)
+    makeDecision: () => ({
+      decision: "SKIP" as const,
+      sampleCount: 0,
+      winRate: 0,
+      expectancy: 0,
+      aGrade: false,
+    }),
+  };
+}
+
+describe("T-19-007: daily_bias direction check — before KNN search", () => {
+  it("daily_bias=LONG_ONLY, evidence=LONG → direction matches → searchKnn called", async () => {
+    const captureSearchKnn = { called: false };
+
+    const candle = makeCandle();
+    const deps = makeDailyBiasDeps({
+      dailyBias: "LONG_ONLY",
+      evidenceDirection: "LONG",
+      captureSearchKnn,
+    });
+
+    await handleCandleClose(candle, "5M", [SYMBOL], deps);
+
+    // Direction matches bias → KNN search should proceed
+    expect(captureSearchKnn.called).toBe(true);
+  });
+
+  it("daily_bias=LONG_ONLY, evidence=SHORT → mismatch → searchKnn NOT called", async () => {
+    const captureSearchKnn = { called: false };
+
+    const candle = makeCandle();
+    const deps = makeDailyBiasDeps({
+      dailyBias: "LONG_ONLY",
+      evidenceDirection: "SHORT",
+      captureSearchKnn,
+    });
+
+    await handleCandleClose(candle, "5M", [SYMBOL], deps);
+
+    // Direction mismatch → pipeline returns before KNN search
+    expect(captureSearchKnn.called).toBe(false);
+  });
+
+  it("daily_bias=SHORT_ONLY, evidence=LONG → mismatch → searchKnn NOT called", async () => {
+    const captureSearchKnn = { called: false };
+
+    const candle = makeCandle();
+    const deps = makeDailyBiasDeps({
+      dailyBias: "SHORT_ONLY",
+      evidenceDirection: "LONG",
+      captureSearchKnn,
+    });
+
+    await handleCandleClose(candle, "5M", [SYMBOL], deps);
+
+    expect(captureSearchKnn.called).toBe(false);
+  });
+
+  it("daily_bias=NEUTRAL → direction check skipped → searchKnn called", async () => {
+    const captureSearchKnn = { called: false };
+
+    const candle = makeCandle();
+    const deps = makeDailyBiasDeps({
+      dailyBias: "NEUTRAL",
+      evidenceDirection: "LONG",
+      captureSearchKnn,
+    });
+
+    await handleCandleClose(candle, "5M", [SYMBOL], deps);
+
+    // NEUTRAL bias → no direction filtering → KNN proceeds
+    expect(captureSearchKnn.called).toBe(true);
+  });
+
+  it("daily_bias=null → direction check skipped → searchKnn called", async () => {
+    const captureSearchKnn = { called: false };
+
+    const candle = makeCandle();
+    const deps = makeDailyBiasDeps({
+      dailyBias: null,
+      evidenceDirection: "SHORT",
+      captureSearchKnn,
+    });
+
+    await handleCandleClose(candle, "5M", [SYMBOL], deps);
+
+    expect(captureSearchKnn.called).toBe(true);
   });
 });

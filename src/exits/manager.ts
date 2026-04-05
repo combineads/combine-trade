@@ -55,6 +55,13 @@ export type ProcessExitParams = {
   ticket: ExitTicket;
   action: ExitAction;
   exchange: Exchange;
+  /**
+   * Exchange capability flags. When absent, safe default applies:
+   * supports_edit_order=true (preserves existing behaviour — editOrder attempted).
+   */
+  exchangeConfig?: {
+    supports_edit_order: boolean;
+  };
 };
 
 export type ExitResult = {
@@ -74,6 +81,13 @@ export type ProcessTrailingParams = {
   ticket: ExitTicket;
   currentPrice: Decimal;
   exchange: Exchange;
+  /**
+   * Exchange capability flags. When absent, safe default applies:
+   * supports_edit_order=true (preserves existing behaviour — editOrder attempted).
+   */
+  exchangeConfig?: {
+    supports_edit_order: boolean;
+  };
 };
 
 export type TrailingUpdateResult = {
@@ -145,13 +159,14 @@ async function moveSl(
   newSlPrice: Decimal,
   exchange: Exchange,
   intentId: string,
+  supportsEditOrder: boolean,
 ): Promise<NewOrderRow | null> {
   const slOrderId = ticket.sl_order_id;
   const side = closeSide(ticket.direction);
   const remainingSize = d(ticket.remaining_size);
 
-  // Try editOrder first
-  if (slOrderId) {
+  // Try editOrder first only when the exchange supports it
+  if (slOrderId && supportsEditOrder) {
     try {
       const editResult = await adapter.editOrder(slOrderId, {
         price: newSlPrice,
@@ -185,8 +200,10 @@ async function moveSl(
         error: errorMessage,
       });
     }
+  }
 
-    // Fallback: cancel old SL + create new SL
+  // cancel+create path: either supports_edit_order=false, or editOrder failed
+  if (slOrderId) {
     try {
       await adapter.cancelOrder(slOrderId, ticket.symbol);
     } catch (cancelErr) {
@@ -256,7 +273,9 @@ async function moveSl(
  * The caller is responsible for DB writes (ticket state transition, order insert).
  */
 export async function processExit(params: ProcessExitParams): Promise<ExitResult> {
-  const { adapter, ticket, action, exchange } = params;
+  const { adapter, ticket, action, exchange, exchangeConfig } = params;
+  // Safe default: attempt editOrder unless flag explicitly set to false
+  const supportsEditOrder = exchangeConfig?.supports_edit_order ?? true;
 
   // NONE → no-op
   if (action.type === "NONE") {
@@ -347,7 +366,7 @@ export async function processExit(params: ProcessExitParams): Promise<ExitResult
   let slOrder: NewOrderRow | null = null;
   if (action.type === "TP1") {
     const breakevenPrice = d(ticket.entry_price);
-    slOrder = await moveSl(adapter, ticket, breakevenPrice, exchange, intentId);
+    slOrder = await moveSl(adapter, ticket, breakevenPrice, exchange, intentId, supportsEditOrder);
 
     log.info("TP1 processed — SL moved to breakeven, trailing activated", {
       symbol: ticket.symbol,
@@ -402,7 +421,9 @@ export async function processExit(params: ProcessExitParams): Promise<ExitResult
 export async function processTrailing(
   params: ProcessTrailingParams,
 ): Promise<TrailingUpdateResult> {
-  const { adapter, ticket, currentPrice, exchange } = params;
+  const { adapter, ticket, currentPrice, exchange, exchangeConfig } = params;
+  // Safe default: attempt editOrder unless flag explicitly set to false
+  const supportsEditOrder = exchangeConfig?.supports_edit_order ?? true;
 
   // Skip if trailing is not active
   if (!ticket.trailing_active) {
@@ -445,7 +466,14 @@ export async function processTrailing(
 
   // 5. Move SL on exchange
   const intentId = crypto.randomUUID();
-  const slOrder = await moveSl(adapter, ticket, newTrailingSl, exchange, intentId);
+  const slOrder = await moveSl(
+    adapter,
+    ticket,
+    newTrailingSl,
+    exchange,
+    intentId,
+    supportsEditOrder,
+  );
 
   log.info("trailing SL updated", {
     symbol: ticket.symbol,

@@ -24,8 +24,8 @@ import {
 // ---------------------------------------------------------------------------
 
 describe("event-log -- EVENT_TYPES constant", () => {
-  it("includes all 10 DATA_MODEL.md event types", () => {
-    const expected = [
+  it("includes all PRD §7.26 base event types (10)", () => {
+    const prdBase = [
       "BIAS_CHANGE",
       "WATCHING_START",
       "WATCHING_END",
@@ -38,13 +38,31 @@ describe("event-log -- EVENT_TYPES constant", () => {
       "SL_MOVED",
     ] as const;
 
-    for (const t of expected) {
+    for (const t of prdBase) {
       expect(EVENT_TYPES).toContain(t);
     }
   });
 
-  it("has exactly 10 entries", () => {
-    expect(EVENT_TYPES).toHaveLength(10);
+  it("includes pipeline diagnostics types (2)", () => {
+    // 운영 진단용 — PRD 외, pipeline.ts에서 사용
+    expect(EVENT_TYPES).toContain("PIPELINE_LATENCY");
+    expect(EVENT_TYPES).toContain("DAILY_BIAS_MISMATCH");
+  });
+
+  it("includes crash recovery session types (2)", () => {
+    // PRD §7.18 크래시 복구 세부 분류
+    expect(EVENT_TYPES).toContain("WATCH_SESSION_RESTORED");
+    expect(EVENT_TYPES).toContain("WATCH_SESSION_INVALIDATED_CRASH");
+  });
+
+  it("includes transfer event types per PRD §7.26 L495 (3)", () => {
+    expect(EVENT_TYPES).toContain("TRANSFER_SUCCESS");
+    expect(EVENT_TYPES).toContain("TRANSFER_FAILED");
+    expect(EVENT_TYPES).toContain("TRANSFER_SKIP");
+  });
+
+  it("has exactly 17 entries (10 base + 2 diagnostics + 2 crash-recovery + 3 transfer)", () => {
+    expect(EVENT_TYPES).toHaveLength(17);
   });
 
   it("is a readonly array", () => {

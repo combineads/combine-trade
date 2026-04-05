@@ -76,8 +76,9 @@ Manual execution of the Double-BB trading strategy is subject to human emotion, 
 | 단계 | 기간 | 내용 | 통과 기준 |
 |------|------|------|----------|
 | 백테스트 | — | 심볼×거래소별 WFO 검증 | expectancy > 0, MDD 감당 가능 |
-| analysis | 2주+ | 30만원, 신호 기록만 | 빈도·비율 백테스트와 유사 |
-| alert 최소자본 | 2주+ | 30만원/3%, 실제 주문 | 10건+ 완결 거래 정상 |
+| analysis | 2주+ | 신호 기록만 (주문·알림 없음) | 빈도·비율 백테스트와 유사 |
+| alert | 2주+ | Slack 알림만 (주문 없음) | 신호 품질·타이밍 실시간 확인 |
+| live 최소자본 | 2주+ | 30만원/3%, 실제 주문 | 10건+ 완결 거래 정상 |
 | 자본 확대 | — | 3천만원, risk_pct 1%로 하향, pyramid_count 확장 | KPI 지속 양호 |
 
 ## risk_pct 티어 (PRD §7.11)

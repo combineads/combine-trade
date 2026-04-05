@@ -2,7 +2,7 @@
  * Order executor — entry order, SL registration, slippage guard, emergency close.
  *
  * Business rules:
- * 1. Mode guard: analysis mode -> hard error. alert/live -> proceed.
+ * 1. Mode guard: only 'live' mode proceeds. analysis/alert -> hard error.
  * 2. Entry order: market order via adapter.createOrder()
  * 3. SL registration: IMMEDIATELY after entry fill. Bracket order first, 2-step fallback.
  *    - 3 retries on failure, emergency close after all fail
@@ -43,7 +43,7 @@ const log = createLogger("executor");
 
 export class ExecutionModeError extends Error {
   constructor(mode: ExecutionMode) {
-    super(`Cannot execute orders in '${mode}' mode. Only 'alert' and 'live' modes are allowed.`);
+    super(`Cannot execute orders in '${mode}' mode. Only 'live' mode is allowed.`);
     this.name = "ExecutionModeError";
   }
 }
@@ -364,7 +364,7 @@ async function attemptSlRegistration(
 
 /**
  * Executes a full entry flow:
- * 1. Mode guard (analysis -> error)
+ * 1. Mode guard (analysis/alert -> error, only live proceeds)
  * 2. Set leverage
  * 3. Attempt bracket order (entry + SL)
  * 4. If bracket fails: plain entry + 2-step SL with retries
@@ -388,8 +388,8 @@ export async function executeEntry(params: ExecuteEntryParams): Promise<ExecuteE
     exchangeConfig,
   } = params;
 
-  // 1. Mode guard
-  if (mode === "analysis") {
+  // 1. Mode guard — only 'live' mode executes real orders
+  if (mode !== "live") {
     throw new ExecutionModeError(mode);
   }
 

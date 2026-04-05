@@ -27,6 +27,7 @@ export const SlackEventType = {
   TRANSFER_SKIP: "TRANSFER_SKIP",
   TRANSFER_SURPLUS_ALERT: "TRANSFER_SURPLUS_ALERT",
   ECONOMIC_CALENDAR_FAILED: "ECONOMIC_CALENDAR_FAILED",
+  SIGNAL_DETECTED: "SIGNAL_DETECTED",
 } as const;
 
 export type SlackEventType = (typeof SlackEventType)[keyof typeof SlackEventType];
@@ -69,6 +70,7 @@ const EVENT_COLORS: Record<SlackEventType, string> = {
   [SlackEventType.TRANSFER_SKIP]: COLOR_ORANGE,
   [SlackEventType.TRANSFER_SURPLUS_ALERT]: COLOR_ORANGE,
   [SlackEventType.ECONOMIC_CALENDAR_FAILED]: COLOR_RED,
+  [SlackEventType.SIGNAL_DETECTED]: COLOR_ORANGE,
 };
 
 // ---------------------------------------------------------------------------
@@ -89,6 +91,7 @@ const EVENT_EMOJIS: Record<SlackEventType, string> = {
   [SlackEventType.TRANSFER_SKIP]: ":fast_forward:",
   [SlackEventType.TRANSFER_SURPLUS_ALERT]: ":mega:",
   [SlackEventType.ECONOMIC_CALENDAR_FAILED]: ":calendar:",
+  [SlackEventType.SIGNAL_DETECTED]: ":bell:",
 };
 
 // ---------------------------------------------------------------------------

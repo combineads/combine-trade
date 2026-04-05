@@ -102,10 +102,9 @@ describe("executor", () => {
       await expect(executeEntry(params)).rejects.toThrow(/analysis/i);
     });
 
-    it("does NOT throw in alert mode", async () => {
+    it("throws ExecutionModeError in alert mode", async () => {
       const params = makeEntryParams({ mode: "alert" });
-      const result = await executeEntry(params);
-      expect(result.success).toBe(true);
+      await expect(executeEntry(params)).rejects.toThrow(ExecutionModeError);
     });
 
     it("does NOT throw in live mode", async () => {

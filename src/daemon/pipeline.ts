@@ -931,13 +931,39 @@ async function processEntry(
     return;
   }
 
-  // ---- 11. Skip execution in analysis mode ----
+  // ---- 11. Skip execution in analysis/alert mode ----
   if (sym.executionMode === "analysis") {
     log.info("pipeline_entry_analysis_mode_skip", {
       symbol,
       exchange,
       details: { timeframe, vectorId: vectorRow.id },
     });
+    return;
+  }
+
+  if (sym.executionMode === "alert") {
+    log.info("pipeline_entry_alert_mode_notify", {
+      symbol,
+      exchange,
+      details: { timeframe, vectorId: vectorRow.id, direction: evidence.direction },
+    });
+    deps
+      .sendSlackAlert(
+        "SIGNAL_DETECTED" as SlackEventType,
+        {
+          symbol,
+          exchange,
+          timeframe,
+          direction: evidence.direction,
+          entryPrice: evidence.entryPrice.toString(),
+          slPrice: evidence.slPrice.toString(),
+          winRate: knnDecision.winRate,
+          sampleCount: knnDecision.sampleCount,
+          aGrade: evidence.aGrade,
+        },
+        deps.db,
+      )
+      .catch(() => {});
     return;
   }
 

@@ -1,0 +1,77 @@
+{
+  "schema": "v1",
+  "description": "Layer rules for mechanical enforcement. Single source of truth for module boundaries.",
+  "lastUpdated": "2026-04-05",
+  "layers": {
+    "L0": {
+      "name": "Foundation",
+      "modules": ["core"],
+      "testCoverage": "100%",
+      "changePolicy": "all-dependents-verified",
+      "allowedImports": []
+    },
+    "L1": {
+      "name": "Data Persistence",
+      "modules": ["db", "config"],
+      "testCoverage": "80%",
+      "changePolicy": "adr-required",
+      "allowedImports": ["L0"]
+    },
+    "L2": {
+      "name": "Adapters",
+      "modules": ["indicators", "exchanges"],
+      "testCoverage": "80%",
+      "changePolicy": "adr-required",
+      "allowedImports": ["L0"]
+    },
+    "L3": {
+      "name": "Data Collection",
+      "modules": ["candles", "vectors"],
+      "testCoverage": "70%",
+      "changePolicy": "task-scoped",
+      "allowedImports": ["L0", "L1", "L2"]
+    },
+    "L4": {
+      "name": "Analysis",
+      "modules": ["filters", "knn"],
+      "testCoverage": "70%",
+      "changePolicy": "task-scoped",
+      "allowedImports": ["L0", "L1"]
+    },
+    "L5": {
+      "name": "Decision",
+      "modules": ["signals", "positions", "limits"],
+      "testCoverage": "70%",
+      "changePolicy": "task-scoped",
+      "allowedImports": ["L0", "L1", "L2"]
+    },
+    "L6": {
+      "name": "Execution",
+      "modules": ["orders", "exits", "labeling"],
+      "testCoverage": "70%",
+      "changePolicy": "task-scoped",
+      "allowedImports": ["L0", "L1", "L5"]
+    },
+    "L7": {
+      "name": "Operations",
+      "modules": ["reconciliation", "notifications", "transfer"],
+      "testCoverage": "70%",
+      "changePolicy": "task-scoped",
+      "allowedImports": ["L0", "L1", "L6"]
+    },
+    "L8": {
+      "name": "Interface",
+      "modules": ["api", "backtest"],
+      "testCoverage": "integration",
+      "changePolicy": "api-compat-check",
+      "allowedImports": ["L0", "L1", "L2", "L3", "L4", "L5", "L6", "L7"]
+    },
+    "L9": {
+      "name": "Orchestration",
+      "modules": ["daemon"],
+      "testCoverage": "integration",
+      "changePolicy": "api-compat-check",
+      "allowedImports": ["L0", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8"]
+    }
+  }
+}

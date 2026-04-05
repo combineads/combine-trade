@@ -1,9 +1,10 @@
 # Security Audit — 2026-04-05
 
 ## Summary
-- Total findings: 6 (Critical: 1, High: 2, Medium: 3)
+- Total findings: 11 (Critical: 1, High: 3, Medium: 7)
 - Attack surface: 2 public endpoints, 12 authenticated, 0 admin-only
-- OWASP categories with findings: A01, A02, A04, A05, A07
+- OWASP categories with findings: A01, A02, A04, A05, A06, A07, A08, A09
+- 3-agent parallel audit: Auth/Surface, Injection/SSRF/Data, Config/Deps/DoS/STRIDE
 
 ## Attack Surface Map
 
@@ -72,6 +73,50 @@
 - **Remediation**: `docs/SECURITY.md` line 49 documents "Pin exact versions in bun.lockb" — the lockfile exists, but `package.json` should also use exact versions for production dependencies (especially `ccxt` which handles exchange API calls). Run `bun install --exact` for new additions.
 - **Fix effort**: 15 minutes (one-time migration)
 
+### [HIGH] A05-004: No HTTP security headers (CSP, X-Frame-Options, HSTS)
+
+- **File**: `src/api/server.ts`
+- **Confidence**: 10/10
+- **OWASP**: A05 Security Misconfiguration
+- **Exploit scenario**: No `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, or `Strict-Transport-Security` headers are set. An attacker hosts a malicious page that embeds the dashboard in an `<iframe>` (clickjacking). The operator is tricked into clicking the kill-switch button or switching execution mode to "live" while believing they are interacting with a different page.
+- **Remediation**: Add Hono `secureHeaders` middleware or manually set: `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`.
+- **Fix effort**: 15 minutes
+
+### [MEDIUM] A04-001: No request body size limit (DoS)
+
+- **File**: `src/api/server.ts`
+- **Confidence**: 9/10
+- **OWASP**: A04 Insecure Design
+- **Exploit scenario**: No `bodyLimit` middleware. `POST /api/login` (public, no auth) with a 500 MB JSON payload → Bun reads entire body into memory → heap exhaustion → daemon crash. Since daemon is single-process (trading pipeline + reconciliation + API), this crashes the entire system.
+- **Remediation**: Add Hono `bodyLimit` middleware globally (1 MB max).
+- **Fix effort**: 5 minutes
+
+### [MEDIUM] A06-001: No dependency vulnerability audit tool
+
+- **Confidence**: 10/10
+- **OWASP**: A06 Vulnerable Components
+- **Exploit scenario**: `bun audit` does not exist. `npm audit` fails (no npm lockfile). Known CVEs in `jsonwebtoken`, `ccxt`, or transitive dependencies go undetected. `SECURITY.md` says "Audit dependencies periodically" but provides no mechanism.
+- **Remediation**: Add `osv-scanner` or `snyk` to CI. Alternatively, generate `package-lock.json` alongside `bun.lock` for `npm audit`.
+- **Fix effort**: 30 minutes
+
+### [MEDIUM] A09-001: TransferScheduler bypasses structured logger
+
+- **File**: `src/transfer/scheduler.ts:167,182`
+- **Confidence**: 10/10
+- **OWASP**: A09 Logging Failures
+- **Exploit scenario**: TransferScheduler uses `console.log`/`console.error` instead of `createLogger()`. Transfer errors are missed by log aggregation pipelines (which parse JSON lines). `console.error(err)` may print stack traces with file paths.
+- **Remediation**: Replace with `createLogger("transfer-scheduler").info(...)` and `.error(...)`.
+- **Fix effort**: 10 minutes
+
+### [MEDIUM] A09-002: Logger has no sensitive-value scrubbing
+
+- **File**: `src/core/logger.ts`
+- **Confidence**: 8/10
+- **OWASP**: A09 Logging Failures
+- **Exploit scenario**: Logger accepts arbitrary `Record<string, unknown>` and serializes via `JSON.stringify`. No deny-list for keys like `password`, `secret`, `apiKey`. Currently no caller passes secrets, but no guardrail prevents future callers from doing so.
+- **Remediation**: Add deny-list filter in `buildEntry()` that redacts keys matching `/password|secret|apiKey|apiSecret|token|authorization/i`.
+- **Fix effort**: 30 minutes
+
 ## Positive Controls (Working Correctly)
 
 | Control | Status | Evidence |
@@ -119,14 +164,34 @@ Legend: ✓=mitigated, ⚠=gap found (Fn=finding #), ✗=unmitigated
 | Candle data | Public | No auth needed | OK | None |
 | Config (CommonCode) | Internal | Auth-gated API | Conditional (F1) | Auth may be bypassed |
 
+## Full Finding Index
+
+| # | Severity | OWASP | Title | Confidence |
+|---|----------|-------|-------|------------|
+| A01-001 | CRITICAL | A01 | Auth routes not mounted + jwtSecret optional | 10/10 |
+| A02-001 | HIGH | A02 | JWT cookie missing Secure flag | 10/10 |
+| A07-001 | HIGH | A07 | No rate limiting on login/transfer/kill-switch | 10/10 |
+| A05-004 | HIGH | A05 | No HTTP security headers (clickjacking) | 10/10 |
+| A05-001 | MEDIUM | A05 | .env.test committed to git | 10/10 |
+| A05-002 | MEDIUM | A05 | CORS hardcoded to dev origin | 9/10 |
+| A05-003 | MEDIUM | A08 | Dependencies use ^ ranges | 8/10 |
+| A04-001 | MEDIUM | A04 | No request body size limit (DoS) | 9/10 |
+| A06-001 | MEDIUM | A06 | No dependency vulnerability audit tool | 10/10 |
+| A09-001 | MEDIUM | A09 | TransferScheduler bypasses structured logger | 10/10 |
+| A09-002 | MEDIUM | A09 | Logger has no sensitive-value scrubbing | 8/10 |
+
 ## Recommendations
 
-1. **[CRITICAL] Mount auth routes + require JWT secret** — This is the highest-priority fix. Without it, the entire API is potentially unauthenticated. (~30 min)
+1. **[CRITICAL] Mount auth routes + require JWT secret** — Highest priority. Without it, the entire API is unauthenticated. (~30 min)
 
-2. **[HIGH] Add Secure flag to cookie + login rate limiting** — Two quick wins that close the remaining auth gaps. (~1 hour combined)
+2. **[HIGH] Security headers + Secure cookie flag** — Add secureHeaders middleware + Secure flag on JWT cookie. (~20 min combined)
 
-3. **[MEDIUM] Git hygiene + CORS config + version pinning** — Lower urgency but important for production readiness. (~30 min combined)
+3. **[HIGH] Rate limiting on critical endpoints** — Login (5/min), transfer trigger (1/min), kill-switch (1/min). (~1 hour)
 
-4. **[RECOMMENDED] Security headers** — Add CSP, HSTS, X-Content-Type-Options, X-Frame-Options via Hono middleware. Not a current vulnerability but best practice.
+4. **[MEDIUM] Body size limit** — Add `bodyLimit(1MB)` middleware globally. (~5 min)
 
-5. **[RECOMMENDED] Re-run this audit after auth fixes** — Verify that all CRITICAL/HIGH findings are resolved before first deployment.
+5. **[MEDIUM] Structured logging fix** — Replace console.log in scheduler, add logger scrubbing. (~40 min)
+
+6. **[MEDIUM] Git hygiene + CORS config + version pinning** — Lower urgency but production-blocking. (~30 min)
+
+7. **[RECOMMENDED] Re-run this audit after CRITICAL/HIGH fixes** — Verify resolution before deployment.

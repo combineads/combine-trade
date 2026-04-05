@@ -17,7 +17,7 @@
 ## Prerequisites
 - EP-01 (core, db, config) 완료
 - EP-03 M1 (exchanges — Binance 어댑터, `transfer()` 메서드) 완료
-- EP-08 (notifications — Slack 알림) 완료
+- EP-08 (safety-net — reconciliation + Slack 알림) 완료
 
 ## Milestones
 
@@ -60,7 +60,7 @@
   - 이체 성공 시 EventLog에 `TRANSFER_SUCCESS` 기록
   - 이체 실패 시 EventLog에 `TRANSFER_FAILED` + error_message 기록, Slack 긴급 알림
   - 이체 중 포지션 개시 이벤트가 발생해도 이체는 계속 (비차단)
-  - 이체 금액 최소 단위(소수점) 거래소 규칙 준수
+  - 이체 금액 최소 단위(소수점) 거래소 규칙 준수 — floor(내림) 적용, 절대 반올림하지 않음
 - Validation:
   - `bun test -- --grep "transfer-executor"`
 
@@ -70,7 +70,7 @@
     - daemon 시작 시 등록, `transfer_schedule` + `transfer_time_utc` 기반 타이머
     - setTimeout 체인으로 다음 이체 시각 계산 (setInterval 미사용 — 드리프트 방지)
     - `transfer_enabled = false` 시 즉시 skip
-  - Slack 알림 통합:
+  - Slack 알림 — daemon(L9)이 transfer 결과를 받아 `sendSlackAlert()` 호출 (L7→L7 의존 방지):
     - 이체 성공: "💸 자동 이체 완료: {amount} USDT → 현물 지갑"
     - 이체 skip: 잔고 부족 시 debug 로그만 (Slack 미발송)
     - 이체 실패: Slack 긴급 알림
@@ -99,15 +99,15 @@
   - 브라우저 수동 확인
 
 ## Task candidates
-- T-14-001: config/seed.ts — TRANSFER CommonCode 그룹 시드 추가 (reserve_multiplier 포함)
-- T-14-002: transfer/balance.ts — 이체 가능 잔고 계산 (동적 reserve, risk_pct 연동, 증거금 제외)
-- T-14-003: transfer/executor.ts — CCXT transfer() 호출 & EventLog 기록
-- T-14-004: transfer/scheduler.ts — 스케줄러 (daily/weekly, setTimeout 체인)
-- T-14-005: scripts/transfer-now.ts — 수동 즉시 이체 CLI (--dry-run 포함)
-- T-14-006: notifications/slack.ts — 이체 성공/실패 알림 + 미지원 거래소 잉여 잔고 알림 템플릿
-- T-14-007: api/routes/ — 이체 이력 조회 (EventLog 필터) & 수동 트리거 엔드포인트
-- T-14-008: web/ — 이체 이력 섹션 & 수동 이체 버튼
-- T-14-009: 이체 E2E 통합 테스트 (dry-run + Binance 테스트넷)
+- T-14-001: config/seed.ts — TRANSFER CommonCode 그룹 시드 추가 (types, schema, seed) ✅ generated
+- T-14-002: transfer/balance.ts — 이체 가능 잔고 계산 (동적 reserve, risk_pct 연동, 증거금 제외) ✅ generated
+- T-14-003: transfer/executor.ts — ExchangeAdapter.transfer() 포트 확장 + CCXT transfer() 호출 & EventLog 기록 ✅ generated
+- T-14-004: transfer/scheduler.ts — 스케줄러 (daily/weekly, setTimeout 체인) ✅ generated
+- T-14-005: scripts/transfer-now.ts — 수동 즉시 이체 CLI (--dry-run 포함) ✅ generated
+- T-14-006: notifications/slack.ts — 이체 성공/실패 알림 + 미지원 거래소 잉여 잔고 알림 템플릿 ✅ generated
+- T-14-007: api/routes/ — 이체 이력 조회 (EventLog 필터) & 수동 트리거 엔드포인트 ✅ generated
+- T-14-008: web/ — 이체 이력 섹션 & 수동 이체 버튼 ✅ generated
+- T-14-009: 이체 E2E 통합 테스트 (MockExchangeAdapter 기반) ✅ generated
 
 ## Risks
 - **이체 중 마진콜**: 이체 직후 급격한 가격 변동으로 유지 증거금 부족. **완화**: reserve = balance × risk_pct × reserve_multiplier로 동적 버퍼 확보, 이체 전 미실현 손익 확인.
@@ -123,9 +123,12 @@
 - **Transfer 테이블 폐기 → EventLog 통합** — 별도 마이그레이션(007) 불필요. event_type `TRANSFER_SUCCESS`/`TRANSFER_FAILED`/`TRANSFER_SKIP`으로 EventLog에 기록. 이력 조회는 EventLog WHERE 필터.
 - **이체 실패는 비치명적** — 이체 실패가 트레이딩 파이프라인을 중단시키지 않음. Slack 알림 후 다음 스케줄에서 재시도.
 - **멀티 거래소 잉여 잔고 알림** — Phase 1에서 이체 미지원 거래소(OKX/Bitget/MEXC)에 잉여 잔고 감지 시 Slack 알림 발송. 자동 이체는 Phase 2.
+- **L7→L7 의존 방지** — transfer 모듈은 notifications를 직접 import하지 않음. transfer는 이체 결과(성공/실패/skip)를 반환하고, daemon(L9)이 결과에 따라 `sendSlackAlert()` 호출. 레이어 규칙 준수.
+- **이체 금액 내림(floor) 적용** — 거래소 최소 단위보다 큰 이체액이 소수점으로 떨어질 때 반올림하면 잔고 초과 가능. 항상 floor 처리.
 
 ## Consensus Log
 - (계획 단계)
 
 ## Progress notes
-- (작업 전)
+- 2026-04-05: task-generator가 9개 태스크 생성 (T-14-001 ~ T-14-009). 의존성 순서: 001→002→003→{004,005,007,009}, 001→006, 007→008.
+- 2026-04-05: implement-all 완료. 9/9 태스크 성공, 6 waves, 6 commits. 101 tests added. M1~M4 모두 구현 완료.

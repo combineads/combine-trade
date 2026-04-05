@@ -14,6 +14,7 @@
  */
 
 import { Decimal } from "@/core/decimal";
+import type { ExchangePosition } from "@/core/ports";
 import { calculateTransferable } from "@/transfer/balance";
 import type { TransferableParams } from "@/transfer/balance";
 import { executeTransfer } from "@/transfer/executor";
@@ -46,6 +47,15 @@ export function parseArgs(args: string[]): TransferNowArgs {
   }
 
   return { dryRun, exchange };
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function computeOpenMargin(positions: ExchangePosition[]): Decimal {
+  return positions.reduce(
+    (sum, p) => sum.plus(p.size.mul(p.entryPrice).div(new Decimal(p.leverage))),
+    new Decimal("0"),
+  );
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -117,10 +127,7 @@ async function main(): Promise<void> {
     const balance = await adapter.fetchBalance();
     const positions = await adapter.fetchPositions();
 
-    const openMargin = positions.reduce(
-      (sum, p) => sum.plus(p.size.mul(p.entryPrice).div(new Decimal(p.leverage))),
-      new Decimal("0"),
-    );
+    const openMargin = computeOpenMargin(positions);
 
     const params: TransferableParams = {
       walletBalance: balance.total,
@@ -151,10 +158,7 @@ async function main(): Promise<void> {
         const balance = await adapter.fetchBalance();
         const positions = await adapter.fetchPositions();
 
-        const openMargin = positions.reduce(
-          (sum, p) => sum.plus(p.size.mul(p.entryPrice).div(new Decimal(p.leverage))),
-          new Decimal("0"),
-        );
+        const openMargin = computeOpenMargin(positions);
 
         return {
           walletBalance: balance.total,

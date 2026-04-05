@@ -35,7 +35,8 @@ bun run backtest
 8. `docs/PLANS.md` — execution planning rules
 9. `docs/RELIABILITY.md` — failure modes and logging
 10. `docs/SECURITY.md` — secrets, auth, input validation
-11. Active exec-plan under `docs/exec-plans/`
+11. `docs/manuals/` — installation, daily operations, monitoring, emergency response
+12. Active exec-plan under `docs/exec-plans/`
 
 ## Agent team roster
 
@@ -125,5 +126,6 @@ harness-discovery → harness-project-bootstrap → harness-architect → [harne
 | `docs/QUALITY_SCORE.md` | Current quality scores with evidence |
 | `docs/RELIABILITY.md` | Failure modes, logging, retry rules |
 | `docs/SECURITY.md` | Secrets, auth, input validation, data sensitivity |
+| `docs/manuals/` | Installation, daily operations, monitoring, emergency response |
 | `docs/tasks/README.md` | Task board rules, lane definitions, sizing |
 | `docs/anti-patterns.md` | Failed approaches to avoid |

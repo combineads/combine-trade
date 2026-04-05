@@ -1,4 +1,4 @@
-# 18-security-hardening
+# EP-17 — 보안 강화
 
 ## Objective
 보안 감사(2026-04-05) 발견 사항 11건(C1/H3/M7)을 해결하여 프로덕션 배포 가능한 보안 수준을 달성한다. 인증 시스템 완성, API 보호 강화, 운영 보안 기반 확보가 목표다.
@@ -100,18 +100,18 @@
   - `bun run typecheck`
 
 ## Task candidates
-- T-19-001: auth 라우트 server.ts 마운트 + jwtSecret 필수화 + GET /api/me
-- T-19-002: JWT 쿠키 Secure 플래그 추가 (buildSetCookie + buildClearCookie)
-- T-19-003: rate limiter 미들웨어 구현 (in-memory token bucket, 엔드포인트별 설정)
-- T-19-004: secureHeaders 미들웨어 (CSP, X-Frame-Options, X-Content-Type-Options)
-- T-19-005: bodyLimit 미들웨어 (1MB 글로벌)
-- T-19-006: CORS origin 환경변수 설정 가능화
-- T-19-007: logger.ts 민감값 스크러빙 (deny-list 필터)
-- T-19-008: TransferScheduler console.log → 구조화 로거 전환
-- T-19-009: .env.test git 제거 + .gitignore 업데이트
-- T-19-010: 프로덕션 의존성 버전 고정 (ccxt, jsonwebtoken, hono 등)
-- T-19-011: 의존성 audit 스크립트 추가 (osv-scanner 또는 npm audit)
-- T-19-012: UUID 형식 검증 유틸 + trade-blocks/:id 적용
+- T-17-001: auth 라우트 server.ts 마운트 + jwtSecret 필수화 + GET /api/me
+- T-17-002: JWT 쿠키 Secure 플래그 추가 (buildSetCookie + buildClearCookie)
+- T-17-003: rate limiter 미들웨어 구현 (in-memory token bucket, 엔드포인트별 설정)
+- T-17-004: secureHeaders 미들웨어 (CSP, X-Frame-Options, X-Content-Type-Options)
+- T-17-005: bodyLimit 미들웨어 (1MB 글로벌)
+- T-17-006: CORS origin 환경변수 설정 가능화
+- T-17-007: logger.ts 민감값 스크러빙 (deny-list 필터)
+- T-17-008: TransferScheduler console.log → 구조화 로거 전환
+- T-17-009: .env.test git 제거 + .gitignore 업데이트
+- T-17-010: 프로덕션 의존성 버전 고정 (ccxt, jsonwebtoken, hono 등)
+- T-17-011: 의존성 audit 스크립트 추가 (osv-scanner 또는 npm audit)
+- T-17-012: UUID 형식 검증 유틸 + trade-blocks/:id 적용
 
 ## Risks
 - **Rate limiter 메모리 누수**: in-memory token bucket은 장기 운영 시 IP 엔트리가 누적될 수 있음. **완화**: 오래된 엔트리 자동 정리 (TTL 기반), 단일 운영자 시스템이므로 IP 수가 극히 제한적.
@@ -121,12 +121,13 @@
 
 ## Decision log
 - **in-memory rate limiter 선택**: Redis 등 외부 저장소 없이 단일 프로세스 Map 기반. 이유: 단일 운영자/단일 서버 시스템이므로 분산 rate limiting 불필요. 프로세스 재시작 시 카운터 리셋되지만 허용.
-- **Secure 쿠키 조건부 적용**: 개발 환경에서는 HTTP를 사용할 수 있으므로, `process.env.NODE_ENV !== "development"` 조건으로 Secure 플래그 적용. localhost는 대부분 브라우저에서 Secure 쿠키를 허용하지만, 안전하게 조건부 처리.
-- **osv-scanner 우선**: `bun audit` 미지원, `npm audit`은 lockfile 불일치. osv-scanner는 bun.lock 직접 파싱 가능. 설치: `brew install osv-scanner` 또는 CI에서 바이너리 다운로드.
-- **A09-002 (로거 스크러빙) 범위**: 현재 callers가 시크릿을 전달하지 않으므로 예방적 조치. 오버헤드 최소화를 위해 키 이름 매칭만 수행 (값 패턴 매칭 미실시).
+- **Secure 쿠키 조건부 적용**: 개발 환경에서는 HTTP를 사용할 수 있으므로, `process.env.NODE_ENV !== "development"` 조건으로 Secure 플래그 적용.
+- **osv-scanner 우선**: `bun audit` 미지원, `npm audit`은 lockfile 불일치. osv-scanner는 bun.lock 직접 파싱 가능.
+- **A09-002 (로거 스크러빙) 범위**: 현재 callers가 시크릿을 전달하지 않으므로 예방적 조치. 오버헤드 최소화를 위해 키 이름 매칭만 수행.
+- **EP 번호 재정렬 (2026-04-05)**: 舊 EP-18 → EP-17로 변경. 舊 EP-15+17 통합 및 EP 번호 정리에 따른 변경.
 
 ## Consensus Log
-- (계획 단계)
+- (舊 EP-18에서 이관, EP-15 통합 과정에서 번호 재정렬)
 
 ## Progress notes
 - (작업 전)

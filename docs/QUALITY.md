@@ -24,7 +24,7 @@ bun run build
 - Unit tests for KNN distance/ranking/time-decay
 - Unit tests for position sizing (Decimal.js precision, leverage cap)
 - Integration tests for ExchangeAdapter implementations (mock exchange responses)
-- Integration tests for FSM state transitions (IDLE→WATCHING→OPEN→exit scenarios)
+- Integration tests for FSM state transitions (IDLE→WATCHING→HAS_POSITION→exit scenarios)
 - Integration tests for Reconciliation (DB↔exchange mismatch scenarios)
 - End-to-end: backtest produces expected signals on known historical data
 - Contract tests for CCXT exchange API responses
@@ -37,8 +37,7 @@ bun run build
 - Exchange adapter changes require testing against sandbox/testnet
 
 ## Performance and DX gates
-- Signal detection < 1s from candle close
-- Order execution < 2s from signal
+- End-to-end pipeline (candle close → order placed) < 1.2s (ARCHITECTURE.md Pipeline latency budget)
 - Backtest 3 years of 5M data completes in reasonable time
 - `bun run dev` starts the full system locally
 - Config changes (mode, trade block toggle) take effect without restart

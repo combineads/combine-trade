@@ -80,6 +80,8 @@ The reconciliation worker runs on a separate 60-second interval timer, independe
 │   ├── labeling/               # L6: trade result recording, pending labels
 │   ├── reconciliation/         # L7: DB↔exchange sync, panic close
 │   ├── notifications/          # L7: Slack webhook
+│   ├── transfer/               # L7: 선물→현물 자동 이체 (스케줄러, 잔고 계산, 실행기)
+│   ├── kpi/                    # L7: 런타임 KPI 모니터링 (MDD, 연속 손실, expectancy, reconciliation rate)
 │   ├── api/                    # L8: REST routes (Bun.serve)
 │   ├── backtest/               # L8: backtest runner, WFO optimizer
 │   ├── web/                    # standalone: React UI (Vite build → ./public)
@@ -107,7 +109,7 @@ L3  candles, vectors       — core, db, config, indicators
 L4  filters, knn           — core, db, config, indicators, vectors
 L5  signals, positions, limits — core, db, config, indicators, filters
 L6  orders, exits, labeling    — core, db, positions, exchanges (via ports)
-L7  reconciliation, notifications — core, db, positions, exchanges
+L7  reconciliation, notifications, transfer, kpi — core, db, config, exchanges (via ports)
 L8  api, backtest              — may read from L0-L7 (specific imports listed below)
 L9  daemon                     — orchestrates all layers
 ```
@@ -118,7 +120,7 @@ L9  daemon                     — orchestrates all layers
 
 **Key structural rules:**
 - `ExchangeAdapter` interface lives in `core/ports.ts` — modules depend on the interface, not concrete adapters
-- Exchange adapter implementations live in `exchanges/` — only `orders`, `reconciliation`, and `daemon` import concrete adapters
+- Exchange adapter implementations live in `exchanges/` — only `orders`, `reconciliation`, `transfer`, and `daemon` import concrete adapters
 - `positions` module must NOT directly import exchange code — `orders` mediates
 - `api` reads from: positions, candles, signals, knn, limits, labeling, config (not "all")
 - `backtest` imports: candles, indicators, filters, signals, vectors, knn, positions, limits, exits, labeling (full pipeline)
@@ -133,7 +135,7 @@ L9  daemon                     — orchestrates all layers
 | `indicators` | L2 | BB20, BB4, MA, RSI, ATR | `calcBB20()`, `calcBB4()`, `calcMA()`, `calcRSI()`, `calcATR()` | core |
 | `exchanges` | L2 | Per-exchange adapter implementations | `BinanceAdapter`, `OkxAdapter`, `BitgetAdapter`, `MexcAdapter` | core (ports), CCXT |
 | `candles` | L3 | WS collection, history, gap recovery | `CandleCollector`, `HistoryLoader`, `GapRecovery` | core, db, config |
-| `vectors` | L3 | 202-dim vectorizer, normalization | `Vectorizer.vectorize(candles): Float32Array` | core, indicators |
+| `vectors` | L3 | 202-dim vectorizer: 38봉×5 candle(190) + 12 strategy, Median/IQR normalization (lookback=60, clamp(-3,3)→[0,1]) | `Vectorizer.vectorize(candles): Float32Array` | core, indicators |
 | `filters` | L4 | Direction filter, trade block | `DailyDirectionFilter`, `TradeBlockManager` | core, config, indicators |
 | `knn` | L4 | KNN engine, distance, time decay | `KnnEngine.query(vector): KnnResult` | core, db, vectors |
 | `signals` | L5 | WATCHING, Evidence Gate, Safety Gate | `WatchingDetector`, `EvidenceGate`, `SafetyGate` | core, indicators, filters |
@@ -144,6 +146,8 @@ L9  daemon                     — orchestrates all layers
 | `labeling` | L6 | Trade result classification, Vector label | `classifyResult()`, `classifyGrade()`, `finalizeLabel()` | core, db |
 | `reconciliation` | L7 | 60s interval position reconciliation | `comparePositions()`, `runOnce()`, `startReconciliation()` | core, db, orders, exchanges (via ports) |
 | `notifications` | L7 | Slack webhook alerts (fire-and-forget) | `sendSlackAlert()`, `formatMessage()`, `getWebhookUrl()` | core, db (CommonCode) |
+| `transfer` | L7 | 선물→현물 자동 이체 | `calculateTransferable()`, `executeTransfer()`, `TransferScheduler` | core, db, config, exchanges (via ports) |
+| `kpi` | L7 | 런타임 KPI 모니터링 (MDD, 연속 손실, expectancy, reconciliation rate) | `calcMDD()`, `calcConsecutiveLosses()`, `calcRecentExpectancy()`, `checkThresholds()` | core, db |
 | `api` | L8 | REST routes | `createRouter(): Router` | core, positions, candles, signals, knn, limits, labeling, config |
 | `backtest` | L8 | Backtest runner, WFO | `BacktestRunner`, `MockExchangeAdapter`, `calcFullMetrics()`, `generateWfoWindows()`, `runWfo()`, `parseArgs()`, `runCli()` | full pipeline (candles→labeling) |
 | `daemon` | L9 | Main entry, pipeline, crash recovery, shutdown | `startDaemon()`, `handleCandleClose()`, `recoverFromCrash()`, `gracefulShutdown()`, `getExecutionMode()`, `killSwitch()` | all |
@@ -154,7 +158,7 @@ L9  daemon                     — orchestrates all layers
 |--------|-------------|-------|---------------|
 | Symbol | core | `symbol` | PK=(symbol, exchange). Per-exchange symbol. |
 | SymbolState | positions | `symbol_state` | Per symbol×exchange FSM + loss counters. Upsert. |
-| CommonCode | config | `common_code` | PK=(group_code, code). All settings. Replaces config.json. |
+| CommonCode | core | `common_code` | PK=(group_code, code). All settings. Replaces config.json. |
 | TradeBlock | filters | `trade_block` | Recurring + one-off trade blocks. Replaces BlackoutWindow + EconomicEvent. |
 | Candle | candles | `candles` | Per exchange×symbol×timeframe. Append-only. |
 | WatchSession | signals | `watch_session` | Lifecycle: open → active → invalidated. Per symbol×exchange. |
@@ -168,6 +172,17 @@ L9  daemon                     — orchestrates all layers
 | DaemonState | daemon | derived on startup | No persistent table. Reconstructed from tickets + exchange positions on restart. |
 
 **Data access rule:** Each module reads/writes only its own table(s). Cross-module data access goes through the owning module's public API. Exception: `db` module provides shared connection pool and migration infrastructure.
+
+## History data collection policy (PRD §3.4)
+
+| Timeframe | Collection period | Notes |
+|-----------|------------------|-------|
+| 1D / 1H / 5M | 3 years | Per exchange |
+| 1M | 6 months | Rolling refresh |
+
+- Each exchange collects its own candle history independently
+- On daemon startup, gap recovery fetches missing candles via REST API
+- 1M data beyond 6 months is archived/deleted (KNN time decay reduces weight anyway)
 
 ## Integration boundaries
 
@@ -189,7 +204,7 @@ L9  daemon                     — orchestrates all layers
 On restart:
 1. Fetch all positions from all exchanges via `fetchPositions()`
 2. Match against `tickets` table in DB
-3. **Matched:** Restore OPEN state, verify SL exists on exchange (re-register if missing)
+3. **Matched:** Restore HAS_POSITION state, verify SL exists on exchange (re-register if missing)
 4. **Unmatched (exchange has, DB doesn't):** Panic close immediately → IDLE
 5. **Orphaned DB (DB has, exchange doesn't):** Mark IDLE, log anomaly
 6. Resume WATCHING evaluation on next 1H close

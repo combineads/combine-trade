@@ -110,7 +110,7 @@
 | `EXCHANGE` | 거래소 메타데이터 | `binance` | `{ name, adapter_type, supports_one_step_order, supports_edit_order, rate_limit_per_min, min_order_size, priority }` |
 | `TIMEFRAME` | 타임프레임 정의 | `1D` | `{ duration_seconds: 86400, display_name: "1일" }` |
 | `SYMBOL_CONFIG` | 심볼별 설정 | `BTCUSDT` | `{ risk_pct: 0.03, max_leverage: 38 }` |
-| `KNN` | KNN 파라미터 | `top_k` | `50` |
+| `KNN` | KNN 파라미터 | `top_k` | `50` — 기타: distance_metric="cosine", min_winrate=0.55, threshold=4.26, min_samples=30, commission_pct=0.08 |
 | `POSITION` | 포지션 관리 | `max_pyramid_count` | `2` |
 | `LOSS_LIMIT` | 손실 제한 | `max_daily_loss_pct` | `0.10` |
 | `SLIPPAGE` | 슬리피지 임계치 | `max_spread_pct` | `0.05` |
@@ -118,6 +118,8 @@
 | `TIME_DECAY` | 시간 감쇠 | `1_month` | `1.0` |
 | `WFO` | WFO 설정 | `in_sample_months` | `6` |
 | `ANCHOR` | 구조적 앵커 (불변) | `bb20` | `{ length: 20, stddev: 2, source: "close" }` |
+| `TRANSFER` | 자동 이체 설정 | `transfer_enabled` | `false` — 이체액 = 당일 실현 수익 × transfer_pct(50%) |
+| `NOTIFICATION` | 알림 설정 | `slack_webhook` | Slack 알림 관련 설정 (채널, 포맷 등) |
 
 > **config.json 제거:** 모든 설정이 CommonCode에 저장되므로 config.json 파일이 불필요합니다.
 
@@ -208,7 +210,7 @@ function isTradeBlocked(now: Date): boolean {
 - `sl_price` (numeric, not null) — 예상 SL가
 - `safety_passed` (boolean, not null) — Safety Gate 통과 여부
 - `knn_decision` (text) — CHECK (PASS / FAIL / SKIP)
-- `a_grade` (boolean, not null, default false) — A등급 시그널 여부
+- `a_grade` (boolean, not null, default false) — A등급 시그널 (1H+5M/1M BB4 동시). A급 시 KNN 완화: min_winrate→50%, min_samples→20
 - `vector_id` (FK → Vector, nullable) — 생성된 벡터 참조
 - `created_at` (timestamptz, not null)
 - CRUD: 파이프라인 산출, append-only
@@ -380,6 +382,12 @@ function isTradeBlocked(now: Date): boolean {
 | `STATE_CHANGE` | FSM 상태 전이 | `{ from: "IDLE", to: "WATCHING", trigger: "1h_close" }` |
 | `SL_REGISTERED` | SL 거래소 등록 | `{ order_id, sl_price }` |
 | `SL_MOVED` | SL 본절 이동 | `{ from_price, to_price, reason: "tp1_hit" }` |
+| `TRANSFER_SUCCESS` | 자동 이체 성공 | `{ exchange, currency, amount, from: "future", to: "spot", balance_before, balance_after, reserve }` |
+| `TRANSFER_FAILED` | 자동 이체 실패 | `{ exchange, currency, amount, error_message }` |
+| `TRANSFER_SKIP` | 이체 건너뜀 (잔고 부족) | `{ exchange, available, min_transfer, reserve }` |
+| `CONSECUTIVE_LOSS_RECORD` | 연속 손실 역대 최대 갱신 | `{ count, previous_max, symbols }` |
+| `MDD_WARNING` | MDD 10% 초과 경고 | `{ mdd_pct, peak_balance, current_balance }` |
+| `EXPECTANCY_WARNING` | 최근 30건 expectancy 음수 | `{ expectancy, sample_count, recent_trades }` |
 
 > **DailyBiasLog, WatchingState, ReconciliationLog, CrashRecoveryLog, SlippageEvent 제거 → EventLog 통합 근거:** 이들은 모두 "무슨 일이 있었는지 기록"하는 이력 테이블. 각각 별도 스키마를 정의하면 테이블만 늘어나고, 새로운 이벤트 유형이 생길 때마다 마이그레이션이 필요. EventLog 하나로 통합하면 event_type + data(jsonb)로 어떤 이벤트든 기록 가능.
 

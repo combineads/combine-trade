@@ -13,7 +13,7 @@ This system manages real money 24/7. It must fail loudly, recover predictably, a
 - **Exchange API downtime**: orders/cancels fail → reconciliation must detect and alert
 
 ### Significant (degraded operation)
-- **Reconciliation mismatch**: DB says OPEN, exchange says no position (or vice versa)
+- **Reconciliation mismatch**: DB says HAS_POSITION, exchange says no position (or vice versa)
 - **Slippage exceeds threshold**: bad fill → immediate close + alert
 - **Rate limit exceeded**: orders delayed → spread may have moved
 - **Investing.com API failure**: economic event data stale → fail-closed (assume trade block active)
@@ -42,17 +42,34 @@ This system manages real money 24/7. It must fail loudly, recover predictably, a
 
 ### Reconciliation
 - Runs every 60 seconds per exchange per symbol
-- DB=OPEN, exchange=no position → mark IDLE, log as anomaly
+- DB=HAS_POSITION, exchange=no position → mark IDLE, log as anomaly
 - DB=IDLE, exchange=has position → panic close, mark IDLE, alert
 - Any mismatch → Slack alert with full context
 
 ### Crash recovery sequence
 1. Fetch all positions from all exchanges
 2. Match against DB tickets
-3. Matched: restore OPEN state, verify SL exists on exchange
+3. Matched: restore HAS_POSITION state, verify SL exists on exchange
 4. Unmatched (exchange has, DB doesn't): panic close + IDLE
 5. Orphaned DB tickets (DB has, exchange doesn't): mark IDLE
 6. Resume WATCHING evaluation on next 1H close
+
+## Runtime KPI monitoring (PRD §9)
+
+실시간 KPI를 감시하고 임계치 초과 시 Slack 경고를 발송한다.
+
+| KPI | 경고 기준 | 체크 주기 | Slack 메시지 |
+|-----|----------|----------|-------------|
+| MDD | 10% 초과 | 1시간 | `⚠️ MDD {pct}% — 10% 초과` |
+| 최대 연속 손실 | 역대 최대 갱신 | Ticket CLOSED 시 | `⚠️ 전략 점검 필요: 연속 {n}회 손실 (역대 최대)` |
+| 최근 30건 expectancy | 음수 전환 | Ticket CLOSED 시 | `⚠️ 최근 30건 expectancy 음수 전환: {value}` |
+| Reconciliation 일치율 | 99% 미만 | Reconciliation 완료 시 | `⚠️ Reconciliation 일치율 {pct}%` |
+
+**중복 방지**: 동일 조건이 해소되기 전까지 같은 경고를 재발송하지 않는다.
+
+**알림만, 자동 중단 아님**: KPI 경고는 운영자 판단 보조. 자동 매매 중단은 Loss Limit(§7.15)이 담당.
+
+**EventLog 기록**: 경고 발생 시 `CONSECUTIVE_LOSS_RECORD`, `MDD_WARNING`, `EXPECTANCY_WARNING` event_type으로 EventLog에 기록.
 
 ## Logging
 - Structured JSON logs

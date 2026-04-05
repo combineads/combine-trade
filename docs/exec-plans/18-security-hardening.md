@@ -1,4 +1,4 @@
-# 19-security-hardening
+# 18-security-hardening
 
 ## Objective
 보안 감사(2026-04-05) 발견 사항 11건(C1/H3/M7)을 해결하여 프로덕션 배포 가능한 보안 수준을 달성한다. 인증 시스템 완성, API 보호 강화, 운영 보안 기반 확보가 목표다.

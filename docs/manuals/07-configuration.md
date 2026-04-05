@@ -124,11 +124,42 @@ WHERE group_code = 'FEATURE_WEIGHT' AND code = 'bb4_position';
 
 ### 시간 감쇠 팩터
 
+KNN이 과거 패턴을 참조할 때, 오래된 데이터일수록 가중치를 낮추는 설정입니다.
+1.0이면 100% 반영, 0.3이면 30%만 반영합니다.
+
 ```sql
+-- 기본 감쇠 설정:
+-- 1개월 이내: 1.0 (100% 반영)
+-- 1~3개월:   0.8 (80% 반영)
+-- 3~6개월:   0.6 (60% 반영)
+-- 6~12개월:  0.3 (30% 반영)
+
 -- 3개월 이내 데이터 감쇠 변경 (0.8 → 0.9)
 UPDATE common_code
 SET value = '0.9'::jsonb
 WHERE group_code = 'TIME_DECAY' AND code = '3_months';
+```
+
+### WFO 파라미터
+
+WFO(Walk-Forward Optimization)의 학습/검증 윈도우 크기를 설정합니다.
+WFO에 대한 상세 설명은 [백테스트 매뉴얼](./05-backtest.md#54-wfo-walk-forward-optimization-상세)을 참고하세요.
+
+```sql
+-- In-sample(학습) 기간 변경 (6개월 → 9개월)
+-- 늘리면: 학습 데이터가 많아져 안정적이지만, 최근 시장 변화에 둔감
+UPDATE common_code SET value = '9'::jsonb
+WHERE group_code = 'WFO' AND code = 'in_sample_months';
+
+-- Out-of-sample(검증) 기간 변경 (2개월 → 3개월)
+-- 늘리면: 검증이 더 엄격해지지만, 윈도우 수가 줄어듦
+UPDATE common_code SET value = '3'::jsonb
+WHERE group_code = 'WFO' AND code = 'out_sample_months';
+
+-- 롤링 간격 변경 (1개월 → 2개월)
+-- 늘리면: 윈도우 수가 줄어 실행이 빨라지지만, 검증 해상도가 낮아짐
+UPDATE common_code SET value = '2'::jsonb
+WHERE group_code = 'WFO' AND code = 'roll_months';
 ```
 
 ## 7.5 설정 변경 적용

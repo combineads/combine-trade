@@ -10,33 +10,32 @@ Score each category from 0 to 5.
 - Security hygiene
 - Developer experience
 
-## Current score (2026-04-05, post EP-18)
+## Current score (2026-04-05, post EP-19 — 프로젝트 마무리)
 | Category | Score | Notes |
 |---|---:|---|
-| Documentation truthfulness | 4 | alignment review에 EP-18 완료 배너 추가. ARCHITECTURE.md kpi/economic-calendar 미구현 표시. PRODUCT.md "box range center" 표현 모호 |
-| Architecture clarity | 5 | L0~L9 전체 구현. L5→L6 레이어 경계를 LabelingDeps DI 패턴으로 해결 |
-| Validation coverage | 5 | 2,925 tests / 0 fail (+659 신규). EP-18 전 P0 수정 모두 TDD 적용 |
-| Reliability readiness | 5 | 손실 카운터 리셋 daemon 연결. FSM WATCHING↔IDLE 전이 DB 기록. Vector 라벨링 단일 TX |
+| Documentation truthfulness | 5 | PRD v2.0 전 42건 불일치 해소. PRODUCT.md 표현 명확화. EventLog 타입 정규화. alignment review EP-18 배너 추가 |
+| Architecture clarity | 5 | L0~L9 전체 구현. check-layers 0 violations. L4→L7 DI 패턴으로 레이어 위반 해결 |
+| Validation coverage | 5 | 3,080 tests / 0 fail. PRD 154개 항목 중 불일치 42건 전부 TDD로 수정 |
+| Reliability readiness | 5 | 크래시 복구 fsm_state 복원. 경제지표 fail-closed. Exchange adapter 플래그 사전 분기. WFO gate 활성 |
 | Security hygiene | **3** | 변동 없음. 킬스위치 CLI 미인증 유지 |
-| Developer experience | **5** | _resetModuleStateForTesting() 클린 export. 테스트 격리 패턴 확립 |
+| Developer experience | **5** | AllIndicators 히스토리 확장. CommonCode PUT API. 백테스트 saveResult 연결 |
 
-**Total: 27/30 (documentation truthfulness -1)**
+**Total: 28/30**
 
-## Score changes from EP-12 to EP-18
-| Category | EP-12 | EP-18 | Delta | Evidence |
+## Score changes from EP-18 to EP-19
+| Category | EP-18 | EP-19 | Delta | Evidence |
 |---|---:|---:|---:|---|
-| Documentation truthfulness | 5 | 4 | -1 | alignment review 9건 P0가 미수정으로 표시됨 (배너로 패치). ARCHITECTURE.md 미구현 모듈 주석 추가 |
-| Validation coverage | 5 | 5 | 0 | +659 테스트 (2,266→2,925). EP-18 P0 전건 TDD |
-| Reliability readiness | 5 | 5 | 0 | 손실 카운터 리셋, FSM 전이, Vector 라벨링 연결 완료 |
+| Documentation truthfulness | 4 | 5 | +1 | PRODUCT.md 명확화, EventLog 타입 정규화, 잔여 P1/P2 전부 수정으로 문서-코드 정합 완전 달성 |
+| Validation coverage | 5 | 5 | 0 | +155 테스트 (2,925→3,080). P1/P2 전건 TDD |
+| Reliability readiness | 5 | 5 | 0 | 크래시 복구 fsm, 경제지표 fail-closed, exchange adapter 플래그 사전 분기 추가 |
 
 ## Top 3 quality risks
-1. **Vector DB 무효화**: T-18-004 캔들 피처 분모 변경 → 기존 벡터와 신규 벡터 거리 비교 무의미. 재구축 필요
-2. **EventLog 비규약 타입**: PIPELINE_LATENCY, DAILY_BIAS_MISMATCH가 EVENT_TYPES 상수에 없음
-3. **processEntry() 340+ 줄**: 12단계 진입 파이프라인이 단일 함수. 리팩토링 권장
+1. **processEntry() 340+ 줄**: 14단계 진입 파이프라인이 단일 함수. 서브 함수 분리 권장
+2. **킬스위치 CLI 미인증**: Security hygiene 3점 원인. EP-17 보안 강화에서 해결 예정
+3. **Investing.com 스크래핑 불안정**: HTML 구조 변경 시 파서 깨짐. 모니터링 + 주기적 검증 필요
 
 ## Next cleanup targets
-- 벡터 재구축 스크립트 (T-18-004 후속)
-- P1 불일치 수정 에픽 (WatchSession A/B, ma20_slope 3봉, rsi_extreme_count 히스토리)
-- EventLog EVENT_TYPES 상수 정리
-- ARCHITECTURE.md kpi/ 미구현 placeholder 해소 (EP-16 구현)
-- 킬스위치 CLI 인증 추가 (Security hygiene 4점 목표)
+- processEntry() 리팩토링 (14단계 → 서브 함수 분리)
+- EP-17 보안 강화 (킬스위치 인증, Security hygiene 4점 목표)
+- kpi/ 모듈 구현 (EP-16)
+- Investing.com 스크래퍼 검증 주기 설정

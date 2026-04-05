@@ -4,8 +4,11 @@
 **PRD 문서**: `docs/specs/combine-trade-prd-v2.0-final.md`
 **검증 방법**: PRD 라인 → 소스코드 직접 교차 검증 (grep + read)
 
-> **EP-18 수정 완료 (2026-04-05)**: 아래 보고서의 P0 항목 9건(#1~10, #15~17, #22~23)은 EP-18에서 전부 수정됨. 수정 상세는 `docs/tasks/archive/ep-18-prd-critical-fixes/SUMMARY.md` 참조.
-> 수정 후 잔여 불일치는 P1/P2 항목만 남아 있음.
+> **전체 수정 완료 (2026-04-05)**:
+> - **EP-18**: P0 항목 9건(#1~10, #15~17, #22~23) 수정 → `docs/tasks/archive/ep-18-prd-critical-fixes/SUMMARY.md`
+> - **EP-19**: P1/P2 잔여 18건(#13~14, #18~21, #25~29, #31, #33~34, #36~39) 수정 → `docs/tasks/archive/ep-19-prd-remaining-fixes/SUMMARY.md`
+> - 제외 3건: #30(설계 정확), #32(자연 발생), #40(EP-14 구현 완료)
+> - **PRD v2.0 154개 항목 중 불일치 42건 전부 해소됨.**
 
 ---
 

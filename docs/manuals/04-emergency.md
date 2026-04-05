@@ -45,8 +45,8 @@ UPDATE symbol_state SET execution_mode = 'alert' WHERE symbol = 'BTCUSDT';
 
 1. 모든 거래소에서 보유 포지션 조회
 2. DB 티켓과 매칭
-3. **매칭된 포지션**: `HAS_POSITION` 상태 복원, SL 거래소 등록 확인 (미등록 시 재등록)
-4. **거래소에만 있는 포지션** (DB에 없음): **긴급 청산** (panic close)
+3. **매칭된 포지션**: FSM 상태를 `HAS_POSITION`으로 명시적으로 SET (추론이 아닌 DB 직접 기록), SL 거래소 등록 확인 (미등록 시 재등록)
+4. **거래소에만 있는 포지션** (DB에 없음): **긴급 청산** (panic close) — `@channel` Slack 알림 발송
 5. **DB에만 있는 티켓** (거래소에 없음): `IDLE` 상태로 변경, 이상 로그 기록
 6. 다음 1H 캔들 종가에서 WATCHING 재개
 
@@ -54,6 +54,9 @@ UPDATE symbol_state SET execution_mode = 'alert' WHERE symbol = 'BTCUSDT';
 
 > SL은 항상 거래소에 등록되어 있으므로, **데몬이 꺼져 있어도 포지션은 SL로 보호**됩니다.
 > 단, TP와 Trailing Stop은 데몬이 실행 중일 때만 작동합니다.
+
+> **FSM 상태(fsm_state)는 DB에 명시적으로 기록됩니다.**
+> 크래시 복구 시 상태를 거래소 응답에서 추론하지 않고, `fsm_state` 컬럼에 직접 SET하여 정합성을 보장합니다.
 
 ## 4.3 거래소 연결 장애
 

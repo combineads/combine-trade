@@ -11,6 +11,7 @@ KNN 통계 검증을 통해 다수 거래소에서 자동 매매를 수행합니
 - **다중 타임프레임**: 1D/1H/5M/1M 캔들 수집 (WebSocket + REST)
 - **3단계 청산**: TP1 → TP2 → Trailing Stop
 - **안전 장치**: SL 거래소 등록 필수, 60초 주기 Reconciliation, 손실 제한, Kill Switch
+- **경제 캘린더**: 고위험 거시경제 이벤트 감지 시 자동 거래 차단 (24시간 블록)
 - **백테스트**: Walk-Forward Optimization (WFO) 지원, 라이브와 동일 코드 경로
 - **실시간 알림**: Slack Webhook 연동
 - **자동 이체**: 선물 → 현물 수익 자동 이체
@@ -142,7 +143,7 @@ src/
 ├── exchanges/      # [L2] 거래소 어댑터 (Binance, OKX, Bitget, MEXC)
 ├── candles/        # [L3] WebSocket 캔들 수집, 갭 복구
 ├── vectors/        # [L3] 202차원 벡터화, 정규화
-├── filters/        # [L4] 방향 필터, 거래 차단
+├── filters/        # [L4] 방향 필터, 거래 차단, 경제 캘린더
 ├── knn/            # [L4] KNN 엔진, 시간 감쇠
 ├── signals/        # [L5] WATCHING, Evidence Gate, Safety Gate
 ├── positions/      # [L5] 포지션 FSM, 사이징

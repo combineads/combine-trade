@@ -34,6 +34,8 @@ psql "$DATABASE_URL" -c "SELECT * FROM pg_extension WHERE extname = 'vector';"
 | `Rate limit exceeded` | API 호출 제한 | 자동 재시도 대기 |
 | `Invalid API key` | API 키 만료/변경 | 거래소에서 재발급 후 `.env` 업데이트 |
 | `Margin insufficient` | 레버리지/마진 부족 | 거래소 마진 설정 확인 |
+| `Economic calendar block` | 고위험 경제 이벤트로 거래 차단 | `trade_block` 확인, 이벤트 종료 대기 또는 오탐 시 수동 삭제 ([DB 관리](./08-database.md#88-트레이드-블록-조회-및-관리) 참고) |
+| `Slippage abort` | 진입 시 슬리피지 초과로 주문 중단 | `SLIPPAGE` 설정 확인, 일시적 현상이면 다음 신호 대기 |
 
 ### 실행 모드 확인
 
@@ -105,6 +107,8 @@ WHERE position_state = 'HAS_POSITION';
 - 거래소의 강제 청산 (liquidation)
 - 네트워크 장애로 주문 결과가 DB에 기록되지 않음
 - API 키 권한 변경
+
+> Reconciliation 워커는 불일치 해소 시 `symbol_state.fsm_state`를 명시적으로 갱신합니다. DB에서 상태가 여전히 `HAS_POSITION`으로 남아 있다면 Reconciliation 워커가 정상 실행되지 않은 것입니다 — 데몬 로그에서 `reconciliation` 이벤트를 확인하세요.
 
 ## 10.5 성능 문제
 
@@ -221,3 +225,23 @@ SL이 거래소에 등록되어 있으므로 **손절은 보호**됩니다.
 
 네. 설정은 데몬 시작 시 메모리 캐시로 로드되므로,
 변경 사항을 적용하려면 재시작이 필요합니다.
+
+### WFO 실행 후 설정이 바뀌었습니다. 의도한 것인가요?
+
+네. WFO 자동 튜닝은 최적화된 파라미터를 `common_code`에 직접 기록합니다.
+영향을 받는 그룹은 `KNN`, `FEATURE_WEIGHT`, `SYMBOL_CONFIG.risk_pct`입니다.
+변경 이전 값으로 되돌리려면 [WFO 자동 파라미터 업데이트 롤백 방법](./07-configuration.md#wfo-자동-파라미터-업데이트)을 참고하세요.
+
+### 경제 캘린더가 오탐으로 24시간 거래를 막고 있습니다. 어떻게 해제하나요?
+
+`trade_block` 테이블에서 해당 블록을 직접 삭제하면 즉시 해제됩니다.
+재시작 없이 다음 사이클부터 거래가 재개됩니다.
+
+```sql
+DELETE FROM trade_block
+WHERE symbol = 'BTCUSDT'
+  AND reason = 'ECONOMIC_CALENDAR'
+  AND blocked_until > NOW();
+```
+
+자세한 내용은 [트레이드 블록 조회 및 관리](./08-database.md#88-트레이드-블록-조회-및-관리)를 참고하세요.

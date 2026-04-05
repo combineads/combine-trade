@@ -9,17 +9,19 @@
 |------|------|----------|
 | `EXCHANGE` | 거래소 어댑터 설정 | O |
 | `TIMEFRAME` | 캔들 타임프레임 | X |
-| `SYMBOL_CONFIG` | 심볼별 risk_pct, max_leverage | O |
-| `KNN` | top_k, min_samples, commission_pct | O |
+| `SYMBOL_CONFIG` | 심볼별 risk_pct, max_leverage | O ¹ |
+| `KNN` | top_k, min_samples, commission_pct | O ¹ |
 | `POSITION` | 기본 레버리지, 최대 피라미딩 | O |
 | `LOSS_LIMIT` | 손실 한도 (일일, 세션, 시간별) | O |
 | `SLIPPAGE` | 스프레드/슬리피지 허용치 | O |
-| `FEATURE_WEIGHT` | KNN 피처 가중치 | O |
+| `FEATURE_WEIGHT` | KNN 피처 가중치 | O ¹ |
 | `TIME_DECAY` | 시간 감쇠 팩터 | O |
 | `WFO` | Walk-Forward 윈도우 크기 | O |
 | `ANCHOR` | **구조적 앵커 (변경 금지)** | **X** |
 | `NOTIFICATION` | Slack 웹훅 설정 | O |
 | `TRANSFER` | 자동 이체 설정 | O |
+
+> ¹ `KNN`, `FEATURE_WEIGHT`, `SYMBOL_CONFIG.risk_pct`는 WFO 자동 튜닝 대상입니다. WFO 실행 후 최적값으로 자동 덮어쓰기될 수 있습니다.
 
 ## 7.2 변경 불가 항목 (구조적 앵커)
 
@@ -122,6 +124,8 @@ SET value = '2.5'::jsonb
 WHERE group_code = 'FEATURE_WEIGHT' AND code = 'bb4_position';
 ```
 
+> **주의**: WFO 자동 튜닝이 실행되면 `FEATURE_WEIGHT` 그룹의 모든 값이 최적화 결과로 덮어쓰기됩니다. 수동으로 변경한 값은 다음 WFO 실행 시 유실됩니다. 수동값을 유지하려면 WFO 자동 업데이트를 비활성화하세요.
+
 ### 시간 감쇠 팩터
 
 KNN이 과거 패턴을 참조할 때, 오래된 데이터일수록 가중치를 낮추는 설정입니다.
@@ -172,7 +176,69 @@ WHERE group_code = 'WFO' AND code = 'roll_months';
 > bun run daemon
 > ```
 
-## 7.6 설정 초기화
+REST API로 설정을 직접 변경할 수도 있습니다 (데몬 재시작 없이 적용하려면 재시작 필요):
+
+```http
+PUT /common-code/:groupCode/:code
+Content-Type: application/json
+
+{"value": "새값"}
+```
+
+예시:
+
+```bash
+# SYMBOL_CONFIG.BTCUSDT의 risk_pct 변경
+curl -X PUT http://localhost:3000/common-code/SYMBOL_CONFIG/BTCUSDT \
+  -H "Content-Type: application/json" \
+  -d '{"value": {"risk_pct": "0.01", "max_leverage": 38}}'
+```
+
+## 7.6 WFO 자동 파라미터 업데이트
+
+WFO 실행 완료 후 최적 파라미터가 자동으로 `common_code`에 기록됩니다.
+
+### 영향을 받는 설정 그룹
+
+| 그룹 | 자동 업데이트 항목 |
+|------|----------------|
+| `KNN` | `top_k`, `min_samples` |
+| `FEATURE_WEIGHT` | 모든 피처 가중치 |
+| `SYMBOL_CONFIG` | 심볼별 `risk_pct` |
+
+### 데몬 반영
+
+WFO가 DB를 업데이트한 후 **데몬을 재시작**해야 새 파라미터가 적용됩니다.
+데몬은 시작 시 설정을 메모리 캐시로 로드하므로, 자동 업데이트 이후 재시작이 필요합니다.
+
+```bash
+kill -TERM $(pgrep -f "bun run daemon")
+bun run daemon
+```
+
+### 롤백 방법
+
+WFO 자동 업데이트 이전 값으로 되돌리려면 WFO 실행 전 백업해 둔 설정을 복원하거나,
+직접 SQL로 원하는 값을 재설정한 뒤 데몬을 재시작합니다.
+
+```sql
+-- 예: FEATURE_WEIGHT 특정 항목 수동 복원
+UPDATE common_code
+SET value = '2.0'::jsonb
+WHERE group_code = 'FEATURE_WEIGHT' AND code = 'bb4_position';
+```
+
+또는 전체 그룹을 초기값으로 초기화:
+
+```sql
+DELETE FROM common_code WHERE group_code = 'FEATURE_WEIGHT';
+```
+
+```bash
+bun run seed
+```
+
+## 7.7 설정 초기화
 
 시드 스크립트는 `ON CONFLICT DO NOTHING`으로 동작하므로,
 기존 값을 덮어쓰지 않습니다.

@@ -17,6 +17,11 @@
 | Kill Switch 발동 | 청산 포지션 수, 취소 주문 수 |
 | 이체 완료 | 이체 금액, 잔고 변동 |
 | KPI 경고 | MDD, 연속 손실, 기대값 음수 전환 |
+| `SLIPPAGE_ABORT` | 슬리피지 초과 진입 취소 |
+| `SLIPPAGE_CLOSE` | 슬리피지 초과 긴급 청산 |
+| `ECONOMIC_CALENDAR_FAILED` | 경제 캘린더 스크래핑 실패 (24시간 거래 차단 생성) |
+
+> **Panic Close 알림**: 거래소에만 포지션이 존재하는 경우 발동하는 긴급 청산(panic close)은 `@channel` 멘션을 포함하여 즉시 팀 전체에 알림이 전달됩니다.
 
 ### Slack 설정
 
@@ -90,6 +95,9 @@ WHERE group_code = 'NOTIFICATION' AND code = 'slack_webhook';
 - WebSocket 연결/재연결/해제
 - 손실 한도 트리거
 - Kill Switch 발동
+- `SLIPPAGE_ABORT` (슬리피지 초과 진입 취소)
+- `SLIPPAGE_CLOSE` (슬리피지 초과 긴급 청산)
+- `ECONOMIC_CALENDAR_FAILED` (경제 캘린더 스크래핑 실패)
 
 ### 로그 레벨 설정
 
@@ -127,3 +135,39 @@ cat daemon.log | jq 'select(.timestamp >= "2026-04-05T09:00:00" and .timestamp <
 - 시스템 상태
 
 웹 UI는 3~5초 주기로 폴링하여 데이터를 갱신합니다.
+
+## 3.5 경제 캘린더 차단 모니터링
+
+경제 캘린더 스케줄러는 고영향 경제 지표 발표 전후 진입을 자동 차단합니다.
+
+### 현재 차단 현황 조회
+
+```sql
+-- 현재 활성 경제 이벤트 차단 확인
+SELECT symbol, reason, blocked_until, created_at
+FROM economic_blocks
+WHERE blocked_until > NOW()
+ORDER BY blocked_until;
+```
+
+### 스크래핑 실패 시 동작
+
+경제 캘린더 스크래핑이 실패하면 시스템은 **안전 측(보수적)으로** 동작합니다:
+
+- `ECONOMIC_CALENDAR_FAILED` 이벤트를 로그에 기록하고 Slack으로 알림 발송
+- 향후 24시간 동안 신규 진입을 차단하는 블록을 자동 생성
+- 스크래핑이 복구되면 다음 스케줄 실행 시 차단이 정상 경제 이벤트로 교체됨
+
+### 수동 차단 해제
+
+긴급하게 차단을 해제해야 할 경우:
+
+```sql
+-- 특정 심볼 차단 해제
+DELETE FROM economic_blocks WHERE symbol = 'BTCUSDT';
+
+-- 전체 차단 해제 (주의: 예정된 고영향 지표 발표가 없는지 확인 후 실행)
+DELETE FROM economic_blocks WHERE blocked_until > NOW();
+```
+
+> **주의**: 수동 해제 후 데몬이 다음 스케줄 실행 시 스크래핑에 성공하면 차단이 재생성될 수 있습니다.

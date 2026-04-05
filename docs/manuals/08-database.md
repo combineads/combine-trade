@@ -11,6 +11,7 @@
 | `order` | 주문 기록 | Transaction |
 | `trade_vector` | 202차원 피처 벡터 (pgvector) | Transaction |
 | `event_log` | 시스템 이벤트 로그 | Transaction |
+| `trade_block` | 거래 차단 기록 (슬리피지, 경제 캘린더 등) | Transaction |
 
 > 분류는 MRT(Master/Reference/Transaction) 기준입니다.
 > 상세 데이터 모델은 [DATA_MODEL.md](../DATA_MODEL.md)를 참고하세요.
@@ -187,6 +188,20 @@ FROM event_log
 WHERE event_type = 'KILL_SWITCH'
 ORDER BY created_at DESC;
 
+-- 슬리피지 관련 이벤트 조회
+SELECT event_type, data, created_at
+FROM event_log
+WHERE event_type IN ('SLIPPAGE_ABORT', 'SLIPPAGE_CLOSE')
+ORDER BY created_at DESC
+LIMIT 20;
+
+-- 경제 캘린더 필터 실패 이벤트 조회
+SELECT data, created_at
+FROM event_log
+WHERE event_type = 'ECONOMIC_CALENDAR_FAILED'
+ORDER BY created_at DESC
+LIMIT 20;
+
 -- 특정 날짜 이벤트
 SELECT event_type, data, created_at
 FROM event_log
@@ -194,3 +209,43 @@ WHERE created_at >= '2026-04-05'
 AND created_at < '2026-04-06'
 ORDER BY created_at;
 ```
+
+## 8.8 트레이드 블록 조회 및 관리
+
+`trade_block` 테이블은 슬리피지 이상, 경제 캘린더 이벤트 등으로 인한 일시적 거래 차단 기록을 보관합니다.
+
+### 활성 블록 조회
+
+```sql
+-- 현재 유효한 차단 목록
+SELECT symbol, exchange, reason, blocked_until, created_at
+FROM trade_block
+WHERE blocked_until > NOW()
+ORDER BY blocked_until DESC;
+
+-- 차단 원인별 집계
+SELECT reason, count(*) AS cnt, max(blocked_until) AS latest_expiry
+FROM trade_block
+WHERE blocked_until > NOW()
+GROUP BY reason
+ORDER BY cnt DESC;
+```
+
+### 오탐(false-positive) 24시간 블록 삭제
+
+경제 캘린더가 오탐으로 24시간 블록을 걸었을 경우, 수동으로 해제할 수 있습니다.
+
+```sql
+-- 특정 심볼의 경제 캘린더 블록 삭제
+DELETE FROM trade_block
+WHERE symbol = 'BTCUSDT'
+  AND reason = 'ECONOMIC_CALENDAR'
+  AND blocked_until > NOW();
+
+-- 전체 경제 캘린더 블록 삭제 (전체 심볼)
+DELETE FROM trade_block
+WHERE reason = 'ECONOMIC_CALENDAR'
+  AND blocked_until > NOW();
+```
+
+> 삭제 후 데몬이 다음 사이클에 자동으로 거래를 재개합니다. 재시작은 필요하지 않습니다.

@@ -30,7 +30,8 @@ bun run backtest
 3. `docs/TECH_STACK.md` — canonical library versions and setup guide
 4. `docs/DATA_MODEL.md` — MRT entity classification, relationships, physical design guide
 5. `docs/DESIGN_SYSTEM.md` — design tokens, colors, typography, visual language
-6. `docs/QUALITY.md` — validation commands and definition of done
+6. `docs/IA.md` — screen inventory, navigation, user flows, URL/route design
+7. `docs/QUALITY.md` — validation commands and definition of done
 7. `docs/WORKFLOW.md` — agent coordination, handoff, and model routing
 8. `docs/PLANS.md` — execution planning rules
 9. `docs/RELIABILITY.md` — failure modes and logging
@@ -118,6 +119,7 @@ harness-discovery → harness-project-bootstrap → harness-architect → [harne
 | `docs/TECH_STACK.md` | Canonical library versions, install commands, setup guide |
 | `docs/DATA_MODEL.md` | MRT entity classification, relationships, projection contracts |
 | `docs/DESIGN_SYSTEM.md` | Visual language — colors, typography, spacing, components |
+| `docs/IA.md` | Screen inventory, navigation architecture, user flows, URL/route design |
 | `docs/assets/tokens.css` | CSS custom properties — import in any stylesheet |
 | `docs/assets/tokens.json` | Machine-readable design tokens (W3C DTCG format) |
 | `docs/WORKFLOW.md` | Agent coordination, handoff protocol, model routing |

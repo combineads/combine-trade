@@ -10,14 +10,17 @@
  *   bun run backtest -- --help
  */
 
-import type { BacktestConfig } from "@/backtest/engine";
+import type { BacktestConfig, LoadCandles } from "@/backtest/engine";
 import type { ParamSet, ParamSpace } from "@/backtest/param-search";
 import { printReport } from "@/backtest/reporter";
 import type { WfoConfig, WfoDeps } from "@/backtest/wfo";
 import { generateWfoWindows, runWfo } from "@/backtest/wfo";
+import { TIMEFRAMES } from "@/core/constants";
+import { d } from "@/core/decimal";
 import { createLogger } from "@/core/logger";
+import type { Candle, Exchange, Timeframe } from "@/core/types";
 import type { DbInstance } from "@/db/pool";
-import type { NewBacktestRow } from "@/db/schema";
+import type { CandleRow, NewBacktestRow } from "@/db/schema";
 
 const log = createLogger("cli");
 
@@ -73,6 +76,92 @@ function defaultThreads(): number {
       ? navigator.hardwareConcurrency
       : 4;
   return Math.max(1, Math.floor(cpus / 2));
+}
+
+// ---------------------------------------------------------------------------
+// CandleRow → Candle conversion
+// ---------------------------------------------------------------------------
+
+function candleRowToCandle(row: CandleRow): Candle {
+  return {
+    id: row.id,
+    symbol: row.symbol,
+    exchange: row.exchange as Exchange,
+    timeframe: row.timeframe as Timeframe,
+    open_time: row.open_time,
+    open: d(row.open),
+    high: d(row.high),
+    low: d(row.low),
+    close: d(row.close),
+    volume: d(row.volume),
+    is_closed: row.is_closed ?? false,
+    created_at: row.created_at,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// loadCandlesFromDb — DB-backed candle loader with auto-sync
+// ---------------------------------------------------------------------------
+
+async function loadCandlesFromDb(
+  db: DbInstance,
+  symbol: string,
+  exchange: Exchange,
+  startDate: Date,
+  endDate: Date,
+): Promise<Candle[]> {
+  const { getCandles } = await import("@/candles/repository");
+  const { syncCandles } = await import("@/candles/sync");
+  const { symbolTable } = await import("@/db/schema");
+
+  // Load candles for all timeframes and merge
+  const loadAll = async (): Promise<CandleRow[]> => {
+    const rows: CandleRow[] = [];
+    for (const tf of TIMEFRAMES) {
+      const tfRows = await getCandles(db, symbol, exchange, tf, startDate, endDate);
+      rows.push(...tfRows);
+    }
+    return rows;
+  };
+
+  let rows = await loadAll();
+
+  // If no candles found, sync from Binance then retry
+  if (rows.length === 0) {
+    log.info("no candles in DB — syncing from exchange", { symbol, exchange });
+
+    // Ensure symbol exists (FK constraint)
+    await db
+      .insert(symbolTable)
+      .values({
+        symbol,
+        exchange,
+        name: symbol,
+        base_asset: symbol.replace(/USDT$/, ""),
+        quote_asset: "USDT",
+      })
+      .onConflictDoNothing();
+
+    await syncCandles({
+      symbols: [{ symbol, exchange }],
+      timeframes: [...TIMEFRAMES],
+      db,
+    });
+
+    rows = await loadAll();
+    log.info("sync complete", { symbol, candlesLoaded: rows.length });
+  }
+
+  return rows.map(candleRowToCandle);
+}
+
+// ---------------------------------------------------------------------------
+// createLoadCandles — build a LoadCandles callback from a DB instance
+// ---------------------------------------------------------------------------
+
+function createLoadCandles(db: DbInstance): LoadCandles {
+  return (symbol, exchange, startDate, endDate) =>
+    loadCandlesFromDb(db, symbol, exchange, startDate, endDate);
 }
 
 // ---------------------------------------------------------------------------
@@ -164,7 +253,20 @@ export function parseArgs(argv: string[]): CliArgs {
  * Exported so tests can call it directly; the CLI uses it via runCli.
  */
 export async function saveBacktestResult(db: DbInstance, row: NewBacktestRow): Promise<string> {
-  const { backtestTable } = await import("@/db/schema");
+  const { backtestTable, symbolTable } = await import("@/db/schema");
+
+  // Ensure the referenced symbol exists (backtest may target unregistered symbols).
+  await db
+    .insert(symbolTable)
+    .values({
+      symbol: row.symbol,
+      exchange: row.exchange,
+      name: row.symbol,
+      base_asset: row.symbol.replace(/USDT$/, ""),
+      quote_asset: "USDT",
+    })
+    .onConflictDoNothing();
+
   const result = await db.insert(backtestTable).values(row).returning({ id: backtestTable.id });
   const inserted = result[0];
   if (inserted === undefined) {
@@ -209,16 +311,15 @@ export async function runCli(args: CliArgs): Promise<void> {
   const { BacktestRunner } = await import("@/backtest/engine");
   const { calcFullMetrics } = await import("@/backtest/metrics");
   const { runParameterSearch } = await import("@/backtest/param-search");
-  const { d } = await import("@/core/decimal");
   const { MockExchangeAdapter } = await import("@/backtest/mock-adapter");
 
-  // Build a minimal adapter config for the CLI runner.
-  // In a full integration the symbol info and balance would come from the DB.
-  const makeAdapter = (_startDate: Date) =>
+  // Build an adapter with the given candles. Symbol info and balance are minimal defaults;
+  // a full integration would read these from the DB.
+  const makeAdapter = (candles: Candle[]) =>
     new MockExchangeAdapter({
       exchange: config.exchange,
       initialBalance: d("10000"),
-      candles: [],
+      candles,
       symbolInfo: {
         symbol: config.symbol,
         tickSize: d("0.01"),
@@ -228,7 +329,7 @@ export async function runCli(args: CliArgs): Promise<void> {
       },
     });
 
-  // Acquire DB instance once; used for saveResult in both modes.
+  // Acquire DB instance once; used for candle loading and saveResult in both modes.
   // initDb is lazy: if the DB is already initialised this is a no-op.
   let db: DbInstance | null = null;
   try {
@@ -241,11 +342,22 @@ export async function runCli(args: CliArgs): Promise<void> {
   }
 
   if (args.mode === "backtest") {
-    const loadCandles = async () => [];
-    const adapter = makeAdapter(args.start);
-    const runner = new BacktestRunner(config, loadCandles);
-    // Strategy callback is a no-op stub; real strategy wiring is out of scope for this CLI task.
-    const result = await runner.run(async (_candle, _adapter, _addTrade) => {}, adapter);
+    if (db === null) {
+      throw new Error("DB is required for backtest mode — candles must be loaded from database");
+    }
+    const loadCandles = createLoadCandles(db);
+    // Pre-load candles so we can pass them to the adapter as well.
+    const candles = await loadCandles(
+      config.symbol,
+      config.exchange,
+      config.startDate,
+      config.endDate,
+    );
+    const adapter = makeAdapter(candles);
+    const { createBacktestStrategy } = await import("@/backtest/strategy");
+    const strategyCallback = createBacktestStrategy(config.symbol);
+    const runner = new BacktestRunner(config, async () => candles);
+    const result = await runner.run(strategyCallback, adapter);
     const metrics = calcFullMetrics(result.trades);
     printReport(config, metrics, result.trades);
 
@@ -273,15 +385,28 @@ export async function runCli(args: CliArgs): Promise<void> {
       totalEndDate: args.end,
     };
 
+    if (db === null) {
+      throw new Error("DB is required for WFO mode — candles must be loaded from database");
+    }
+    const wfoLoadCandles = createLoadCandles(db);
+
     const runBacktestWindow = async (window: { start: Date; end: Date }, _params: ParamSet) => {
       const windowConfig: BacktestConfig = {
         ...config,
         startDate: window.start,
         endDate: window.end,
       };
-      const runner = new BacktestRunner(windowConfig, async () => []);
-      const adapter = makeAdapter(window.start);
-      const result = await runner.run(async (_candle, _adapter, _addTrade) => {}, adapter);
+      const candles = await wfoLoadCandles(
+        config.symbol,
+        config.exchange,
+        window.start,
+        window.end,
+      );
+      const adapter = makeAdapter(candles);
+      const { createBacktestStrategy } = await import("@/backtest/strategy");
+      const strategyCallback = createBacktestStrategy(config.symbol);
+      const runner = new BacktestRunner(windowConfig, async () => candles);
+      const result = await runner.run(strategyCallback, adapter);
       return calcFullMetrics(result.trades);
     };
 
@@ -320,9 +445,8 @@ export async function runCli(args: CliArgs): Promise<void> {
           // For parent rows use the overall WFO date range; for child windows the
           // isStart/oosEnd dates are available in cfg (set by wfo.ts).
           start_date:
-            cfgMap["isStart"] !== undefined ? new Date(cfgMap["isStart"] as string) : args.start,
-          end_date:
-            cfgMap["oosEnd"] !== undefined ? new Date(cfgMap["oosEnd"] as string) : args.end,
+            cfgMap.isStart !== undefined ? new Date(cfgMap.isStart as string) : args.start,
+          end_date: cfgMap.oosEnd !== undefined ? new Date(cfgMap.oosEnd as string) : args.end,
           config_snapshot: cfgMap,
           results: res as Record<string, unknown>,
           parent_id: parentId ?? null,

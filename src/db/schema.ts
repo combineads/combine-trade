@@ -272,7 +272,7 @@ export const signalTable = pgTable(
     safety_passed: boolean("safety_passed").notNull(),
     knn_decision: text("knn_decision"),
     a_grade: boolean("a_grade").notNull().default(false),
-    vector_id: uuid("vector_id"),
+    vector_id: uuid("vector_id").references(() => vectorTable.id, { onDelete: "set null" }),
     created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -351,6 +351,7 @@ export const vectorTable = pgTable(
       foreignColumns: [candleTable.id],
     }).onDelete("cascade"),
     index("vectors_symbol_exchange_timeframe_idx").on(t.symbol, t.exchange, t.timeframe),
+    index("vectors_embedding_hnsw_idx").using("hnsw", sql`${t.embedding} vector_cosine_ops`),
     check("vectors_timeframe_check", sql`${t.timeframe} IN ('5M', '1M')`),
     check(
       "vectors_label_check",

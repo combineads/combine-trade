@@ -183,17 +183,37 @@ describe("parseArgs", () => {
 // ---------------------------------------------------------------------------
 
 describe("saveBacktestResult", () => {
+  /**
+   * Build a mock DbInstance that handles the two-insert chain in saveBacktestResult:
+   *   1. db.insert(symbolTable).values(...).onConflictDoNothing()  — symbol upsert
+   *   2. db.insert(backtestTable).values(row).returning(...)       — actual insert
+   */
+  function makeMockDb(returningFn: () => Promise<Array<{ id: string }>>) {
+    let callCount = 0;
+    return {
+      insert: () => {
+        callCount++;
+        if (callCount === 1) {
+          // First call: symbol upsert chain
+          return {
+            values: () => ({
+              onConflictDoNothing: async () => {},
+            }),
+          };
+        }
+        // Second call: backtest insert chain
+        return {
+          values: () => ({
+            returning: returningFn,
+          }),
+        };
+      },
+    } as unknown as DbInstance;
+  }
+
   it("calls db.insert with backtestTable and returning id", async () => {
     const fakeId = "550e8400-e29b-41d4-a716-446655440000";
-
-    // Minimal mock that satisfies the insert().values().returning() call chain.
-    const mockDb = {
-      insert: () => ({
-        values: () => ({
-          returning: async () => [{ id: fakeId }],
-        }),
-      }),
-    } as unknown as DbInstance;
+    const mockDb = makeMockDb(async () => [{ id: fakeId }]);
 
     const row = {
       run_type: "BACKTEST" as const,
@@ -210,13 +230,7 @@ describe("saveBacktestResult", () => {
   });
 
   it("throws when INSERT returns no rows", async () => {
-    const mockDb = {
-      insert: () => ({
-        values: () => ({
-          returning: async () => [],
-        }),
-      }),
-    } as unknown as DbInstance;
+    const mockDb = makeMockDb(async () => []);
 
     const row = {
       run_type: "BACKTEST" as const,
@@ -232,15 +246,9 @@ describe("saveBacktestResult", () => {
   });
 
   it("propagates DB errors to the caller", async () => {
-    const mockDb = {
-      insert: () => ({
-        values: () => ({
-          returning: async () => {
-            throw new Error("connection refused");
-          },
-        }),
-      }),
-    } as unknown as DbInstance;
+    const mockDb = makeMockDb(async () => {
+      throw new Error("connection refused");
+    });
 
     const row = {
       run_type: "WFO" as const,

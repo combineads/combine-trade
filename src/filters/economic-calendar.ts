@@ -78,7 +78,7 @@ function extractEventDatetime(rowHtml: string): Date | null {
   );
   if (datetimeMatch?.[1]) {
     // Replace slashes with dashes for ISO compatibility
-    const iso = datetimeMatch[1].replace(/\//g, "-").replace(" ", "T") + "Z";
+    const iso = `${datetimeMatch[1].replace(/\//g, "-").replace(" ", "T")}Z`;
     const d = new Date(iso);
     if (!Number.isNaN(d.getTime())) {
       return d;

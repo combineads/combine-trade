@@ -1,7 +1,6 @@
 import { createLogger } from "@/core/logger";
 import type { ExchangeAdapter } from "@/core/ports";
 import type { Timeframe } from "@/core/types";
-import type { DbInstance } from "@/db/pool";
 import { getDb } from "@/db/pool";
 import { type CandleGap, detectGaps } from "./gap-detection";
 import type { NewCandle } from "./history-loader";
@@ -37,7 +36,7 @@ type FetchCandlesFn = (
   limit?: number,
 ) => Promise<NewCandle[]>;
 
-type UpsertFn = (db: DbInstance, candles: NewCandle[]) => Promise<number>;
+type UpsertFn = (candles: NewCandle[]) => Promise<number>;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -58,7 +57,7 @@ export class GapRecovery {
   constructor(
     detectGapsFn: DetectGapsFn = detectGaps,
     fetchCandlesFn: FetchCandlesFn = fetchCandlesViaREST,
-    upsertFn: UpsertFn = bulkUpsertCandles,
+    upsertFn: UpsertFn = (candles) => bulkUpsertCandles(getDb(), candles),
   ) {
     this.detectGapsFn = detectGapsFn;
     this.fetchCandlesFn = fetchCandlesFn;
@@ -118,8 +117,7 @@ export class GapRecovery {
         );
 
         if (candles.length > 0) {
-          const db = getDb();
-          const upserted = await this.upsertFn(db, candles);
+          const upserted = await this.upsertFn(candles);
           result.candlesRecovered += upserted;
         }
 

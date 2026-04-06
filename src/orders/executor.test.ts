@@ -283,11 +283,11 @@ describe("T-19-008: executeEntry — supports_one_step_order flag", () => {
 
   it("supports_one_step_order=false and SL fails → emergency close, bracket not attempted", async () => {
     const createOrderCalls: Array<{ type: string; stopLoss?: unknown }> = [];
-    let callCount = 0;
+    let _callCount = 0;
 
     const adapter = makeAdapter({
       createOrder: async (params) => {
-        callCount++;
+        _callCount++;
         createOrderCalls.push({ type: params.type, stopLoss: params.stopLoss });
 
         if (params.type === "stop_market") {
